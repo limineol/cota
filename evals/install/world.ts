@@ -1,4 +1,10 @@
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Ran } from "./installer.ts";
@@ -350,6 +356,24 @@ export const makeWorld = async (options: {
   });
   if (bundled.exitCode !== 0)
     throw new Error(`git bundle failed: ${bundled.stderr.toString()}`);
+  // A shallow clone, as CI's is, bundles commits whose parents it does not
+  // hold, and a fetch refuses such a bundle unless the checkout is shallow at
+  // the same commits.
+  const shallowFile = Bun.spawnSync(
+    ["git", "rev-parse", "--path-format=absolute", "--git-path", "shallow"],
+    { cwd: root },
+  )
+    .stdout.toString()
+    .trim();
+  const shallow = existsSync(shallowFile)
+    ? readFileSync(shallowFile, "utf8")
+        .split("\n")
+        .filter((line) => /^[0-9a-f]{40,64}$/.test(line))
+    : [];
+  const asShallow =
+    shallow.length === 0
+      ? ""
+      : ` && printf '%s\\n' ${shallow.join(" ")} > ${checkout}/.git/shallow`;
   for (const machine of task.machines) {
     for (const client of machine.clients) {
       must(
@@ -368,7 +392,7 @@ export const makeWorld = async (options: {
       `the checkout on ${machine.name}`,
       await shell(
         machine.name,
-        `cat > /tmp/cota.bundle && git init -q ${checkout} && git -C ${checkout} fetch -q /tmp/cota.bundle HEAD && git -C ${checkout} checkout -q --detach ${commit} && rm /tmp/cota.bundle`,
+        `cat > /tmp/cota.bundle && git init -q ${checkout}${asShallow} && git -C ${checkout} fetch -q /tmp/cota.bundle HEAD && git -C ${checkout} checkout -q --detach ${commit} && rm /tmp/cota.bundle`,
         { stdin: await Bun.file(bundle).bytes() },
       ),
     );
