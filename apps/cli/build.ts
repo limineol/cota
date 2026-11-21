@@ -22,6 +22,10 @@ const dist = join(import.meta.dir, "dist");
 const fileOf = (target: Target) =>
   target.startsWith("bun-windows-") ? "cota.exe" : "cota";
 
+/** A release's name for a system's `cota`, which that system picks without unpacking anything (ADR-0027). */
+const releaseFileOf = (target: Target) =>
+  `${target.replace(/^bun-/, "cota-")}${target.startsWith("bun-windows-") ? ".exe" : ""}`;
+
 const thisSystem = targets.find(
   (target) =>
     target ===
@@ -50,7 +54,7 @@ const build = (target: Target, outfile: string) => {
 
 if (values.all) {
   for (const target of targets) {
-    build(target, join(dist, target, fileOf(target)));
+    build(target, join(dist, releaseFileOf(target)));
   }
 } else if (thisSystem === undefined) {
   console.error(
