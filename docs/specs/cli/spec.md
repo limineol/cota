@@ -2,7 +2,7 @@
 status: active
 scope: apps/cli
 owner: limineol
-last_verified: 2026-11-19
+last_verified: 2026-11-21
 review_by: 2027-02-19
 supersedes: []
 code:
@@ -306,4 +306,4 @@ J1 and J2 run over generated hosts (names, IPv4 and bracketed IPv6), ports, user
 - **Asking models.dev for a model's facts.** They are the hub's price list's; a model it lacks is written with its id alone.
 - **Rewriting a file with comments**: OpenCode's JSONC, or a Codex `cota-` provider written by hand in another form. It is left as it is, and said.
 - **A keychain.** Secrets are files only the user reads.
-- **Updating `cota`, and publishing it.** Milestone 5.
+- **Updating `cota`.** Left by ADR-0027, under which a release publishes `cota` for the five systems.
