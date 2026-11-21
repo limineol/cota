@@ -1,0 +1,146 @@
+name: Release
+
+# A release is published by the tag v<version> on a commit of main, pushed by
+# the owner, and by nothing else (ADR-0027). The jobs run in that ADR's order:
+# the image is pushed only once every binary has started on its system, and the
+# GitHub release is made last.
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/limineol/cota-hub
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.2
+      - id: check
+        env:
+          TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(bun tooling/release.ts check "$TAG")"
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "::error::$TAG is on $(git rev-parse HEAD), which is not a commit of main"
+            exit 1
+          fi
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "::error::the release $TAG is published already, and is never changed: a fix is the next patch version"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  binaries:
+    needs: check
+    permissions:
+      contents: read
+    uses: ./.github/workflows/binaries.yml
+
+  image:
+    needs: [check, binaries]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - env:
+          ACTOR: ${{ github.actor }}
+          TOKEN: ${{ github.token }}
+        run: printf '%s' "$TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+      # The registry shows a multi-platform image's description from its index,
+      # not from the labels of each platform's image.
+      - id: push
+        env:
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --build-arg "COTA_VERSION=$VERSION" \
+            --build-arg "COTA_REVISION=$(git rev-parse HEAD)" \
+            --annotation "index:org.opencontainers.image.description=Cota's hub" \
+            --provenance=false \
+            --tag "$IMAGE:$VERSION" \
+            --metadata-file metadata.json \
+            --push \
+            .
+          digest="$(jq -r '."containerimage.digest"' metadata.json)"
+          case "$digest" in
+            sha256:*) echo "digest=$digest" >> "$GITHUB_OUTPUT" ;;
+            *) echo "::error::the build gave no digest for $IMAGE:$VERSION"; exit 1 ;;
+          esac
+      - if: always()
+        run: docker logout ghcr.io
+
+  attest:
+    needs: [binaries, image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: cota
+          path: release
+      - run: |
+          cp deploy/compose.yaml deploy/cota.toml release/
+          cd release
+          sha256sum cota-* compose.yaml cota.toml > SHA256SUMS
+          cat SHA256SUMS
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: release/SHA256SUMS
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ needs.image.outputs.digest }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release
+          path: release/
+          if-no-files-found: error
+
+  release:
+    needs: [check, image, attest]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.2
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: release
+      - env:
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.check.outputs.version }}
+          DIGEST: ${{ needs.image.outputs.digest }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          bun tooling/release.ts page "$TAG" "$IMAGE:$VERSION@$DIGEST" > page.md
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --title "Cota $VERSION" --notes-file page.md release/*
