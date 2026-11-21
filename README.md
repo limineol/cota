@@ -6,7 +6,7 @@ Cota is a hub you run yourself for the AI coding subscriptions and API plans you
 
 It is for a developer with more than one subscription, or more than one machine, who will run two containers and wants one place to see and search all of it.
 
-Cota is not released yet: there are no published images or binaries, and you build both from this repository. [The state of the project](#the-state-of-the-project) says what has been run, and where.
+Cota is not released yet: there are no published images or binaries, and you build both from this repository. The workflow that publishes a release is built, and publishes nothing until its first tag, `v0.1.0` ([ADR-0027](docs/adr/ADR-0027-releases.md)). [The state of the project](#the-state-of-the-project) says what has been run, and where.
 
 ```text
    laptop                   desktop                  any other machine
@@ -34,7 +34,7 @@ The hub serves a dashboard at its own address, behind the owner password or a pa
 - **Lets your agents remember.** With a reader key, a coding agent on any machine can search past sessions and read their transcripts through `cota memory`, using the skill in [`skills/cota-memory`](skills/cota-memory/SKILL.md).
 - **Sets each machine up.** `cota join` puts shims for `claude`, `codex`, `opencode` and `pi` first on your `PATH`, configures Codex, OpenCode and Pi for the hub, and schedules the title reporter. When the hub cannot be reached, a launch goes straight to the provider with the login its route would have used, and says so; those requests are not logged. `cota doctor` checks the machine and names the command that fixes each problem.
 
-Not built yet: sharing requests across several subscriptions of one provider (load balancing), Codex over a WebSocket (through the hub it uses HTTP), and the published images and binaries. [`docs/roadmap.md`](docs/roadmap.md) has the plan.
+Not built yet: sharing requests across several subscriptions of one provider (load balancing), and Codex over a WebSocket (through the hub it uses HTTP). Not published yet: the hub image and the `cota` binaries, which a version's tag publishes. [`docs/roadmap.md`](docs/roadmap.md) has the plan.
 
 ## Install
 

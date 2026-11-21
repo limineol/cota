@@ -2,7 +2,7 @@
 status: active
 scope: repository
 owner: limineol
-last_verified: 2026-11-19
+last_verified: 2026-11-21
 review_by: 2027-02-19
 supersedes: []
 code:
@@ -112,7 +112,7 @@ The memory eval asks questions about past work whose answers are in a request lo
 
 ## Where it has run
 
-Every gate, on one Mac (Apple silicon, macOS, OrbStack for Docker), before each pull request. The repository's CI workflow (`.github/workflows/ci.yml`, which runs `verify` with the proofs rechecked and builds the hub image for both platforms) is not running at present, so no run of it is behind any of this. The deployment's test has run under OrbStack only; the install eval's world runs a Docker engine inside an Ubuntu container on that Mac.
+Every gate, on one Mac (Apple silicon, macOS, OrbStack for Docker), before each pull request. The repository's CI workflow (`.github/workflows/ci.yml`, which runs `verify` with the proofs rechecked, builds the hub image for both platforms, and builds `cota` for its five systems and starts each on a runner of its own system) is not running at present, so no run of it is behind any of this. The deployment's test has run under OrbStack only; the install eval's world runs a Docker engine inside an Ubuntu container on that Mac.
 
 ## What it does not show
 

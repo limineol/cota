@@ -2,7 +2,7 @@
 status: accepted
 scope: repository
 owner: limineol
-last_verified: 2026-11-19
+last_verified: 2026-11-21
 review_by: 2027-02-18
 supersedes: []
 code:
@@ -36,6 +36,8 @@ Cota is fewer moving parts: the hub is one process that relays, logs, archives, 
 - **How it is built.** `Dockerfile` and `.dockerignore` at the repository's root, so a checkout builds it with `docker build -t cota-hub:<commit> .`. The build stage runs on the builder's own platform; the final stage only copies files onto the base image and runs nothing, so the same files serve every platform and building for another needs no emulation.
 - **Platforms: `linux/amd64` and `linux/arm64`.** The machine a single owner keeps on is as likely an Apple silicon Mac (whose container engine runs arm64 Linux) or a small arm64 board as an amd64 server, and ClickHouse's and Bun's images exist for both. Since the final stage runs nothing, two platforms cost one build stage and two copies. Other platforms are not built.
 - **In CI.** 5a adds a job that builds the image for both platforms without pushing it or loading it anywhere (`--output type=cacheonly`). The deployment's slow test (`docs/specs/deployment/spec.md`) builds the image for the runner's platform itself, in the verify job's slow tier, on the runner's Docker, so that what it runs is the working tree it tests. Publishing (a registry, its name, tags per version) is milestone 5's release slice, which is a public action and the owner's to start.
+
+> Amended by ADR-0027: the release workflow publishes the image, for both platforms, as `ghcr.io/limineol/cota-hub:<version>`, built with `COTA_VERSION` and `COTA_REVISION`, when the owner pushes a version's tag, and on nothing else. CI's job still builds it on every pull request and keeps it nowhere, and CI also builds `cota` for its five systems and starts each on a runner of its own system.
 
 ### The Compose file and the hub directory
 
