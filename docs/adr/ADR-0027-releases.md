@@ -22,7 +22,7 @@ Cota has no release. An owner builds the hub image and `cota` from a checkout (`
 
 Three facts shape the answer. Each part of a release is public and cannot be taken back once someone has fetched it, so a release must be published by one act of the owner's, and by nothing a commit or a pull request does. An owner names the hub image in `.env` by tag and digest (ADR-0024), so what they read the digest from must be written after the image is pushed. And `cota` is cross-compiled by Bun on one system for five: a program that compiles is not one that starts, and macOS on arm64 kills a Mach-O whose signature does not cover it.
 
-The owner decided the release's shape on 2026-11-21; this records it, and how it is built.
+This records the release's shape, and how it is built.
 
 ## Decision
 
@@ -83,7 +83,7 @@ The image is pushed without buildx's own provenance attestation inside it: the i
 2. **CI is green on `main`** for the merged commit.
 3. **The tag**: the owner pushes `v<version>` on that commit, or has it pushed on their word.
 4. **The workflow** runs the jobs above in their order. Nothing is public until the `image` job pushes, and the GitHub release is made last.
-5. **What is checked afterwards**: the release's page lists the eight downloads and gives the image's digest; the image's manifest lists both platforms under that digest; `sha256sum -c SHA256SUMS` passes on the downloads; `gh attestation verify` passes for a download and for the image; and a downloaded `cota --version` prints the version. The first release's package is private on the registry until the owner makes it public in its settings, which GitHub does not let be undone.
+5. **What is checked afterwards**: the release's page lists the eight downloads and gives the image's digest; the image's manifest lists both platforms under that digest; `sha256sum -c SHA256SUMS` passes on the downloads; `gh attestation verify` passes for a download and for the image; a downloaded `cota --version` prints the version; and the image is pulled without signing in to the registry. GitHub's documentation says a personal account's new package starts private: if this one does, the owner makes it public in its settings, which GitHub does not let be undone.
 
 ### When a release fails part-way
 
