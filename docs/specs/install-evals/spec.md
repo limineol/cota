@@ -2,7 +2,7 @@
 status: active
 scope: evals/install
 owner: limineol
-last_verified: 2026-11-19
+last_verified: 2026-11-21
 review_by: 2027-02-18
 supersedes: []
 code:
