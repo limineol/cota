@@ -20,7 +20,7 @@
     },
     "apps/cli": {
       "name": "@cota/cli",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "@cota/hub": "workspace:*",
         "effect": "4.1.4",
@@ -28,7 +28,7 @@
     },
     "apps/hub": {
       "name": "@cota/hub",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "@effect/platform-bun": "4.1.4",
         "@simplewebauthn/server": "14.1.0",
