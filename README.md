@@ -2,6 +2,8 @@
 
 Cota is a hub you run yourself for the AI coding subscriptions and API plans you hold. Every machine you work on sends Claude Code, Codex, OpenCode and Pi through it: the hub forwards each client's own login to that client's own provider, bills each project to the subscription you chose for it, keeps every request and conversation in a request log you can search, and shows every plan's quota windows in one dashboard.
 
+![A tour of the dashboard: every pool's quota windows, the command palette finding sessions by what was said in them, the sessions list, one session's context request by request with its transcript, a request in full, and the SQL console.](docs/assets/dashboard-tour.gif)
+
 It is for a developer with more than one subscription, or more than one machine, who will run two containers and wants one place to see and search all of it.
 
 Cota is not released yet: there are no published images or binaries, and you build both from this repository. [The state of the project](#the-state-of-the-project) says what has been run, and where.
@@ -19,7 +21,7 @@ Cota is not released yet: there are no published images or binaries, and you bui
 
 ## What it looks like
 
-The hub serves a dashboard at its own address, behind the owner password or a passkey. Its first screen is every pool's quota windows, each drawn as twenty blocks with a mark where even use would be, beside the traffic of the range you choose and the range before it. From there: the sessions of every machine, searched and filtered by project, model, client or machine; a session's timeline and its transcript; a request in full, from its cost to its tool calls; the errors grouped by cause; a SQL console over the request log; and Settings, where you name pools, models and projects, set which project bills which pool, and manage the ways you sign in. A command palette (`⌘K`, `Ctrl+K` or `/`) reaches any of it. There is no screenshot here yet.
+The hub serves a dashboard at its own address, behind the owner password or a passkey. Its first screen is every pool's quota windows, each drawn as twenty blocks with a mark where even use would be, beside the traffic of the range you choose and the range before it. From there: the sessions of every machine, searched and filtered by project, model, client or machine; a session's timeline and its transcript; a request in full, from its cost to its tool calls; the errors grouped by cause; a SQL console over the request log; and Settings, where you name pools, models and projects, set which project bills which pool, and manage the ways you sign in. A command palette (`⌘K`, `Ctrl+K` or `/`) reaches any of it. The tour above is the dashboard itself, drawn from the constructed sample data its stories use, not from anyone's account.
 
 ## What it does
 
