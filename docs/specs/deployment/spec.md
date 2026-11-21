@@ -16,7 +16,7 @@ code:
 
 A deployment is the hub and its ClickHouse as the owner runs them on one machine with Docker Compose: the hub image, the Compose file, the hub directory beside it, and ClickHouse's volume. This spec covers what each holds, how a deployment is made, started, checked, upgraded and rolled back, and how a hub's machines are moved onto it. ADR-0024 gives the reasons.
 
-**Status.** Active. `Dockerfile`, `.dockerignore`, `deploy/compose.yaml` and `deploy/cota.toml` are built; the tests that read the two files (`deploy/deployment.test.ts`, Y3 to Y5) pass, and the slow test (`deploy/deployment.slow.test.ts`) passes on macOS with OrbStack in about two minutes. Neither Docker Desktop nor Linux has run it, and the CI job that builds the image for both platforms has not run.
+**Status.** Active. `Dockerfile`, `.dockerignore`, `deploy/compose.yaml` and `deploy/cota.toml` are built; the tests that read the two files (`deploy/deployment.test.ts`, Y3 to Y5) pass, and the slow test (`deploy/deployment.slow.test.ts`) passes on macOS with OrbStack in about two minutes, and on Linux with Docker Engine in CI, where the job that builds the image for both platforms runs too. Docker Desktop has not run it.
 
 ## The hub image
 
