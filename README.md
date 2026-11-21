@@ -92,7 +92,7 @@ Cota is a rewrite, in the open, of a private hub its author used. Everything tha
 
 What has been run, and where:
 
-- Every gate (types, lints, tests, proofs, mutants, the dashboard's stories, and the slow tier: the deployment's test and the evals' rehearsals) passes on one Mac, Apple silicon, with OrbStack. The repository's CI workflow is written but is not running at present, so these are a developer's runs, not CI's.
+- Every gate (types, lints, tests, proofs, mutants, the dashboard's stories, and the slow tier: the deployment's test and the evals' rehearsals) passes on one Mac, Apple silicon, with OrbStack, and in the repository's CI workflow, on GitHub's Linux runners, for every pull request and push to `main`.
 - The deployment, on that Mac under OrbStack, and in a Docker engine inside an Ubuntu container in the install evals. The recipes were each read against a deployment there (each says how).
 - `cota`, on macOS and in Ubuntu containers. Never on Windows.
 - Claude Code, as the installer, passed every criterion of the install eval in three of eight runs, the last of them on the deployment the prompt installs now; the others failed on the eval's own faults or ended before they were done ([the install evals spec's Results](docs/specs/install-evals/spec.md#results)). The memory skill's commands find every answer in their scripted eval; no agent has been given the skill yet.

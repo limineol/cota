@@ -69,6 +69,6 @@ jobs:
       - run: >-
           docker buildx build
           --platform linux/amd64,linux/arm64
-          --build-arg COTA_REVISION=${{ github.sha }}
+          --build-arg "COTA_REVISION=$GITHUB_SHA"
           --output type=cacheonly
           .

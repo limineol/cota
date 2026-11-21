@@ -112,7 +112,7 @@ The memory eval asks questions about past work whose answers are in a request lo
 
 ## Where it has run
 
-Every gate, on one Mac (Apple silicon, macOS, OrbStack for Docker), before each pull request. The repository's CI workflow (`.github/workflows/ci.yml`, which runs `verify` with the proofs rechecked, builds the hub image for both platforms, and builds `cota` for its five systems and starts each on a runner of its own system) is not running at present, so no run of it is behind any of this. The deployment's test has run under OrbStack only; the install eval's world runs a Docker engine inside an Ubuntu container on that Mac.
+Every gate, on one Mac (Apple silicon, macOS, OrbStack for Docker), and in the repository's CI workflow (`.github/workflows/ci.yml`, which runs `verify` with the proofs rechecked, builds the hub image for both platforms, and builds `cota` for its five systems and starts each on a runner of its own system), on GitHub's Linux runners, for every pull request and push to `main`. The deployment's test has run under OrbStack and on a runner's Docker Engine; the install eval's world runs a Docker engine inside an Ubuntu container on either.
 
 ## What it does not show
 
