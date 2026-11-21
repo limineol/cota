@@ -2,7 +2,7 @@
 status: accepted
 scope: apps/cli
 owner: limineol
-last_verified: 2026-11-17
+last_verified: 2026-11-21
 review_by: 2027-02-17
 supersedes: []
 code:
@@ -115,6 +115,8 @@ OpenCode's and Pi's titles are not reported in milestone 4. Its behaviour, its d
 **What Windows does differently**, in one place: a `.cmd` shim, and the user's `Path` in place of a shell's file; no `execve`, so `cota` waits as the client's parent; a real client installed by npm is a `.cmd`, which is started through `cmd.exe` with its arguments quoted for it (a known source of injection when arguments are not), so `cota` prefers a client's `.exe` when both exist; the machine's name from `COMPUTERNAME`; files guarded by the profile's permissions, not modes; Pi's key by `!"<cota>" hub-key keyed`, the command elsewhere's with the path in double quotes; and the title reporter's task triggered twice a minute.
 
 **Left to milestone 5**: publishing `cota` (where, and under which npm name, is the owner's), signing it for macOS and Windows, `cota update`, and keeping a machine's clients' configuration current without the owner running `cota configure`.
+
+> Amended by ADR-0027: publishing `cota` is a release's: the five binaries as downloads of the GitHub release of each version's tag, named for their systems, with `SHA256SUMS` and build provenance, and no npm package. Signing it for macOS and Windows, `cota update`, and keeping the clients' configuration current stay left.
 
 ### Facts to confirm when built
 

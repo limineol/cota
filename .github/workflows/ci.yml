@@ -51,9 +51,16 @@ jobs:
           name: evidence
           path: evidence/
 
-  # The hub image for both platforms of ADR-0024, built and kept nowhere:
-  # publishing it is the release's, and the owner's to start. The verify job's
-  # slow tier builds the image for the runner's platform and runs it.
+  # `cota` for the five systems, each started on its own (ADR-0027): the same
+  # workflow the release publishes from.
+  binaries:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/binaries.yml
+
+  # The hub image for both platforms of ADR-0024, built and kept nowhere: the
+  # release workflow publishes it, on a tag the owner pushes (ADR-0027). The
+  # verify job's slow tier builds the image for the runner's platform and runs it.
   image:
     runs-on: ubuntu-latest
     steps:
@@ -62,6 +69,6 @@ jobs:
       - run: >-
           docker buildx build
           --platform linux/amd64,linux/arm64
-          --build-arg COTA_REVISION=${{ github.sha }}
+          --build-arg "COTA_REVISION=$GITHUB_SHA"
           --output type=cacheonly
           .

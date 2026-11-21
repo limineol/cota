@@ -2,7 +2,7 @@
 status: active
 scope: repository
 owner: limineol
-last_verified: 2026-11-19
+last_verified: 2026-11-21
 review_by: 2027-02-19
 supersedes: []
 code:
@@ -16,7 +16,7 @@ code:
 
 A deployment is the hub and its ClickHouse as the owner runs them on one machine with Docker Compose: the hub image, the Compose file, the hub directory beside it, and ClickHouse's volume. This spec covers what each holds, how a deployment is made, started, checked, upgraded and rolled back, and how a hub's machines are moved onto it. ADR-0024 gives the reasons.
 
-**Status.** Active. `Dockerfile`, `.dockerignore`, `deploy/compose.yaml` and `deploy/cota.toml` are built; the tests that read the two files (`deploy/deployment.test.ts`, Y3 to Y5) pass, and the slow test (`deploy/deployment.slow.test.ts`) passes on macOS with OrbStack in about two minutes. Neither Docker Desktop nor Linux has run it, and the CI job that builds the image for both platforms has not run.
+**Status.** Active. `Dockerfile`, `.dockerignore`, `deploy/compose.yaml` and `deploy/cota.toml` are built; the tests that read the two files (`deploy/deployment.test.ts`, Y3 to Y5) pass, and the slow test (`deploy/deployment.slow.test.ts`) passes on macOS with OrbStack in about two minutes, and on Linux with Docker Engine in CI, where the job that builds the image for both platforms runs too. Docker Desktop has not run it.
 
 ## The hub image
 
@@ -138,5 +138,5 @@ Y1, Y2, Y6 to Y8 and Y3's second half are one slow test, `deploy/deployment.slow
 - **Backups by Cota.** The archive keeps the request log; the hub directory is the owner's to copy.
 - **ClickHouse reachable from the host.** The SQL console, or `docker compose exec clickhouse clickhouse-client`.
 - **Several hubs on one hub directory**, as two hubs on one store are not.
-- **Published images.** The release slice, the owner's to start: until then the image is built from a checkout.
+- **Published images, until a release.** The release workflow publishes the image for each version's tag, which the owner pushes (ADR-0027); until a release is published and the install moves onto it, the image is built from a checkout.
 - **Upgrading ClickHouse with the hub.** Its own step, said by the release that needs it.

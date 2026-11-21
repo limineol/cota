@@ -2,7 +2,7 @@
 status: active
 scope: repository
 owner: limineol
-last_verified: 2026-11-19
+last_verified: 2026-11-21
 review_by: 2027-02-15
 supersedes: []
 code:
@@ -542,6 +542,20 @@ _Avoid_: revert, downgrade, restore (a restore is the archive's)
 Documented steps for something around a deployment that is the owner's and not Cota's: HTTPS and a reverse proxy, keeping the hub on a private network, copying the hub directory elsewhere. Cota documents a recipe and never runs or ships one.
 _Avoid_: guide, integration, plugin, module (a module is the hub's)
 
+## Releases
+
+**Version**:
+Cota's one number, `<major>.<minor>.<patch>`, which `apps/hub/package.json` and `apps/cli/package.json` state together: what `cota --version` prints, the hub image's tag, and, after a `v`, the tag of its release.
+_Avoid_: build, revision (the commit an image was built from, `COTA_REVISION`)
+
+**Release**:
+A version of Cota published by the tag `v<version>` on a commit of `main`, and by nothing else: the hub image for both platforms, `cota` for each of its five systems with their checksums, the Compose file and the deployment's configuration as they are at the tag, and its release notes. A published release is never changed: a fix is the next patch version.
+_Avoid_: build, deploy, publish alone (publishing is one step of a release), ship, upgrade (an upgrade is the owner's, moving a deployment to a release's image)
+
+**Release notes**:
+What a person wrote about one release, `docs/releases/<version>.md`, reviewed in the pull request that moves the version: what it holds and what it does not, whether it adds a step to the hub store or changes ClickHouse's image, and how to install it. The release's page is its notes and the hub image's name with its digest.
+_Avoid_: changelog, release body, announcement
+
 ## The import
 
 **Import**:
@@ -670,6 +684,7 @@ _Avoid_: quick open, spotlight, omnibox, search alone (search is the request log
 - A **sign-in** is made with a **way in**: the **owner password** or a **passkey**. A hub with a way in is **set up**, and keeps at least one.
 - The **archiver** writes each **day** of the request log to the **archive** as **verified** files, which its **manifest** names, and archives a day again when it changed and the request log still **holds** every row of its archive. A **restore** adds back the archived rows the request log does not hold. Nothing ever leaves the request log.
 - A **deployment** runs one **hub image** by its **Compose file**, over one **hub directory** and ClickHouse's volume. An **upgrade** keeps the previous image's name and a copy of the hub store, and a **rollback** starts that image on that copy; neither touches the request log.
+- A **release** is one **version**: its tag, its **hub image**, its `cota` binaries and its **release notes** all say it. An **upgrade** moves a **deployment** to a release's hub image.
 - An **import** reads an **import source** day by day and adds the rows the request log does not **hold**: **imported requests**, whose items stay in their **source form**, each billing the pool its **pool map** names, with titles and display names. A **dry run** says what an import would add and what it would leave **not carried**, and adds nothing.
 - An agent with the **memory skill** reads the request log only through `cota memory`, which sends the machine's **reader key** for it, and reads a **transcript** a **transcript page** at a time. A **memory eval** asks an **answerer** each **question** against the request log of a **memory world**, and gives each answer a **verdict** by its **facts**.
 
@@ -699,4 +714,5 @@ _Avoid_: quick open, spotlight, omnibox, search alone (search is the request log
 - **Image** is a picture (a transcript's image part, a model's **image input**) and the container image a deployment runs. The second is always the **hub image**, or ClickHouse's image by that name.
 - **Set aside** is the writer's (a request a declined batch left alone, `docs/specs/request-log/spec.md`); what an import cannot bring over is **not carried**. **Dropped** is also the writer's.
 - **Memory** alone is not a term: the request log is the record, and the **memory skill** is how an agent reads it as its memory. `cota memory` is the CLI's command for that reading.
+- **Release** is a published version of Cota (a **release**), and also the name of the roadmap's milestone 5, which builds the deployment, the import, the memory skill and the docs as well as the first release. In code and copy, release alone is a published version.
 - **Import** is an import's alone. Putting archived rows back is a **restore**; going back to a previous hub image is a **rollback**; the hub store's own changes are its migrations' steps.

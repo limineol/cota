@@ -24,7 +24,7 @@ RUN bun install --frozen-lockfile --production --filter @cota/hub
 
 FROM oven/bun:1.4.2-slim@sha256:cb3bbbb08e13a4a2ff400f24c7a2a1d5efa83f6ef8544d52d95a519631e2fc61
 ARG COTA_REVISION=unknown
-ARG COTA_VERSION=0.0.0
+ARG COTA_VERSION=0.1.0
 # Bun's image labels itself as Bun; these say the image is Cota's hub.
 LABEL org.opencontainers.image.title="cota-hub" \
       org.opencontainers.image.description="Cota's hub" \

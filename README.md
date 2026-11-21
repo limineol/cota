@@ -6,7 +6,7 @@ Cota is a hub you run yourself for the AI coding subscriptions and API plans you
 
 It is for a developer with more than one subscription, or more than one machine, who will run two containers and wants one place to see and search all of it.
 
-Cota is not released yet: there are no published images or binaries, and you build both from this repository. [The state of the project](#the-state-of-the-project) says what has been run, and where.
+Cota is not released yet: there are no published images or binaries, and you build both from this repository. The workflow that publishes a release is built, and publishes nothing until its first tag, `v0.1.0` ([ADR-0027](docs/adr/ADR-0027-releases.md)). [The state of the project](#the-state-of-the-project) says what has been run, and where.
 
 ```text
    laptop                   desktop                  any other machine
@@ -34,7 +34,7 @@ The hub serves a dashboard at its own address, behind the owner password or a pa
 - **Lets your agents remember.** With a reader key, a coding agent on any machine can search past sessions and read their transcripts through `cota memory`, using the skill in [`skills/cota-memory`](skills/cota-memory/SKILL.md).
 - **Sets each machine up.** `cota join` puts shims for `claude`, `codex`, `opencode` and `pi` first on your `PATH`, configures Codex, OpenCode and Pi for the hub, and schedules the title reporter. When the hub cannot be reached, a launch goes straight to the provider with the login its route would have used, and says so; those requests are not logged. `cota doctor` checks the machine and names the command that fixes each problem.
 
-Not built yet: sharing requests across several subscriptions of one provider (load balancing), Codex over a WebSocket (through the hub it uses HTTP), and the published images and binaries. [`docs/roadmap.md`](docs/roadmap.md) has the plan.
+Not built yet: sharing requests across several subscriptions of one provider (load balancing), and Codex over a WebSocket (through the hub it uses HTTP). Not published yet: the hub image and the `cota` binaries, which a version's tag publishes. [`docs/roadmap.md`](docs/roadmap.md) has the plan.
 
 ## Install
 
@@ -92,7 +92,7 @@ Cota is a rewrite, in the open, of a private hub its author used. Everything tha
 
 What has been run, and where:
 
-- Every gate (types, lints, tests, proofs, mutants, the dashboard's stories, and the slow tier: the deployment's test and the evals' rehearsals) passes on one Mac, Apple silicon, with OrbStack. The repository's CI workflow is written but is not running at present, so these are a developer's runs, not CI's.
+- Every gate (types, lints, tests, proofs, mutants, the dashboard's stories, and the slow tier: the deployment's test and the evals' rehearsals) passes on one Mac, Apple silicon, with OrbStack, and in the repository's CI workflow, on GitHub's Linux runners, for every pull request and push to `main`.
 - The deployment, on that Mac under OrbStack, and in a Docker engine inside an Ubuntu container in the install evals. The recipes were each read against a deployment there (each says how).
 - `cota`, on macOS and in Ubuntu containers. Never on Windows.
 - Claude Code, as the installer, passed every criterion of the install eval in three of eight runs, the last of them on the deployment the prompt installs now; the others failed on the eval's own faults or ended before they were done ([the install evals spec's Results](docs/specs/install-evals/spec.md#results)). The memory skill's commands find every answer in their scripted eval; no agent has been given the skill yet.
