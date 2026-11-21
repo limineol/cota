@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["bun"],
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        "allowedUnstableApis": [
+          "@effect/vitest",
+          "effect/Arbitrary",
+          "effect/ByteSize",
+          "effect/http",
+          "effect/http-api",
+          "effect/encoding/Sse",
+          "@effect/platform-bun/BunHttpServer",
+          "@effect/platform-bun/BunHttpClient",
+          "@effect/platform-bun/BunRuntime"
+        ]
+      }
+    ]
+  },
+  "include": ["src"]
+}

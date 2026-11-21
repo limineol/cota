@@ -1,0 +1,518 @@
+{
+  "source": {
+    "kind": "constructed",
+    "from": [
+      "Codex 0.167.1 source (codex-rs, tag rust-v0.167.1): protocol/src/models.rs (ResponseItem: how Codex reads an output item and writes it back), core/src/client.rs (build_responses_request, prepare_response_items_for_request), core/src/context_manager/history.rs (record_items)",
+      "Milestone 1 research, Codex wire facts (2026-11-12), from the Codex 0.167.1 source, section 4"
+    ],
+    "note": "Not recorded. The first three input items after the question are the output items of stream-reasoning-message-function-call.json written back in the key order Codex serialises them; the function call's output follows. The request echoes x-codex-turn-state, as Codex does within a turn."
+  },
+  "request": {
+    "method": "POST",
+    "path": "/backend-api/codex/responses",
+    "headers": {
+      "accept": "text/event-stream",
+      "authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC1mYWtlLTAwMDEiLCJjaGF0Z3B0X2FjY291bnRfdXNlcl9pZCI6InVzZXItZmFrZS0wMDAxX19hY2N0LWZha2UtMDAwMSJ9LCJleHAiOjE3OTQ0NDE2MDB9.RkFLRS1zaWduYXR1cmUtZm9yLXRlc3RzLW9ubHk",
+      "chatgpt-account-id": "acct-fake-0001",
+      "content-type": "application/json",
+      "originator": "codex_cli_rs",
+      "session-id": "00000000-0000-7000-8000-00000000c0de",
+      "thread-id": "00000000-0000-7000-8000-00000000c0de",
+      "user-agent": "codex_cli_rs/0.167.1 (Mac OS 26.1.0; arm64) iTerm.app/3.6.6",
+      "x-client-request-id": "00000000-0000-7000-8000-00000000c0de",
+      "x-codex-beta-features": "remote_compaction_v2",
+      "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000101\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}",
+      "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+      "x-codex-routing-hint": "model=gpt-5.5-codex;tier=priority",
+      "content-encoding": "zstd",
+      "x-codex-turn-state": "FAKE-turn-state-0001"
+    },
+    "body": {
+      "json": {
+        "model": "gpt-5.5-codex",
+        "stream": true,
+        "service_tier": "priority",
+        "input": [
+          {
+            "type": "message",
+            "id": "msg_00000000000050008000000000000001",
+            "role": "developer",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "You are Codex, a coding agent. These are made-up base instructions for a test."
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "id": "msg_input_00000000-0000-4000-8000-000000000201",
+            "role": "user",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "What files are in this made-up project?"
+              }
+            ]
+          },
+          {
+            "type": "reasoning",
+            "id": "rs_fake0001",
+            "summary": [
+              {
+                "type": "summary_text",
+                "text": "**Listing the files**\n\nI will look at the directory first."
+              }
+            ],
+            "encrypted_content": "gAAAAABFAKE-encrypted-reasoning-for-tests-only=="
+          },
+          {
+            "type": "message",
+            "status": "completed",
+            "id": "msg_fake0001",
+            "role": "assistant",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "I will list the files.",
+                "annotations": [],
+                "logprobs": []
+              }
+            ],
+            "phase": "commentary"
+          },
+          {
+            "type": "function_call",
+            "status": "completed",
+            "id": "fc_fake0001",
+            "name": "shell",
+            "arguments": "{\"command\":[\"ls\",\"-a\"],\"workdir\":\"/work/demo\"}",
+            "call_id": "call_fake0001"
+          },
+          {
+            "type": "function_call_output",
+            "call_id": "call_fake0001",
+            "output": "README.md\nsrc"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "name": "shell",
+            "description": "Runs a shell command and returns its output.",
+            "strict": false,
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "workdir": {
+                  "type": "string"
+                }
+              },
+              "required": ["command"],
+              "additionalProperties": false
+            }
+          }
+        ],
+        "tool_choice": "auto",
+        "parallel_tool_calls": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        },
+        "store": false,
+        "include": ["reasoning.encrypted_content"],
+        "prompt_cache_key": "00000000-0000-7000-8000-00000000c0de",
+        "client_metadata": {
+          "x-codex-installation-id": "00000000-0000-4000-8000-0000000000aa",
+          "session_id": "00000000-0000-7000-8000-00000000c0de",
+          "thread_id": "00000000-0000-7000-8000-00000000c0de",
+          "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+          "turn_id": "00000000-0000-7000-8000-000000000101",
+          "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000101\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}"
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "text/event-stream; charset=utf-8",
+      "x-request-id": "req_fake0002",
+      "openai-model": "gpt-5.5-codex",
+      "x-codex-turn-state": "FAKE-turn-state-0001",
+      "x-models-etag": "W/\"fake-etag-0001\"",
+      "cf-ray": "0000000000000000-FAK",
+      "x-codex-primary-used-percent": "12",
+      "x-codex-primary-window-minutes": "300",
+      "x-codex-primary-reset-at": "1794459600",
+      "x-codex-secondary-used-percent": "3",
+      "x-codex-secondary-window-minutes": "10080",
+      "x-codex-secondary-reset-at": "1794960000",
+      "x-codex-credits-has-credits": "false",
+      "x-codex-credits-unlimited": "false"
+    },
+    "body": {
+      "events": [
+        {
+          "event": "response.created",
+          "data": {
+            "type": "response.created",
+            "response": {
+              "id": "resp_fake0002",
+              "object": "response",
+              "created_at": 1794441600,
+              "status": "in_progress",
+              "model": "gpt-5.5-codex",
+              "output": [],
+              "usage": null
+            },
+            "sequence_number": 0
+          }
+        },
+        {
+          "event": "response.output_item.added",
+          "data": {
+            "type": "response.output_item.added",
+            "output_index": 0,
+            "item": {
+              "id": "msg_fake0002",
+              "type": "message",
+              "status": "in_progress",
+              "role": "assistant",
+              "content": []
+            },
+            "sequence_number": 1
+          }
+        },
+        {
+          "event": "response.content_part.added",
+          "data": {
+            "type": "response.content_part.added",
+            "item_id": "msg_fake0002",
+            "output_index": 0,
+            "content_index": 0,
+            "part": {
+              "type": "output_text",
+              "annotations": [],
+              "logprobs": [],
+              "text": ""
+            },
+            "sequence_number": 2
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "item_id": "msg_fake0002",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": "The",
+            "logprobs": [],
+            "sequence_number": 3
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "item_id": "msg_fake0002",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": " project",
+            "logprobs": [],
+            "sequence_number": 4
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "item_id": "msg_fake0002",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": " has",
+            "logprobs": [],
+            "sequence_number": 5
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "item_id": "msg_fake0002",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": " README.md",
+            "logprobs": [],
+            "sequence_number": 6
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "item_id": "msg_fake0002",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": " and",
+            "logprobs": [],
+            "sequence_number": 7
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "item_id": "msg_fake0002",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": " src.",
+            "logprobs": [],
+            "sequence_number": 8
+          }
+        },
+        {
+          "event": "response.output_text.done",
+          "data": {
+            "type": "response.output_text.done",
+            "item_id": "msg_fake0002",
+            "output_index": 0,
+            "content_index": 0,
+            "text": "The project has README.md and src.",
+            "logprobs": [],
+            "sequence_number": 9
+          }
+        },
+        {
+          "event": "response.content_part.done",
+          "data": {
+            "type": "response.content_part.done",
+            "item_id": "msg_fake0002",
+            "output_index": 0,
+            "content_index": 0,
+            "part": {
+              "type": "output_text",
+              "annotations": [],
+              "logprobs": [],
+              "text": "The project has README.md and src."
+            },
+            "sequence_number": 10
+          }
+        },
+        {
+          "event": "response.output_item.done",
+          "data": {
+            "type": "response.output_item.done",
+            "output_index": 0,
+            "item": {
+              "id": "msg_fake0002",
+              "type": "message",
+              "status": "completed",
+              "role": "assistant",
+              "content": [
+                {
+                  "type": "output_text",
+                  "annotations": [],
+                  "logprobs": [],
+                  "text": "The project has README.md and src."
+                }
+              ],
+              "phase": "final_answer"
+            },
+            "sequence_number": 11
+          }
+        },
+        {
+          "event": "response.completed",
+          "data": {
+            "type": "response.completed",
+            "response": {
+              "id": "resp_fake0002",
+              "object": "response",
+              "created_at": 1794441600,
+              "status": "completed",
+              "model": "gpt-5.5-codex",
+              "end_turn": true,
+              "usage": {
+                "input_tokens": 5400,
+                "input_tokens_details": {
+                  "cached_tokens": 5120
+                },
+                "output_tokens": 24,
+                "output_tokens_details": {
+                  "reasoning_tokens": 0
+                },
+                "total_tokens": 5424
+              }
+            },
+            "sequence_number": 12
+          }
+        }
+      ]
+    }
+  },
+  "expects": {
+    "logged": {
+      "session": "00000000-0000-7000-8000-00000000c0de",
+      "sessionSource": "session-id",
+      "machine": "",
+      "project": "",
+      "client": "codex",
+      "clientVersion": "0.167.1",
+      "userAgent": "codex_cli_rs/0.167.1 (Mac OS 26.1.0; arm64) iTerm.app/3.6.6",
+      "divertedFrom": null,
+      "follows": null,
+      "loginFingerprint": "b078b30895acad342351ab2b63a1eb73eec9729dd460c36821700be56d640ec8",
+      "refusalReset": null,
+      "protocol": "chatgpt-codex",
+      "operation": "responses",
+      "purpose": "turn",
+      "model": "gpt-5.5-codex",
+      "servedModel": "",
+      "stream": true,
+      "outcome": "ok",
+      "upstreamStatus": 200,
+      "errorType": "",
+      "errorMessage": "",
+      "stopReason": "completed",
+      "usage": {
+        "tokens": {
+          "input": 280,
+          "cacheRead": 5120,
+          "cacheWriteShort": 0,
+          "cacheWriteLong": 0,
+          "output": 24
+        },
+        "reasoning": 0,
+        "reported": "{\"input_tokens\":5400,\"input_tokens_details\":{\"cached_tokens\":5120},\"output_tokens\":24,\"output_tokens_details\":{\"reasoning_tokens\":0},\"total_tokens\":5424}"
+      },
+      "serviceTier": "priority",
+      "providerRequestId": "req_fake0002",
+      "rateLimits": {
+        "x-codex-credits-has-credits": "false",
+        "x-codex-credits-unlimited": "false",
+        "x-codex-primary-reset-at": "1794459600",
+        "x-codex-primary-used-percent": "12",
+        "x-codex-primary-window-minutes": "300",
+        "x-codex-secondary-reset-at": "1794960000",
+        "x-codex-secondary-used-percent": "3",
+        "x-codex-secondary-window-minutes": "10080"
+      },
+      "clientHeaders": {
+        "originator": "codex_cli_rs",
+        "thread-id": "00000000-0000-7000-8000-00000000c0de",
+        "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+        "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000101\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}",
+        "x-codex-beta-features": "remote_compaction_v2"
+      },
+      "conversation": {
+        "params": {
+          "model": "gpt-5.5-codex",
+          "stream": true,
+          "service_tier": "priority",
+          "tool_choice": "auto",
+          "parallel_tool_calls": true,
+          "reasoning": {
+            "effort": "medium",
+            "summary": "auto"
+          },
+          "store": false,
+          "include": ["reasoning.encrypted_content"],
+          "prompt_cache_key": "00000000-0000-7000-8000-00000000c0de",
+          "client_metadata": {
+            "x-codex-installation-id": "00000000-0000-4000-8000-0000000000aa",
+            "session_id": "00000000-0000-7000-8000-00000000c0de",
+            "thread_id": "00000000-0000-7000-8000-00000000c0de",
+            "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+            "turn_id": "00000000-0000-7000-8000-000000000101",
+            "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000101\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}"
+          }
+        },
+        "layout": [
+          {
+            "part": "system",
+            "field": "instructions",
+            "layout": "absent"
+          },
+          {
+            "part": "tools",
+            "field": "tools",
+            "layout": "list"
+          },
+          {
+            "part": "input",
+            "field": "input",
+            "layout": "list"
+          }
+        ],
+        "overlay": [],
+        "system": [],
+        "tools": [
+          {
+            "digest": "d1c908c0585eb67beaebc618b44ba149",
+            "type": "function",
+            "role": "",
+            "text": ""
+          }
+        ],
+        "input": [
+          {
+            "digest": "512443ae75a019e63e5a317dd61cfe9a",
+            "type": "message",
+            "role": "developer",
+            "text": "You are Codex, a coding agent. These are made-up base instructions for a test."
+          },
+          {
+            "digest": "0c2ef568614049fba1842ba52a546518",
+            "type": "message",
+            "role": "user",
+            "text": "What files are in this made-up project?"
+          },
+          {
+            "digest": "5fdd1bdf49c9fc4e437087a63dbbf034",
+            "type": "reasoning",
+            "role": "",
+            "text": "**Listing the files**\n\nI will look at the directory first."
+          },
+          {
+            "digest": "0f2987b8895ffc851e997b49dc78a31a",
+            "type": "message",
+            "role": "assistant",
+            "text": "I will list the files."
+          },
+          {
+            "digest": "00c4ee7c32670a392844ffc58588b7bb",
+            "type": "function_call",
+            "role": "",
+            "text": "{\"command\":[\"ls\",\"-a\"],\"workdir\":\"/work/demo\"}"
+          },
+          {
+            "digest": "e34bd62d9fb7ade73c0fe4fe0222eafe",
+            "type": "function_call_output",
+            "role": "",
+            "text": "README.md\nsrc"
+          }
+        ],
+        "output": [
+          {
+            "digest": "859c759c5ebe82aa94fa12cd1e54a9c8",
+            "type": "message",
+            "role": "assistant",
+            "text": "The project has README.md and src."
+          }
+        ]
+      },
+      "errorBody": "",
+      "requestBytes": 1049,
+      "responseBytes": 3015,
+      "readingComplete": true
+    }
+  }
+}

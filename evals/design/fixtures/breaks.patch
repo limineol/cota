@@ -1,0 +1,58 @@
+diff --git a/apps/web/src/screens/keys/keys.stories.tsx b/apps/web/src/screens/keys/keys.stories.tsx
+new file mode 100644
+index 0000000..ecd2f65
+--- /dev/null
++++ b/apps/web/src/screens/keys/keys.stories.tsx
+@@ -0,0 +1,19 @@
++import type { Meta, StoryObj } from "@storybook/react-vite";
++import { Keys } from "./keys.tsx";
++
++const meta = {
++  title: "Screens/Keys",
++  component: Keys,
++} satisfies Meta<typeof Keys>;
++
++export default meta;
++type Story = StoryObj<typeof meta>;
++
++export const TwoKeys: Story = {
++  args: {
++    keys: [
++      { id: "k_7f3a9c", requests: 1204, share: 80 },
++      { id: "k_19be02", requests: 12, share: 20 },
++    ],
++  },
++};
+diff --git a/apps/web/src/screens/keys/keys.tsx b/apps/web/src/screens/keys/keys.tsx
+new file mode 100644
+index 0000000..283383e
+--- /dev/null
++++ b/apps/web/src/screens/keys/keys.tsx
+@@ -0,0 +1,27 @@
++import { Card } from "@cota/ui/components/card";
++
++export interface Key {
++  readonly id: string;
++  readonly requests: number;
++  readonly share: number;
++}
++
++export function Keys({ keys }: { readonly keys: ReadonlyArray<Key> }) {
++  if (keys.length === 0) return <p>Oops! No data</p>;
++  return (
++    <div className="flex flex-col gap-2">
++      {keys.map((key) => (
++        <Card key={key.id} className="rounded-xl bg-surface-2 p-6 shadow-md">
++          <span className="font-mono text-[15px]">{key.id}</span> ·{" "}
++          {(key.requests / 1000).toFixed(1)}K requests
++          <div className="h-2 rounded-full bg-surface-3">
++            <div
++              className="h-2 rounded-full bg-pool-1"
++              style={{ width: `${key.share}%` }}
++            />
++          </div>
++        </Card>
++      ))}
++    </div>
++  );
++}

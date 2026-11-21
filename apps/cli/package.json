@@ -1,0 +1,17 @@
+{
+  "name": "@cota/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#package.json": "./package.json",
+    "#*": "./src/*"
+  },
+  "scripts": {
+    "typecheck": "effect-tsgo tsc -p ."
+  },
+  "dependencies": {
+    "@cota/hub": "workspace:*",
+    "effect": "4.1.4"
+  }
+}

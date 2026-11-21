@@ -1,0 +1,680 @@
+{
+  "about": "Rates models.dev does not give, each taken from the provider's own published pricing, in dollars per million tokens. An entry without a service tier adds rates to the model's price from models.dev, and may state the model's contextTokens, outputTokens and imageInput where models.dev gives none; one with a service tier is the model's whole price in that tier (the request's serviceTier, as the request log records it: fast for Anthropic's fast mode, priority for OpenAI's Fast). bun run prices:update merges them into prices.json.",
+  "additions": [
+    {
+      "list": "anthropic",
+      "model": "claude-fable-5",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#model-pricing, the row of Claude Fable 5, column 1h cache writes (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 20
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-fable-5-1",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#model-pricing, the row of Claude Fable 5.1, column 1h cache writes (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 20
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-fable-5-2",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#model-pricing, the row of Claude Fable 5.2, column 1h cache writes (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 16
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-haiku-4-5",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#model-pricing, the row of Claude Haiku 4.5, column 1h cache writes (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 2
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-haiku-4-5-20251001",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#model-pricing, the row of Claude Haiku 4.5, column 1h cache writes (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 2
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-opus-4-5",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#model-pricing, the row of Claude Opus 4.5, column 1h cache writes (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 10
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-opus-4-5-20251101",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#model-pricing, the row of Claude Opus 4.5, column 1h cache writes (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 10
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-opus-4-6",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#model-pricing, the row of Claude Opus 4.6, column 1h cache writes (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 10
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-opus-4-7",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#model-pricing, the row of Claude Opus 4.7, column 1h cache writes (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 10
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-opus-4-8",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#model-pricing, the row of Claude Opus 4.8, column 1h cache writes (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 10
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-opus-5",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#model-pricing, the row of Claude Opus 5, column 1h cache writes (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 10
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-opus-5-5",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#model-pricing, the row of Claude Opus 5.5, column 1h cache writes (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 8
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-sonnet-4-5",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#model-pricing, the row of Claude Sonnet 4.5, column 1h cache writes (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 6
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-sonnet-4-5-20250929",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#model-pricing, the row of Claude Sonnet 4.5, column 1h cache writes (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 6
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-sonnet-4-6",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#model-pricing, the row of Claude Sonnet 4.6, column 1h cache writes (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 6
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-sonnet-5",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#model-pricing, the row of Claude Sonnet 5, column 1h cache writes (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 4
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-sonnet-5-5",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#model-pricing, the row of Claude Sonnet 5.5, column 1h cache writes (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 4
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-haiku-5-5",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#model-pricing, the rows of Claude Haiku 5.5 for prompts up to and over 100,000 tokens, column 1h cache writes (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 0.2
+      },
+      "tiers": [
+        {
+          "over": 100000,
+          "rates": {
+            "cacheWriteLong": 1
+          }
+        }
+      ]
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-fable-5-2",
+      "serviceTier": "fast",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#fast-mode-pricing, the row of Claude Fable 5.2 (input and output), with the caching multipliers that page says apply on top of fast mode pricing (https://platform.claude.com/docs/en/about-claude/pricing#prompt-caching): 5-minute write 1.25x, 1-hour write 2x, cache hit 0.025x the input price (read 2026-11-12)",
+      "base": {
+        "input": 16,
+        "output": 80,
+        "cacheRead": 0.4,
+        "cacheWriteShort": 20.0,
+        "cacheWriteLong": 32
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-opus-4-8",
+      "serviceTier": "fast",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#fast-mode-pricing, the row of Claude Opus 5 / Claude Opus 4.8 (input and output), with the caching multipliers that page says apply on top of fast mode pricing (https://platform.claude.com/docs/en/about-claude/pricing#prompt-caching): 5-minute write 1.25x, 1-hour write 2x, cache hit 0.1x the input price (read 2026-11-12)",
+      "base": {
+        "input": 10,
+        "output": 50,
+        "cacheRead": 1.0,
+        "cacheWriteShort": 12.5,
+        "cacheWriteLong": 20
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-opus-5",
+      "serviceTier": "fast",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#fast-mode-pricing, the row of Claude Opus 5 / Claude Opus 4.8 (input and output), with the caching multipliers that page says apply on top of fast mode pricing (https://platform.claude.com/docs/en/about-claude/pricing#prompt-caching): 5-minute write 1.25x, 1-hour write 2x, cache hit 0.1x the input price (read 2026-11-12)",
+      "base": {
+        "input": 10,
+        "output": 50,
+        "cacheRead": 1.0,
+        "cacheWriteShort": 12.5,
+        "cacheWriteLong": 20
+      }
+    },
+    {
+      "list": "anthropic",
+      "model": "claude-opus-5-5",
+      "serviceTier": "fast",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing#fast-mode-pricing, the row of Claude Opus 5.5 (input and output), with the caching multipliers that page says apply on top of fast mode pricing (https://platform.claude.com/docs/en/about-claude/pricing#prompt-caching): 5-minute write 1.25x, 1-hour write 2x, cache hit 0.05x the input price (read 2026-11-12)",
+      "base": {
+        "input": 8,
+        "output": 40,
+        "cacheRead": 0.4,
+        "cacheWriteShort": 10.0,
+        "cacheWriteLong": 16
+      }
+    },
+    {
+      "list": "openai",
+      "model": "gpt-5.6-luna",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Standard, the row of gpt-5.6-luna, columns Short context 12h write and Long context 12h write (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 0.5
+      },
+      "tiers": [
+        {
+          "over": 272000,
+          "rates": {
+            "cacheWriteLong": 1
+          }
+        }
+      ]
+    },
+    {
+      "list": "openai",
+      "model": "gpt-5.6-sol",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Standard, the row of gpt-5.6-sol, columns Short context 12h write and Long context 12h write (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 10
+      },
+      "tiers": [
+        {
+          "over": 272000,
+          "rates": {
+            "cacheWriteLong": 20
+          }
+        }
+      ]
+    },
+    {
+      "list": "openai",
+      "model": "gpt-5.6-terra",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Standard, the row of gpt-5.6-terra, columns Short context 12h write and Long context 12h write (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 5
+      },
+      "tiers": [
+        {
+          "over": 272000,
+          "rates": {
+            "cacheWriteLong": 10
+          }
+        }
+      ]
+    },
+    {
+      "list": "openai",
+      "model": "gpt-6-astra",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Standard, the row of gpt-6-astra, columns Short context 12h write and Long context 12h write (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 25
+      },
+      "tiers": [
+        {
+          "over": 272000,
+          "rates": {
+            "cacheWriteLong": 50
+          }
+        }
+      ]
+    },
+    {
+      "list": "openai",
+      "model": "gpt-6-luna",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Standard, the row of gpt-6-luna, columns Short context 12h write and Long context 12h write (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 0.25
+      },
+      "tiers": [
+        {
+          "over": 272000,
+          "rates": {
+            "cacheWriteLong": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "list": "openai",
+      "model": "gpt-6-sol",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Standard, the row of gpt-6-sol, columns Short context 12h write and Long context 12h write (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 5
+      },
+      "tiers": [
+        {
+          "over": 272000,
+          "rates": {
+            "cacheWriteLong": 10
+          }
+        }
+      ]
+    },
+    {
+      "list": "openai",
+      "model": "gpt-6.1-sol",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Standard, the row of gpt-6.1-sol, columns Short context 12h write and Long context 12h write (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 5
+      },
+      "tiers": [
+        {
+          "over": 272000,
+          "rates": {
+            "cacheWriteLong": 10
+          }
+        }
+      ]
+    },
+    {
+      "list": "openai",
+      "model": "gpt-6.1-terra",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Standard, the row of gpt-6.1-terra, columns Short context 12h write and Long context 12h write (read 2026-11-12)",
+      "base": {
+        "cacheWriteLong": 2.5
+      },
+      "tiers": [
+        {
+          "over": 272000,
+          "rates": {
+            "cacheWriteLong": 5
+          }
+        }
+      ]
+    },
+    {
+      "list": "openai",
+      "model": "gpt-5.6-luna",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast (which the page says was named Priority processing until 2026-07-30; Codex sends it as service_tier priority), the row of gpt-5.6-luna, short and long context (read 2026-11-12)",
+      "base": {
+        "input": 0.4,
+        "output": 2.4,
+        "cacheRead": 0.04,
+        "cacheWriteShort": 0.5,
+        "cacheWriteLong": 1
+      },
+      "tiers": [
+        {
+          "over": 272000,
+          "rates": {
+            "input": 0.8,
+            "output": 3.6,
+            "cacheRead": 0.08,
+            "cacheWriteShort": 1,
+            "cacheWriteLong": 2
+          }
+        }
+      ]
+    },
+    {
+      "list": "openai",
+      "model": "gpt-5.6-sol",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast (which the page says was named Priority processing until 2026-07-30; Codex sends it as service_tier priority), the row of gpt-5.6-sol, short and long context (read 2026-11-12)",
+      "base": {
+        "input": 8,
+        "output": 40,
+        "cacheRead": 0.8,
+        "cacheWriteShort": 10,
+        "cacheWriteLong": 20
+      },
+      "tiers": [
+        {
+          "over": 272000,
+          "rates": {
+            "input": 16,
+            "output": 60,
+            "cacheRead": 1.6,
+            "cacheWriteShort": 20,
+            "cacheWriteLong": 40
+          }
+        }
+      ]
+    },
+    {
+      "list": "openai",
+      "model": "gpt-5.6-terra",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast (which the page says was named Priority processing until 2026-07-30; Codex sends it as service_tier priority), the row of gpt-5.6-terra, short and long context (read 2026-11-12)",
+      "base": {
+        "input": 4,
+        "output": 24,
+        "cacheRead": 0.4,
+        "cacheWriteShort": 5,
+        "cacheWriteLong": 10
+      },
+      "tiers": [
+        {
+          "over": 272000,
+          "rates": {
+            "input": 8,
+            "output": 36,
+            "cacheRead": 0.8,
+            "cacheWriteShort": 10,
+            "cacheWriteLong": 20
+          }
+        }
+      ]
+    },
+    {
+      "list": "openai",
+      "model": "gpt-6-astra",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast (which the page says was named Priority processing until 2026-07-30; Codex sends it as service_tier priority), the row of gpt-6-astra, short and long context (read 2026-11-12)",
+      "base": {
+        "input": 20,
+        "output": 100,
+        "cacheRead": 2,
+        "cacheWriteShort": 25,
+        "cacheWriteLong": 50
+      },
+      "tiers": [
+        {
+          "over": 272000,
+          "rates": {
+            "input": 40,
+            "output": 150,
+            "cacheRead": 4,
+            "cacheWriteShort": 50,
+            "cacheWriteLong": 100
+          }
+        }
+      ]
+    },
+    {
+      "list": "openai",
+      "model": "gpt-6-luna",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast (which the page says was named Priority processing until 2026-07-30; Codex sends it as service_tier priority), the row of gpt-6-luna, short and long context (read 2026-11-12)",
+      "base": {
+        "input": 0.2,
+        "output": 1,
+        "cacheRead": 0.02,
+        "cacheWriteShort": 0.25,
+        "cacheWriteLong": 0.5
+      },
+      "tiers": [
+        {
+          "over": 272000,
+          "rates": {
+            "input": 0.4,
+            "output": 1.5,
+            "cacheRead": 0.04,
+            "cacheWriteShort": 0.5,
+            "cacheWriteLong": 1
+          }
+        }
+      ]
+    },
+    {
+      "list": "openai",
+      "model": "gpt-6-sol",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast (which the page says was named Priority processing until 2026-07-30; Codex sends it as service_tier priority), the row of gpt-6-sol, short and long context (read 2026-11-12)",
+      "base": {
+        "input": 4,
+        "output": 20,
+        "cacheRead": 0.4,
+        "cacheWriteShort": 5,
+        "cacheWriteLong": 10
+      },
+      "tiers": [
+        {
+          "over": 272000,
+          "rates": {
+            "input": 8,
+            "output": 30,
+            "cacheRead": 0.8,
+            "cacheWriteShort": 10,
+            "cacheWriteLong": 20
+          }
+        }
+      ]
+    },
+    {
+      "list": "openai",
+      "model": "gpt-6.1-sol",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast (which the page says was named Priority processing until 2026-07-30; Codex sends it as service_tier priority), the row of gpt-6.1-sol, short and long context (read 2026-11-12)",
+      "base": {
+        "input": 4,
+        "output": 20,
+        "cacheRead": 0.2,
+        "cacheWriteShort": 5,
+        "cacheWriteLong": 10
+      },
+      "tiers": [
+        {
+          "over": 272000,
+          "rates": {
+            "input": 8,
+            "output": 30,
+            "cacheRead": 0.4,
+            "cacheWriteShort": 10,
+            "cacheWriteLong": 20
+          }
+        }
+      ]
+    },
+    {
+      "list": "openai",
+      "model": "gpt-6.1-terra",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast (which the page says was named Priority processing until 2026-07-30; Codex sends it as service_tier priority), the row of gpt-6.1-terra, short and long context (read 2026-11-12)",
+      "base": {
+        "input": 2,
+        "output": 10,
+        "cacheRead": 0.1,
+        "cacheWriteShort": 2.5,
+        "cacheWriteLong": 5
+      },
+      "tiers": [
+        {
+          "over": 272000,
+          "rates": {
+            "input": 4,
+            "output": 15,
+            "cacheRead": 0.2,
+            "cacheWriteShort": 5,
+            "cacheWriteLong": 10
+          }
+        }
+      ]
+    },
+    {
+      "list": "openai",
+      "model": "gpt-5.4",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast, the row of gpt-5.4 (<272K context length); the page gives no long-context Fast price for it (read 2026-11-12)",
+      "base": {
+        "input": 5,
+        "output": 30,
+        "cacheRead": 0.5
+      }
+    },
+    {
+      "list": "openai",
+      "model": "gpt-5.5",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast, the row of gpt-5.5 (<272K context length); the page gives no long-context Fast price for it (read 2026-11-12)",
+      "base": {
+        "input": 12.5,
+        "output": 75,
+        "cacheRead": 1.25
+      }
+    },
+    {
+      "list": "openai",
+      "model": "gpt-4.1",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast, the row of gpt-4.1 (read 2026-11-12)",
+      "base": {
+        "input": 3.5,
+        "output": 14,
+        "cacheRead": 0.875
+      }
+    },
+    {
+      "list": "openai",
+      "model": "gpt-4.1-mini",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast, the row of gpt-4.1-mini (read 2026-11-12)",
+      "base": {
+        "input": 0.7,
+        "output": 2.8,
+        "cacheRead": 0.175
+      }
+    },
+    {
+      "list": "openai",
+      "model": "gpt-4o",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast, the row of gpt-4o (read 2026-11-12)",
+      "base": {
+        "input": 4.25,
+        "output": 17,
+        "cacheRead": 2.125
+      }
+    },
+    {
+      "list": "openai",
+      "model": "gpt-4o-mini",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast, the row of gpt-4o-mini (read 2026-11-12)",
+      "base": {
+        "input": 0.25,
+        "output": 1,
+        "cacheRead": 0.125
+      }
+    },
+    {
+      "list": "openai",
+      "model": "gpt-5",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast, the row of gpt-5 (read 2026-11-12)",
+      "base": {
+        "input": 2.5,
+        "output": 20,
+        "cacheRead": 0.25
+      }
+    },
+    {
+      "list": "openai",
+      "model": "gpt-5-mini",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast, the row of gpt-5-mini (read 2026-11-12)",
+      "base": {
+        "input": 0.45,
+        "output": 3.6,
+        "cacheRead": 0.045
+      }
+    },
+    {
+      "list": "openai",
+      "model": "gpt-5.1",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast, the row of gpt-5.1 (read 2026-11-12)",
+      "base": {
+        "input": 2.5,
+        "output": 20,
+        "cacheRead": 0.25
+      }
+    },
+    {
+      "list": "openai",
+      "model": "gpt-5.2",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast, the row of gpt-5.2 (read 2026-11-12)",
+      "base": {
+        "input": 3.5,
+        "output": 28,
+        "cacheRead": 0.35
+      }
+    },
+    {
+      "list": "openai",
+      "model": "gpt-5.4-mini",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast, the row of gpt-5.4-mini (read 2026-11-12)",
+      "base": {
+        "input": 1.5,
+        "output": 9,
+        "cacheRead": 0.15
+      }
+    },
+    {
+      "list": "openai",
+      "model": "o3",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Flagship models, Fast, the row of o3 (read 2026-11-12)",
+      "base": {
+        "input": 3.5,
+        "output": 14,
+        "cacheRead": 0.875
+      }
+    },
+    {
+      "list": "openai",
+      "model": "gpt-5.3-codex",
+      "serviceTier": "priority",
+      "source": "https://developers.openai.com/api/docs/pricing, Specialized models, Fast, the row of Codex gpt-5.3-codex (read 2026-11-12)",
+      "base": {
+        "input": 3.5,
+        "output": 28,
+        "cacheRead": 0.35
+      }
+    }
+  ]
+}

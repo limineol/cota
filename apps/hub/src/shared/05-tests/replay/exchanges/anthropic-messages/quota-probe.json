@@ -1,0 +1,181 @@
+{
+  "source": {
+    "kind": "constructed",
+    "from": [
+      "Milestone 1 research, Anthropic wire facts (2026-11-12), from the Claude Code 2.1.322 binary, sections 4 and 6"
+    ],
+    "note": "The request Claude Code sends to check its limits. The answer's body is made up; its headers are the unified family the research lists."
+  },
+  "request": {
+    "method": "POST",
+    "path": "/v1/messages?beta=true",
+    "headers": {
+      "accept": "application/json",
+      "anthropic-beta": "claude-code-20250219,oauth-2025-04-20,interleaved-thinking-2025-05-14,context-management-2025-06-27",
+      "anthropic-dangerous-direct-browser-access": "true",
+      "anthropic-version": "2023-06-01",
+      "authorization": "Bearer sk-ant-oat01-FAKE-login-for-tests-only-0000",
+      "content-type": "application/json",
+      "user-agent": "claude-cli/2.1.322 (external, cli)",
+      "x-app": "cli",
+      "x-stainless-retry-count": "0",
+      "x-stainless-timeout": "600",
+      "x-claude-code-session-id": "0f6c1a52-7a3e-4c55-9d0e-c4553e7d1a01"
+    },
+    "body": {
+      "json": {
+        "model": "claude-haiku-4-5",
+        "max_tokens": 1,
+        "messages": [
+          {
+            "role": "user",
+            "content": "quota"
+          }
+        ],
+        "metadata": {
+          "user_id": "{\"device_id\":\"d3v1ce0000\",\"account_uuid\":\"00000000-0000-4000-8000-000000000000\",\"session_id\":\"0f6c1a52-7a3e-4c55-9d0e-c4553e7d1a01\"}"
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "request-id": "req_011FAKEquotaprobe0000000",
+      "anthropic-ratelimit-unified-status": "allowed_warning",
+      "anthropic-ratelimit-unified-5h-utilization": "0.86",
+      "anthropic-ratelimit-unified-5h-reset": "1794477600",
+      "anthropic-ratelimit-unified-7d-utilization": "0.41",
+      "anthropic-ratelimit-unified-7d-reset": "1794873600",
+      "anthropic-ratelimit-unified-reset": "1794477600",
+      "anthropic-ratelimit-unified-representative-claim": "five_hour"
+    },
+    "body": {
+      "json": {
+        "id": "msg_01FAKEquotaprobe",
+        "type": "message",
+        "role": "assistant",
+        "model": "claude-haiku-4-5-20251001",
+        "content": [
+          {
+            "type": "text",
+            "text": "I"
+          }
+        ],
+        "stop_reason": "max_tokens",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "output_tokens": 1,
+          "service_tier": "standard"
+        }
+      }
+    }
+  },
+  "expects": {
+    "logged": {
+      "session": "0f6c1a52-7a3e-4c55-9d0e-c4553e7d1a01",
+      "sessionSource": "x-claude-code-session-id",
+      "machine": "",
+      "project": "",
+      "client": "claude-code",
+      "clientVersion": "2.1.322",
+      "userAgent": "claude-cli/2.1.322 (external, cli)",
+      "divertedFrom": null,
+      "follows": null,
+      "loginFingerprint": "4404dcf514dbc9376a8eb4c4090b783210521621b64e77f6aaa86b5b03e87351",
+      "refusalReset": null,
+      "protocol": "anthropic-messages",
+      "operation": "messages",
+      "purpose": "quota_probe",
+      "model": "claude-haiku-4-5",
+      "servedModel": "claude-haiku-4-5-20251001",
+      "stream": false,
+      "outcome": "ok",
+      "upstreamStatus": 200,
+      "errorType": "",
+      "errorMessage": "",
+      "stopReason": "max_tokens",
+      "usage": {
+        "tokens": {
+          "input": 8,
+          "cacheRead": 0,
+          "cacheWriteShort": 0,
+          "cacheWriteLong": 0,
+          "output": 1
+        },
+        "reasoning": 0,
+        "reported": "{\"input_tokens\":8,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":1,\"service_tier\":\"standard\"}"
+      },
+      "serviceTier": "standard",
+      "providerRequestId": "req_011FAKEquotaprobe0000000",
+      "rateLimits": {
+        "anthropic-ratelimit-unified-5h-reset": "1794477600",
+        "anthropic-ratelimit-unified-5h-utilization": "0.86",
+        "anthropic-ratelimit-unified-7d-reset": "1794873600",
+        "anthropic-ratelimit-unified-7d-utilization": "0.41",
+        "anthropic-ratelimit-unified-representative-claim": "five_hour",
+        "anthropic-ratelimit-unified-reset": "1794477600",
+        "anthropic-ratelimit-unified-status": "allowed_warning"
+      },
+      "clientHeaders": {
+        "anthropic-beta": "claude-code-20250219,oauth-2025-04-20,interleaved-thinking-2025-05-14,context-management-2025-06-27",
+        "anthropic-version": "2023-06-01",
+        "x-app": "cli",
+        "x-stainless-retry-count": "0"
+      },
+      "conversation": {
+        "params": {
+          "model": "claude-haiku-4-5",
+          "max_tokens": 1,
+          "metadata": {
+            "user_id": "{\"device_id\":\"d3v1ce0000\",\"account_uuid\":\"00000000-0000-4000-8000-000000000000\",\"session_id\":\"0f6c1a52-7a3e-4c55-9d0e-c4553e7d1a01\"}"
+          }
+        },
+        "layout": [
+          {
+            "part": "system",
+            "field": "system",
+            "layout": "absent"
+          },
+          {
+            "part": "tools",
+            "field": "tools",
+            "layout": "absent"
+          },
+          {
+            "part": "input",
+            "field": "messages",
+            "layout": "list"
+          }
+        ],
+        "overlay": [],
+        "system": [],
+        "tools": [],
+        "input": [
+          {
+            "digest": "2b796148ff47289c97a4b85268d99df5",
+            "type": "",
+            "role": "user",
+            "text": "quota"
+          }
+        ],
+        "output": [
+          {
+            "digest": "e11f8e393ad203e4c1053c57badac253",
+            "type": "",
+            "role": "assistant",
+            "text": "I"
+          }
+        ]
+      },
+      "errorBody": "",
+      "requestBytes": 260,
+      "responseBytes": 319,
+      "readingComplete": true
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "@cota/proofs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "effect-tsgo tsc -p ."
+  },
+  "dependencies": {
+    "@cota/hub": "workspace:*",
+    "effect": "4.1.4"
+  }
+}

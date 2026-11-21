@@ -1,0 +1,177 @@
+{
+  "source": {
+    "kind": "constructed",
+    "from": [
+      "https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create",
+      "Milestone 1 research, OpenAI-compatible adapter facts (2026-11-12), sections 2 and 3"
+    ],
+    "note": "A client that does not ask for usage: the stream carries none, and the entry says usage was not reported."
+  },
+  "request": {
+    "method": "POST",
+    "path": "/chat/completions",
+    "headers": {
+      "authorization": "Bearer cota-FAKE-hub-key-for-tests",
+      "accept": "application/json",
+      "content-type": "application/json",
+      "user-agent": "pi/1.5.2 (darwin; bun/1.4.2; arm64)",
+      "x-stainless-lang": "js",
+      "x-stainless-retry-count": "0"
+    },
+    "body": {
+      "json": {
+        "model": "glm-5.2",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Say hi."
+          }
+        ],
+        "stream": true,
+        "store": false,
+        "max_completion_tokens": 32000
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "text/event-stream",
+      "cache-control": "no-cache",
+      "x-request-id": "req-FAKE-chat-0001"
+    },
+    "body": {
+      "events": [
+        {
+          "data": {
+            "id": "chatcmpl-FAKE1",
+            "object": "chat.completion.chunk",
+            "created": 1794441600,
+            "model": "glm-5.2",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant",
+                  "content": ""
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE1",
+            "object": "chat.completion.chunk",
+            "created": 1794441600,
+            "model": "glm-5.2",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "content": "Hi!"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE1",
+            "object": "chat.completion.chunk",
+            "created": 1794441600,
+            "model": "glm-5.2",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {},
+                "finish_reason": "stop"
+              }
+            ]
+          }
+        },
+        {
+          "data": "[DONE]"
+        }
+      ]
+    }
+  },
+  "expects": {
+    "logged": {
+      "session": "request:<id>",
+      "sessionSource": "",
+      "machine": "",
+      "project": "",
+      "client": "pi",
+      "clientVersion": "1.5.2",
+      "userAgent": "pi/1.5.2 (darwin; bun/1.4.2; arm64)",
+      "divertedFrom": null,
+      "follows": null,
+      "loginFingerprint": null,
+      "refusalReset": null,
+      "protocol": "openai-chat",
+      "operation": "chat",
+      "purpose": "",
+      "model": "glm-5.2",
+      "servedModel": "",
+      "stream": true,
+      "outcome": "ok",
+      "upstreamStatus": 200,
+      "errorType": "",
+      "errorMessage": "",
+      "stopReason": "stop",
+      "usage": null,
+      "serviceTier": "",
+      "providerRequestId": "req-FAKE-chat-0001",
+      "rateLimits": {},
+      "clientHeaders": {
+        "x-stainless-retry-count": "0"
+      },
+      "conversation": {
+        "params": {
+          "model": "glm-5.2",
+          "stream": true,
+          "store": false,
+          "max_completion_tokens": 32000
+        },
+        "layout": [
+          {
+            "part": "tools",
+            "field": "tools",
+            "layout": "absent"
+          },
+          {
+            "part": "input",
+            "field": "messages",
+            "layout": "list"
+          }
+        ],
+        "overlay": [],
+        "system": [],
+        "tools": [],
+        "input": [
+          {
+            "digest": "83695bba711d95cf4162cf19c418c8ab",
+            "type": "",
+            "role": "user",
+            "text": "Say hi."
+          }
+        ],
+        "output": [
+          {
+            "digest": "e8c6b6fc590f52c5aff0bb42651d0b65",
+            "type": "",
+            "role": "assistant",
+            "text": "Hi!"
+          }
+        ]
+      },
+      "errorBody": "",
+      "requestBytes": 126,
+      "responseBytes": 539,
+      "readingComplete": true
+    }
+  }
+}

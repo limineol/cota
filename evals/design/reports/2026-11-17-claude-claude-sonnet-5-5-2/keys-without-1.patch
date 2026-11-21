@@ -1,0 +1,725 @@
+diff --git a/apps/web/src/screens/keys/keys.stories.tsx b/apps/web/src/screens/keys/keys.stories.tsx
+new file mode 100644
+index 0000000..44db56f
+--- /dev/null
++++ b/apps/web/src/screens/keys/keys.stories.tsx
+@@ -0,0 +1,106 @@
++import type { Meta, StoryObj } from "@storybook/react-vite";
++import { expect, within } from "storybook/test";
++import { keysAnswer, keysNow, keysOfAYoungLog, noKeys } from "#stories/keys.ts";
++import { Keys } from "./keys.tsx";
++
++const meta = {
++  title: "Screens/Keys",
++  component: Keys,
++  args: { answer: keysAnswer, now: keysNow },
++} satisfies Meta<typeof Keys>;
++
++export default meta;
++type Story = StoryObj<typeof meta>;
++
++const idsOf = (table: HTMLElement) =>
++  within(table)
++    .getAllByText(/^k_[0-9a-f]{6}$/)
++    .map((cell) => cell.textContent);
++
++export const Everything: Story = {
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByText("12 keys, 3 never used, 2 idle for over 7 days"),
++    ).toBeVisible();
++    const table = await canvas.findByRole("table", { name: "Hub keys" });
++    await expect(idsOf(table)).toHaveLength(12);
++    await expect(idsOf(table)[0]).toBe("k_7f3a9c");
++    await expect(
++      within(table).getByRole("columnheader", { name: "Last used" }),
++    ).toHaveAttribute("aria-sort", "descending");
++    await expect(within(table).getAllByText("Never used")).toHaveLength(3);
++    await expect(canvas.getByText("4m ago")).toBeVisible();
++    await expect(canvas.getAllByText("tower").length).toBeGreaterThan(0);
++    await expect(canvas.getByText("96.4M")).toBeVisible();
++  },
++};
++
++export const NeverUsedLast: Story = {
++  play: async ({ canvas }) => {
++    const table = await canvas.findByRole("table", { name: "Hub keys" });
++    await expect(idsOf(table).slice(-3)).toEqual([
++      "k_91d6a2",
++      "k_d9144e",
++      "k_0b9d3a",
++    ]);
++  },
++};
++
++export const SortedByRequests: Story = {
++  play: async ({ canvas, userEvent }) => {
++    const table = await canvas.findByRole("table", { name: "Hub keys" });
++    await userEvent.click(
++      within(table).getByRole("button", { name: "Requests" }),
++    );
++    await expect(
++      within(table).getByRole("columnheader", { name: "Requests" }),
++    ).toHaveAttribute("aria-sort", "descending");
++    await expect(idsOf(table).slice(0, 3)).toEqual([
++      "k_5e0f48",
++      "k_7f3a9c",
++      "k_2b81de",
++    ]);
++  },
++};
++
++export const NarrowedToOneScope: Story = {
++  play: async ({ canvas, userEvent }) => {
++    await userEvent.click(await canvas.findByRole("radio", { name: "Reader" }));
++    const table = await canvas.findByRole("table", { name: "Hub keys" });
++    await expect(idsOf(table)).toEqual(["k_3f5c80", "k_e72a65", "k_0b9d3a"]);
++    await expect(canvas.getByText("3 of 12 keys")).toBeVisible();
++    await expect(
++      within(table).getAllByText("The request log, no pool"),
++    ).toHaveLength(3);
++  },
++};
++
++export const ALogThatBeganThisWeek: Story = {
++  args: { answer: keysOfAYoungLog },
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByText(
++        "Requests and tokens are those of the last 7 days, though the request log begins on 2026-11-14.",
++      ),
++    ).toBeVisible();
++  },
++};
++
++export const NoKeys: Story = {
++  args: { answer: noKeys },
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByText("The configuration holds no hub keys."),
++    ).toBeVisible();
++  },
++};
++
++export const Narrow: Story = {
++  globals: { viewport: { value: "mobile2" } },
++  play: async ({ canvas }) => {
++    const table = await canvas.findByRole("table", { name: "Hub keys" });
++    await expect(
++      within(table).queryByRole("columnheader", { name: "Tokens" }),
++    ).toBeNull();
++  },
++};
+diff --git a/apps/web/src/screens/keys/keys.tsx b/apps/web/src/screens/keys/keys.tsx
+new file mode 100644
+index 0000000..3052825
+--- /dev/null
++++ b/apps/web/src/screens/keys/keys.tsx
+@@ -0,0 +1,287 @@
++import { Empty, EmptyDescription, EmptyTitle } from "@cota/ui/components/empty";
++import {
++  ListPanel,
++  ListPanelBody,
++  ListPanelFoot,
++  ListPanelHead,
++} from "@cota/ui/components/list-panel";
++import { Note } from "@cota/ui/components/note";
++import {
++  Page,
++  PageDescription,
++  PageHeader,
++  PageTitle,
++} from "@cota/ui/components/page";
++import { PoolMark } from "@cota/ui/components/pool-mark";
++import { Segmented } from "@cota/ui/components/segmented";
++import {
++  Table,
++  TableBody,
++  TableCell,
++  TableHead,
++  TableHeader,
++  TableLabel,
++  TableMagnitude,
++  TableRow,
++  TableSecondary,
++  TableSort,
++} from "@cota/ui/components/table";
++import { type ReactNode, useMemo, useState } from "react";
++import { poolHues } from "#shared/domain/hues.ts";
++import {
++  type KeysSort,
++  narrowed,
++  type Scope,
++  shortWindow,
++  sorted,
++} from "#shared/domain/keys.ts";
++import { ago, tokens } from "#shared/domain/quantities.ts";
++import { counted, plural, when } from "#shared/words.ts";
++
++/** What `GET /api/keys` answers. */
++export interface KeysAnswer {
++  readonly keys: ReadonlyArray<KeyRow>;
++  readonly pools: ReadonlyArray<string>;
++  readonly logBegins: string;
++}
++
++export interface KeyRow {
++  readonly id: string;
++  readonly note: string | null;
++  readonly scope: Scope;
++  readonly pools: ReadonlyArray<string>;
++  readonly lastUsedAt: string | null;
++  readonly lastMachine: string | null;
++  readonly requests: number;
++  readonly tokens: number | null;
++}
++
++type Shown = Scope | "all";
++
++const scopeOptions: ReadonlyArray<{
++  readonly value: Shown;
++  readonly label: string;
++}> = [
++  { value: "all", label: "All" },
++  { value: "subscription", label: "Subscription" },
++  { value: "keyed", label: "Keyed" },
++  { value: "reader", label: "Reader" },
++];
++
++const scopeName: Record<Scope, string> = {
++  subscription: "Subscription",
++  keyed: "Keyed",
++  reader: "Reader",
++};
++
++const sevenDays = 7 * 24 * 60 * 60 * 1000;
++
++const tokensText = (row: KeyRow) => {
++  if (row.requests === 0) return "none";
++  return row.tokens === null ? "unreported" : tokens(row.tokens);
++};
++
++function Opens({
++  row,
++  markOf,
++}: {
++  readonly row: KeyRow;
++  readonly markOf: (pool: string) => ReactNode;
++}) {
++  if (row.scope === "reader") {
++    return <span className="text-text-3">The request log, no pool</span>;
++  }
++  if (row.pools.length === 0) {
++    return <span className="text-text-3">No pool</span>;
++  }
++  return (
++    <ul className="flex flex-wrap gap-x-3 gap-y-1">
++      {row.pools.map((pool) => (
++        <li key={pool} className="flex min-w-0 items-center gap-1.5">
++          {markOf(pool)}
++          <span className="truncate">{pool}</span>
++        </li>
++      ))}
++    </ul>
++  );
++}
++
++function LastUse({ row, now }: { readonly row: KeyRow; readonly now: number }) {
++  if (row.lastUsedAt === null) {
++    return <span className="text-text-3">Never used</span>;
++  }
++  const at = Date.parse(row.lastUsedAt);
++  return <span title={when(at, now)}>{ago(now - at)}</span>;
++}
++
++/** The hub keys of the configuration, each with what it opens, its last use and what it carried in the last 7 days; the answer is the caller's. */
++export function Keys({
++  answer,
++  now,
++}: {
++  readonly answer: KeysAnswer;
++  readonly now: number;
++}) {
++  const [scope, setScope] = useState<Shown>("all");
++  const [by, setBy] = useState<KeysSort>("last-use");
++  const hues = useMemo(() => poolHues(answer.pools), [answer.pools]);
++  const markOf = (pool: string): ReactNode => (
++    <PoolMark hue={hues.get(pool) ?? "neutral"} name={pool} />
++  );
++
++  const listed = sorted(
++    narrowed(answer.keys, scope === "all" ? null : scope),
++    by,
++  );
++  const sortedBy = (sort: KeysSort) => (sort === by ? "descending" : undefined);
++  const peak = Math.max(1, ...listed.map((row) => row.requests));
++  const beginsOn = shortWindow(answer.logBegins, now);
++  const unused = answer.keys.filter((row) => row.lastUsedAt === null).length;
++  const idle = answer.keys.filter(
++    (row) =>
++      row.lastUsedAt !== null && now - Date.parse(row.lastUsedAt) > sevenDays,
++  ).length;
++
++  const body = () => {
++    if (answer.keys.length === 0) {
++      return (
++        <Empty>
++          <EmptyTitle>The configuration holds no hub keys.</EmptyTitle>
++          <EmptyDescription>
++            A machine needs a hub key to use this hub. Add one to the
++            configuration to see it here.
++          </EmptyDescription>
++        </Empty>
++      );
++    }
++    if (listed.length === 0) {
++      return (
++        <Empty>
++          <EmptyTitle>No hub key has this scope.</EmptyTitle>
++          <EmptyDescription>
++            Try another scope, or all of them.
++          </EmptyDescription>
++        </Empty>
++      );
++    }
++    return (
++      <Table aria-label="Hub keys">
++        <TableHeader from="md">
++          <TableRow>
++            <TableHead scope="col">Key</TableHead>
++            <TableHead scope="col" from="md">
++              Opens
++            </TableHead>
++            <TableHead scope="col" from="lg">
++              Scope
++            </TableHead>
++            <TableHead scope="col" sorted={sortedBy("last-use")}>
++              <TableSort
++                sorted={sortedBy("last-use")}
++                onClick={() => setBy("last-use")}
++              >
++                Last used
++              </TableSort>
++            </TableHead>
++            <TableHead
++              scope="col"
++              numeric
++              from="md"
++              sorted={sortedBy("requests")}
++            >
++              <TableSort
++                numeric
++                sorted={sortedBy("requests")}
++                onClick={() => setBy("requests")}
++              >
++                Requests
++              </TableSort>
++            </TableHead>
++            <TableHead scope="col" numeric from="md">
++              Tokens
++            </TableHead>
++          </TableRow>
++        </TableHeader>
++        {listed.map((row) => (
++          <TableBody key={row.id}>
++            <TableRow>
++              <TableCell className="max-w-0 min-w-40">
++                <TableLabel className="block">
++                  <code className="font-mono">{row.id}</code>
++                </TableLabel>
++                <TableSecondary>
++                  {row.note ?? "No note"}
++                  <span className="@2xl/panel:hidden">
++                    {` · ${scopeName[row.scope]} · ${plural(row.requests, "request")} · ${tokensText(row)} tokens`}
++                  </span>
++                </TableSecondary>
++              </TableCell>
++              <TableCell from="md">
++                <Opens row={row} markOf={markOf} />
++              </TableCell>
++              <TableCell from="lg">{scopeName[row.scope]}</TableCell>
++              <TableCell>
++                <LastUse row={row} now={now} />
++                {row.lastUsedAt !== null ? (
++                  <TableSecondary>
++                    {row.lastMachine ?? "No machine tagged"}
++                  </TableSecondary>
++                ) : null}
++              </TableCell>
++              <TableCell numeric from="md">
++                {counted(row.requests)}
++                <TableMagnitude fraction={row.requests / peak} />
++              </TableCell>
++              <TableCell numeric from="md">
++                {tokensText(row)}
++              </TableCell>
++            </TableRow>
++          </TableBody>
++        ))}
++      </Table>
++    );
++  };
++
++  return (
++    <Page className="@container">
++      <PageHeader>
++        <div>
++          <PageTitle>Hub keys</PageTitle>
++          <PageDescription>
++            {[
++              plural(answer.keys.length, "key"),
++              ...(unused > 0 ? [`${unused} never used`] : []),
++              ...(idle > 0 ? [`${idle} idle for over 7 days`] : []),
++            ].join(", ")}
++          </PageDescription>
++        </div>
++        <Segmented
++          label="Scope"
++          size="sm"
++          value={scope}
++          options={scopeOptions}
++          onValueChange={setScope}
++        />
++      </PageHeader>
++
++      <ListPanel aria-label="The hub keys">
++        <ListPanelHead alone>
++          <Note>
++            Requests and tokens are those of the last 7 days
++            {beginsOn === null
++              ? "."
++              : `, though the request log begins on ${beginsOn}.`}
++          </Note>
++        </ListPanelHead>
++        <ListPanelBody>{body()}</ListPanelBody>
++        {answer.keys.length > 0 ? (
++          <ListPanelFoot>
++            {scope === "all"
++              ? plural(listed.length, "key")
++              : `${counted(listed.length)} of ${plural(answer.keys.length, "key")}`}
++          </ListPanelFoot>
++        ) : null}
++      </ListPanel>
++    </Page>
++  );
++}
+diff --git a/apps/web/src/shared/domain/keys.laws.test.ts b/apps/web/src/shared/domain/keys.laws.test.ts
+new file mode 100644
+index 0000000..3c222f5
+--- /dev/null
++++ b/apps/web/src/shared/domain/keys.laws.test.ts
+@@ -0,0 +1,71 @@
++import { describe, expect, it } from "@effect/vitest";
++import { Arbitrary, Schema } from "effect";
++import { type KeyRow, narrowed, scopes, shortWindow, sorted } from "./keys.ts";
++
++const rows = Arbitrary.schema(
++  Schema.Array(
++    Schema.Struct({
++      scope: Schema.Literals(scopes),
++      at: Schema.NullOr(
++        Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 5 })),
++      ),
++      requests: Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 5 })),
++    }),
++  ),
++).pipe(
++  Arbitrary.map((items) =>
++    items.map(({ scope, at, requests }) => ({
++      scope,
++      lastUsedAt:
++        at === null ? null : new Date(Date.UTC(2026, 10, 1 + at)).toISOString(),
++      requests,
++    })),
++  ),
++);
++
++const time = (key: KeyRow) =>
++  key.lastUsedAt === null ? -1 : Date.parse(key.lastUsedAt);
++
++describe("the hub keys' list", () => {
++  it.prop(
++    "V43: narrowing keeps the keys of the scope in their order, and sorting keeps every key, the used before the never used and each order from greatest, ties in their order",
++    { rows },
++    ({ rows: keys }) => {
++      const tagged = keys.map((key, index) => ({ ...key, index }));
++      for (const scope of scopes) {
++        expect(narrowed(tagged, scope)).toEqual(
++          tagged.filter((key) => key.scope === scope),
++        );
++      }
++      expect(narrowed(tagged, null)).toEqual(tagged);
++
++      const byUse = sorted(tagged, "last-use");
++      const byRequests = sorted(tagged, "requests");
++      for (const ordered of [byUse, byRequests]) {
++        expect([...ordered].sort((a, b) => a.index - b.index)).toEqual(tagged);
++      }
++      byUse.forEach((key, at) => {
++        const next = byUse[at + 1];
++        if (next === undefined) return;
++        expect(time(key)).toBeGreaterThanOrEqual(time(next));
++        if (time(key) === time(next))
++          expect(key.index).toBeLessThan(next.index);
++      });
++      byRequests.forEach((key, at) => {
++        const next = byRequests[at + 1];
++        if (next === undefined) return;
++        expect(key.requests).toBeGreaterThanOrEqual(next.requests);
++        if (key.requests === next.requests) {
++          expect(key.index).toBeLessThan(next.index);
++        }
++      });
++    },
++  );
++
++  it("V44: the window is short only when the log begins inside the last 7 days", () => {
++    const now = Date.parse("2026-11-17T12:00:00Z");
++    expect(shortWindow("2026-11-12", now)).toBe("2026-11-12");
++    expect(shortWindow("2026-11-10", now)).toBeNull();
++    expect(shortWindow("2026-10-01", now)).toBeNull();
++  });
++});
+diff --git a/apps/web/src/shared/domain/keys.ts b/apps/web/src/shared/domain/keys.ts
+new file mode 100644
+index 0000000..7f756b7
+--- /dev/null
++++ b/apps/web/src/shared/domain/keys.ts
+@@ -0,0 +1,50 @@
++export const scopes = ["subscription", "keyed", "reader"] as const;
++
++export type Scope = (typeof scopes)[number];
++
++export type KeysSort = "last-use" | "requests";
++
++/** What the list needs of a hub key. */
++export interface KeyRow {
++  readonly scope: Scope;
++  readonly lastUsedAt: string | null;
++  readonly requests: number;
++}
++
++const day = 24 * 60 * 60 * 1000;
++
++/** The keys of one scope, or all of them, in the order given. */
++export const narrowed = <Row extends KeyRow>(
++  rows: ReadonlyArray<Row>,
++  scope: Scope | null,
++): ReadonlyArray<Row> =>
++  scope === null ? rows : rows.filter((row) => row.scope === scope);
++
++const usedAt = (row: KeyRow) =>
++  row.lastUsedAt === null
++    ? Number.NEGATIVE_INFINITY
++    : Date.parse(row.lastUsedAt);
++
++/** The keys, the most recently used or the busiest first; a key never used comes after every used one, and keys that tie keep their order. */
++export const sorted = <Row extends KeyRow>(
++  rows: ReadonlyArray<Row>,
++  by: KeysSort,
++): ReadonlyArray<Row> =>
++  rows
++    .map((row, index) => ({ row, index }))
++    .sort((a, b) => {
++      const order =
++        by === "requests"
++          ? b.row.requests - a.row.requests
++          : usedAt(b.row) === usedAt(a.row)
++            ? 0
++            : usedAt(b.row) > usedAt(a.row)
++              ? 1
++              : -1;
++      return order === 0 ? a.index - b.index : order;
++    })
++    .map(({ row }) => row);
++
++/** The day the request log begins when it begins inside the last 7 days, so that the 7 days' figures cover less than 7 days; otherwise nothing. */
++export const shortWindow = (logBegins: string, now: number): string | null =>
++  Date.parse(logBegins) > now - 7 * day ? logBegins : null;
+diff --git a/apps/web/src/stories/keys.ts b/apps/web/src/stories/keys.ts
+new file mode 100644
+index 0000000..807fc08
+--- /dev/null
++++ b/apps/web/src/stories/keys.ts
+@@ -0,0 +1,149 @@
++import type { KeysAnswer } from "#screens/keys/keys.tsx";
++
++/** The moment the keys' stories are drawn at. */
++export const keysNow = Date.parse("2026-11-17T12:00:00.000Z");
++
++const minutesAgo = (minutes: number) =>
++  new Date(keysNow - minutes * 60_000).toISOString();
++
++const daysAgo = (days: number) => minutesAgo(days * 24 * 60);
++
++/** `GET /api/keys` as the hub will answer it: twelve keys of the three scopes, three of them never used. */
++export const keysAnswer: KeysAnswer = {
++  pools: ["work", "personal", "team-api", "spare"],
++  logBegins: "2026-08-02",
++  keys: [
++    {
++      id: "k_7f3a9c",
++      note: "work laptop",
++      scope: "subscription",
++      pools: ["work", "personal"],
++      lastUsedAt: minutesAgo(4),
++      lastMachine: "tower",
++      requests: 1842,
++      tokens: 96_400_000,
++    },
++    {
++      id: "k_2b81de",
++      note: "home desktop",
++      scope: "subscription",
++      pools: ["personal"],
++      lastUsedAt: minutesAgo(95),
++      lastMachine: "desk",
++      requests: 611,
++      tokens: 31_200_000,
++    },
++    {
++      id: "k_c04e17",
++      note: "old laptop",
++      scope: "subscription",
++      pools: ["work", "personal"],
++      lastUsedAt: daysAgo(23),
++      lastMachine: "retired-box",
++      requests: 0,
++      tokens: null,
++    },
++    {
++      id: "k_91d6a2",
++      note: null,
++      scope: "subscription",
++      pools: ["spare"],
++      lastUsedAt: null,
++      lastMachine: null,
++      requests: 0,
++      tokens: null,
++    },
++    {
++      id: "k_5e0f48",
++      note: "ci runners",
++      scope: "keyed",
++      pools: ["team-api"],
++      lastUsedAt: minutesAgo(12),
++      lastMachine: "ci-runner-3",
++      requests: 4207,
++      tokens: 58_900_000,
++    },
++    {
++      id: "k_a3c7b9",
++      note: "staging",
++      scope: "keyed",
++      pools: ["team-api", "spare"],
++      lastUsedAt: daysAgo(2),
++      lastMachine: null,
++      requests: 96,
++      tokens: null,
++    },
++    {
++      id: "k_68b2f0",
++      note: "contractor, ends in March",
++      scope: "keyed",
++      pools: ["team-api"],
++      lastUsedAt: daysAgo(9),
++      lastMachine: "contractor-mbp",
++      requests: 0,
++      tokens: null,
++    },
++    {
++      id: "k_d9144e",
++      note: "experiments",
++      scope: "keyed",
++      pools: ["spare"],
++      lastUsedAt: null,
++      lastMachine: null,
++      requests: 0,
++      tokens: null,
++    },
++    {
++      id: "k_3f5c80",
++      note: "log-reading agent",
++      scope: "reader",
++      pools: [],
++      lastUsedAt: minutesAgo(35),
++      lastMachine: "tower",
++      requests: 388,
++      tokens: 0,
++    },
++    {
++      id: "k_e72a65",
++      note: "dashboard bookmarklet",
++      scope: "reader",
++      pools: [],
++      lastUsedAt: daysAgo(5),
++      lastMachine: null,
++      requests: 14,
++      tokens: null,
++    },
++    {
++      id: "k_0b9d3a",
++      note: null,
++      scope: "reader",
++      pools: [],
++      lastUsedAt: null,
++      lastMachine: null,
++      requests: 0,
++      tokens: null,
++    },
++    {
++      id: "k_b6e41f",
++      note: "travel tablet",
++      scope: "subscription",
++      pools: ["personal", "work", "spare"],
++      lastUsedAt: daysAgo(1),
++      lastMachine: "tablet",
++      requests: 57,
++      tokens: 2_870_000,
++    },
++  ],
++};
++
++/** The same keys on a hub whose request log began three days ago. */
++export const keysOfAYoungLog: KeysAnswer = {
++  ...keysAnswer,
++  logBegins: "2026-11-14",
++};
++
++export const noKeys: KeysAnswer = {
++  keys: [],
++  pools: keysAnswer.pools,
++  logBegins: keysAnswer.logBegins,
++};
+diff --git a/docs/specs/dashboard/spec.md b/docs/specs/dashboard/spec.md
+index 4220c51..3cdbcb9 100644
+--- a/docs/specs/dashboard/spec.md
++++ b/docs/specs/dashboard/spec.md
+@@ -43,6 +43,7 @@ code:
+   - packages/ui/src/components/guide.tsx
+   - packages/ui/src/components/steps.tsx
+   - packages/ui/src/components/log-line.tsx
++  - apps/web/src/screens/keys
+ ---
+ 
+ # The dashboard's own rules
+@@ -183,6 +184,10 @@ The command palette is the shell's: `⌘K` or `Ctrl+K` opens it from any screen
+ 
+ Which screens, pools and values are listed, and in what order, is `found(candidates, text)`: a candidate is an id and the name it is shown by (a screen's path and its name; a pool's id and its display name; a project's, model's, client's or machine's id and its display name), and it is listed when its name or its id holds the text, case ignored, and once. Those whose name starts with the text come first, then those whose name holds it elsewhere, then those whose id alone holds it, each in the order given. Case is ignored code point by code point: a character is compared by its lowercase when that is one character, and as itself otherwise (`İ`, whose lowercase is two), so every place in a name stays where it was. The place the text first holds in a name or an id is marked; the pieces, put together, are the name or the id.
+ 
++## The hub keys
++
++The hub keys screen (`apps/web/src/screens/keys`) draws `GET /api/keys` as it comes, in one panel, a key to a row: its id and note, the pools it opens (a reader key opens none, and says it opens the request log), when it was last used and the machine its last request was tagged with, and its requests and tokens of the last 7 days. A key never used says so and has no machine; a key whose requests reported no usage writes its tokens as `unreported`, and one with no requests as `none`. The scope narrows the list to one (or all), and the heads Last used and Requests order it (`keys.ts`: `narrowed`, `sorted`). The panel says the 7 days begin after the request log does when `logBegins` falls inside them (`shortWindow`). The screen takes its answer from whoever renders it; no route or endpoint exists yet.
++
+ ## Laws
+ 
+ | Id | Law | Held by |
+@@ -228,6 +233,8 @@ Which screens, pools and values are listed, and in what order, is `found(candida
+ | V40 | **The last way in stays.** Settings offers turning off the password this hub keeps, and removing a passkey, exactly when the hub would allow it, a password or a passkey being left after it; turning off is offered for no other password, and while the kept password is the last way in, it says a passkey is wanted first. | property |
+ | V41 | **A code as the hub reads it.** A setup code typed in any case, with any spaces and hyphens, and O for 0 and I or L for 1, sends its first twelve characters as the hub reads them, is written as those in groups of four joined by hyphens, which reads back the same, and is complete only with twelve. | property |
+ | V42 | **A password as the hub counts it.** A new owner password is counted as the hub counts it, by code points, and fits exactly when it has 12 to 1,024 of them. | property |
++| V43 | **The keys, narrowed and in order.** Narrowing to a scope keeps exactly the keys of that scope in their order; sorting keeps every key once, by last use or by requests from the greatest, a key never used after every used one, and keys that tie in their order. | property |
++| V44 | **A short window is said.** The 7 days' figures are said to cover less than 7 days exactly when the request log begins inside the last 7 days. | example |
+ 
+ V1 to V20 are floating-point arithmetic or formatting, which Bend cannot state usefully (ADR-0004); V21 to V42 are text cut into pieces, a page's arithmetic, a session's requests cut into runs, entries paired, an error's headline, SQL cut for its tones, the statement a run sends, the rows a grid draws, an answer written as TSV, the ids a list of names holds, a user agent read, what the palette finds, the ways in offered and kept, a setup code read and a password counted, small enough that a property test says all they promise. All are property-tested only, in `apps/web/src/shared/domain/*.laws.test.ts`.
+ 

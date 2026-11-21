@@ -1,0 +1,1942 @@
+{
+  "source": {
+    "kind": "recorded",
+    "date": "2026-11-12",
+    "client": "claude-code",
+    "version": "2.1.322"
+  },
+  "request": {
+    "method": "POST",
+    "path": "/v1/messages?beta=true",
+    "headers": {
+      "accept": "application/json",
+      "accept-encoding": "gzip, deflate, br, zstd",
+      "anthropic-beta": "claude-code-20250219,oauth-2025-04-20,interleaved-thinking-2025-05-14,context-management-2025-06-27,per-turn-control-2026-07-01,mid-conversation-tool-changes-2026-07-01,inline-tools-2026-09-15,advisor-tool-2026-03-01,thinking-token-count-2026-05-13,advanced-tool-use-2025-11-20,effort-2025-11-24,dangerous-tool-use-2026-09-03,afk-mode-2026-01-31,extended-cache-ttl-2025-04-11",
+      "anthropic-dangerous-direct-browser-access": "true",
+      "anthropic-version": "2023-06-01",
+      "authorization": "Bearer sk-ant-oat01-FAKE-login-for-tests-only-0000",
+      "content-type": "application/json",
+      "user-agent": "claude-cli/2.1.322",
+      "x-app": "cli",
+      "x-claude-code-prompt-id": "00000000-0000-4000-8000-000000000008",
+      "x-claude-code-request-class": "main",
+      "x-claude-code-session-id": "00000000-0000-4000-8000-000000000001",
+      "x-stainless-retry-count": "0"
+    },
+    "body": {
+      "json": {
+        "model": "claude-opus-5-5",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "scrubbed:xl"
+              },
+              {
+                "type": "text",
+                "text": "scrubbed:l"
+              },
+              {
+                "type": "text",
+                "text": "scrubbed:l"
+              }
+            ]
+          },
+          {
+            "role": "system",
+            "content": [
+              {
+                "type": "text",
+                "text": "scrubbed:xl"
+              },
+              {
+                "type": "tool_addition",
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": {
+                    "scrubbed-key-1": "scrubbed:m",
+                    "scrubbed-key-2": "scrubbed:m",
+                    "scrubbed-key-3": {
+                      "scrubbed-key-1": "scrubbed:s",
+                      "scrubbed-key-2": {
+                        "scrubbed-key-1": {
+                          "scrubbed-key-1": "scrubbed:s"
+                        },
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": {
+                            "scrubbed-key-1": {
+                              "scrubbed-key-1": "scrubbed:s"
+                            },
+                            "scrubbed-key-2": {
+                              "scrubbed-key-1": "scrubbed:s"
+                            },
+                            "scrubbed-key-3": {
+                              "scrubbed-key-1": "scrubbed:s"
+                            }
+                          },
+                          "scrubbed-key-3": ["scrubbed:s"]
+                        },
+                        "scrubbed-key-3": {
+                          "scrubbed-key-1": "scrubbed:s"
+                        },
+                        "scrubbed-key-4": {
+                          "scrubbed-key-1": "scrubbed:s"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "tool_addition",
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": {
+                    "scrubbed-key-1": "scrubbed:m",
+                    "scrubbed-key-2": "scrubbed:l",
+                    "scrubbed-key-3": {
+                      "scrubbed-key-1": "scrubbed:s",
+                      "scrubbed-key-2": {
+                        "scrubbed-key-1": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:l"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "tool_addition",
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": {
+                    "scrubbed-key-1": "scrubbed:m",
+                    "scrubbed-key-2": "scrubbed:l",
+                    "scrubbed-key-3": {
+                      "scrubbed-key-1": "scrubbed:s",
+                      "scrubbed-key-2": {
+                        "scrubbed-key-1": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": {
+                            "scrubbed-key-1": {
+                              "scrubbed-key-1": "scrubbed:s",
+                              "scrubbed-key-2": [
+                                "scrubbed:s",
+                                "scrubbed:s",
+                                "scrubbed:s",
+                                "scrubbed:m",
+                                "scrubbed:s"
+                              ]
+                            },
+                            "scrubbed-key-2": {
+                              "scrubbed-key-1": "scrubbed:s"
+                            }
+                          },
+                          "scrubbed-key-3": ["scrubbed:s", "scrubbed:s"]
+                        },
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": "scrubbed:s"
+                        },
+                        "scrubbed-key-3": {
+                          "scrubbed-key-1": [
+                            {
+                              "scrubbed-key-1": "scrubbed:s"
+                            },
+                            {
+                              "scrubbed-key-1": "scrubbed:s"
+                            }
+                          ]
+                        },
+                        "scrubbed-key-4": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": {
+                            "scrubbed-key-1": {
+                              "scrubbed-key-1": "scrubbed:s"
+                            },
+                            "scrubbed-key-2": {
+                              "scrubbed-key-1": "scrubbed:s"
+                            },
+                            "scrubbed-key-3": {
+                              "scrubbed-key-1": "scrubbed:s"
+                            }
+                          },
+                          "scrubbed-key-3": ["scrubbed:s", "scrubbed:s"]
+                        },
+                        "scrubbed-key-5": {
+                          "scrubbed-key-1": "scrubbed:s"
+                        },
+                        "scrubbed-key-6": {
+                          "scrubbed-key-1": "scrubbed:s"
+                        },
+                        "scrubbed-key-7": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": 0
+                        }
+                      },
+                      "scrubbed-key-3": ["scrubbed:s", "scrubbed:s"]
+                    }
+                  }
+                },
+                "cache_control": {
+                  "type": "ephemeral",
+                  "ttl": "1h"
+                }
+              }
+            ],
+            "output_config": {
+              "effort": "medium"
+            }
+          }
+        ],
+        "system": [
+          {
+            "type": "text",
+            "text": "scrubbed:l"
+          },
+          {
+            "type": "text",
+            "text": "scrubbed:m",
+            "cache_control": {
+              "type": "ephemeral",
+              "ttl": "1h"
+            }
+          },
+          {
+            "type": "text",
+            "text": "scrubbed:xl",
+            "cache_control": {
+              "type": "ephemeral",
+              "ttl": "1h"
+            }
+          }
+        ],
+        "tools": [
+          {
+            "name": "scrubbed:s",
+            "description": "scrubbed:xl",
+            "input_schema": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": "scrubbed:s",
+              "scrubbed-key-3": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-2": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-3": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-4": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": [
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:s"
+                  ]
+                },
+                "scrubbed-key-5": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": [
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:s"
+                  ]
+                },
+                "scrubbed-key-6": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-7": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": ["scrubbed:s", "scrubbed:s"]
+                }
+              },
+              "scrubbed-key-4": ["scrubbed:m", "scrubbed:s"],
+              "scrubbed-key-5": false
+            }
+          },
+          {
+            "name": "scrubbed:s",
+            "description": "scrubbed:xl",
+            "input_schema": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": "scrubbed:s",
+              "scrubbed-key-3": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": [
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:m"
+                  ]
+                },
+                "scrubbed-key-2": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-3": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-4": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": 0,
+                  "scrubbed-key-3": 0,
+                  "scrubbed-key-4": "scrubbed:s",
+                  "scrubbed-key-5": {
+                    "scrubbed-key-1": "scrubbed:s",
+                    "scrubbed-key-2": 0,
+                    "scrubbed-key-3": 0,
+                    "scrubbed-key-4": "scrubbed:s"
+                  }
+                },
+                "scrubbed-key-5": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": 0
+                },
+                "scrubbed-key-6": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": 0,
+                  "scrubbed-key-3": 0,
+                  "scrubbed-key-4": "scrubbed:s",
+                  "scrubbed-key-5": {
+                    "scrubbed-key-1": "scrubbed:s",
+                    "scrubbed-key-2": "scrubbed:m"
+                  }
+                },
+                "scrubbed-key-7": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": 0,
+                  "scrubbed-key-4": 0
+                },
+                "scrubbed-key-8": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": 0
+                },
+                "scrubbed-key-9": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": [
+                    {
+                      "scrubbed-key-1": 0,
+                      "scrubbed-key-2": "scrubbed:s",
+                      "scrubbed-key-3": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:l",
+                            "scrubbed-key-2": "scrubbed:s",
+                            "scrubbed-key-3": 0,
+                            "scrubbed-key-4": 0
+                          },
+                          "scrubbed-key-2": {
+                            "scrubbed-key-1": "scrubbed:l",
+                            "scrubbed-key-2": "scrubbed:s"
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:s"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "scrubbed-key-1": "scrubbed:s",
+                      "scrubbed-key-2": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": 0,
+                        "scrubbed-key-3": 0
+                      },
+                      "scrubbed-key-3": {
+                        "scrubbed-key-1": [
+                          {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": 0,
+                            "scrubbed-key-3": 0
+                          },
+                          {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": {
+                              "scrubbed-key-1": {
+                                "scrubbed-key-1": "scrubbed:l",
+                                "scrubbed-key-2": "scrubbed:s",
+                                "scrubbed-key-3": 0,
+                                "scrubbed-key-4": 0
+                              },
+                              "scrubbed-key-2": {
+                                "scrubbed-key-1": "scrubbed:l",
+                                "scrubbed-key-2": "scrubbed:s"
+                              }
+                            },
+                            "scrubbed-key-3": ["scrubbed:s"],
+                            "scrubbed-key-4": false
+                          },
+                          {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": {
+                              "scrubbed-key-1": {
+                                "scrubbed-key-1": "scrubbed:l",
+                                "scrubbed-key-2": "scrubbed:s",
+                                "scrubbed-key-3": 0,
+                                "scrubbed-key-4": 0
+                              },
+                              "scrubbed-key-2": {
+                                "scrubbed-key-1": "scrubbed:l",
+                                "scrubbed-key-2": "scrubbed:s",
+                                "scrubbed-key-3": 0,
+                                "scrubbed-key-4": 0
+                              },
+                              "scrubbed-key-3": {
+                                "scrubbed-key-1": "scrubbed:l",
+                                "scrubbed-key-2": "scrubbed:s",
+                                "scrubbed-key-3": 0,
+                                "scrubbed-key-4": 0
+                              }
+                            },
+                            "scrubbed-key-3": ["scrubbed:s", "scrubbed:s"],
+                            "scrubbed-key-4": false
+                          },
+                          {
+                            "scrubbed-key-1": "scrubbed:s"
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "scrubbed-key-10": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": 0,
+                  "scrubbed-key-3": 0,
+                  "scrubbed-key-4": "scrubbed:s",
+                  "scrubbed-key-5": {
+                    "scrubbed-key-1": "scrubbed:s",
+                    "scrubbed-key-2": {
+                      "scrubbed-key-1": {
+                        "scrubbed-key-1": "scrubbed:m",
+                        "scrubbed-key-2": "scrubbed:s"
+                      },
+                      "scrubbed-key-2": {
+                        "scrubbed-key-1": "scrubbed:m",
+                        "scrubbed-key-2": "scrubbed:s"
+                      }
+                    },
+                    "scrubbed-key-3": ["scrubbed:s", "scrubbed:s"],
+                    "scrubbed-key-4": false
+                  }
+                },
+                "scrubbed-key-11": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": 0,
+                  "scrubbed-key-4": 0
+                },
+                "scrubbed-key-12": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-13": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": 0,
+                  "scrubbed-key-4": 0
+                },
+                "scrubbed-key-14": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": 0
+                },
+                "scrubbed-key-15": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": [
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:s"
+                  ]
+                },
+                "scrubbed-key-16": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": 0
+                },
+                "scrubbed-key-17": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": 0
+                },
+                "scrubbed-key-18": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": [
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:s"
+                  ]
+                },
+                "scrubbed-key-19": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-20": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-21": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": 0
+                },
+                "scrubbed-key-22": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": 0
+                },
+                "scrubbed-key-23": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": 0,
+                  "scrubbed-key-3": "scrubbed:s",
+                  "scrubbed-key-4": {
+                    "scrubbed-key-1": "scrubbed:s",
+                    "scrubbed-key-2": 0,
+                    "scrubbed-key-3": 0
+                  }
+                },
+                "scrubbed-key-24": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-25": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": 0
+                },
+                "scrubbed-key-26": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": ["scrubbed:m", "scrubbed:m"]
+                },
+                "scrubbed-key-27": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-28": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-29": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": 0
+                },
+                "scrubbed-key-30": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": 0
+                },
+                "scrubbed-key-31": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": 0,
+                  "scrubbed-key-3": 0,
+                  "scrubbed-key-4": "scrubbed:s",
+                  "scrubbed-key-5": {
+                    "scrubbed-key-1": "scrubbed:s",
+                    "scrubbed-key-2": 0
+                  }
+                },
+                "scrubbed-key-32": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": "scrubbed:m"
+                },
+                "scrubbed-key-33": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-34": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": {
+                    "scrubbed-key-1": "scrubbed:s",
+                    "scrubbed-key-2": 0,
+                    "scrubbed-key-3": 0
+                  },
+                  "scrubbed-key-4": {}
+                },
+                "scrubbed-key-35": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": [
+                    {
+                      "scrubbed-key-1": "scrubbed:s",
+                      "scrubbed-key-2": "scrubbed:s"
+                    },
+                    {
+                      "scrubbed-key-1": "scrubbed:s",
+                      "scrubbed-key-2": "scrubbed:m"
+                    }
+                  ]
+                }
+              },
+              "scrubbed-key-4": false
+            }
+          },
+          {
+            "name": "scrubbed:s",
+            "description": "scrubbed:xl",
+            "input_schema": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": "scrubbed:s",
+              "scrubbed-key-3": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-2": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-3": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-4": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-5": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                }
+              },
+              "scrubbed-key-4": ["scrubbed:s"],
+              "scrubbed-key-5": false
+            }
+          },
+          {
+            "name": "scrubbed:s",
+            "description": "scrubbed:l",
+            "input_schema": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": "scrubbed:s",
+              "scrubbed-key-3": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-2": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-3": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-4": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": false,
+                  "scrubbed-key-3": "scrubbed:s"
+                }
+              },
+              "scrubbed-key-4": ["scrubbed:m", "scrubbed:m", "scrubbed:m"],
+              "scrubbed-key-5": false
+            }
+          },
+          {
+            "name": "scrubbed:m",
+            "description": "scrubbed:l",
+            "input_schema": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": "scrubbed:s",
+              "scrubbed-key-3": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": 0
+                },
+                "scrubbed-key-2": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": 0
+                }
+              },
+              "scrubbed-key-4": false
+            }
+          },
+          {
+            "name": "scrubbed:s",
+            "description": "scrubbed:l",
+            "input_schema": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": "scrubbed:s",
+              "scrubbed-key-3": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-2": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": 0,
+                  "scrubbed-key-4": 0
+                },
+                "scrubbed-key-3": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": 0,
+                  "scrubbed-key-4": 0
+                },
+                "scrubbed-key-4": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-5": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                }
+              },
+              "scrubbed-key-4": ["scrubbed:m"],
+              "scrubbed-key-5": false
+            }
+          },
+          {
+            "name": "scrubbed:m",
+            "description": "scrubbed:l",
+            "input_schema": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": "scrubbed:s",
+              "scrubbed-key-3": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": [
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:s",
+                    "scrubbed:s"
+                  ]
+                },
+                "scrubbed-key-2": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": 0,
+                  "scrubbed-key-3": "scrubbed:s",
+                  "scrubbed-key-4": {
+                    "scrubbed-key-1": "scrubbed:s",
+                    "scrubbed-key-2": {
+                      "scrubbed-key-1": {
+                        "scrubbed-key-1": "scrubbed:m",
+                        "scrubbed-key-2": "scrubbed:s"
+                      },
+                      "scrubbed-key-2": {
+                        "scrubbed-key-1": "scrubbed:m",
+                        "scrubbed-key-2": "scrubbed:s",
+                        "scrubbed-key-3": 0,
+                        "scrubbed-key-4": 0
+                      },
+                      "scrubbed-key-3": {
+                        "scrubbed-key-1": "scrubbed:m",
+                        "scrubbed-key-2": "scrubbed:s"
+                      },
+                      "scrubbed-key-4": {
+                        "scrubbed-key-1": "scrubbed:l",
+                        "scrubbed-key-2": "scrubbed:s",
+                        "scrubbed-key-3": 0
+                      },
+                      "scrubbed-key-5": {
+                        "scrubbed-key-1": "scrubbed:m",
+                        "scrubbed-key-2": "scrubbed:s"
+                      },
+                      "scrubbed-key-6": {
+                        "scrubbed-key-1": "scrubbed:l",
+                        "scrubbed-key-2": "scrubbed:s",
+                        "scrubbed-key-3": 0
+                      },
+                      "scrubbed-key-7": {
+                        "scrubbed-key-1": "scrubbed:m",
+                        "scrubbed-key-2": "scrubbed:s",
+                        "scrubbed-key-3": ["scrubbed:m", "scrubbed:m"]
+                      },
+                      "scrubbed-key-8": {
+                        "scrubbed-key-1": "scrubbed:l",
+                        "scrubbed-key-2": "scrubbed:s",
+                        "scrubbed-key-3": [
+                          "scrubbed:s",
+                          "scrubbed:s",
+                          "scrubbed:m"
+                        ]
+                      }
+                    },
+                    "scrubbed-key-3": [
+                      "scrubbed:s",
+                      "scrubbed:s",
+                      "scrubbed:m"
+                    ],
+                    "scrubbed-key-4": false
+                  }
+                }
+              },
+              "scrubbed-key-4": ["scrubbed:s"],
+              "scrubbed-key-5": false
+            }
+          },
+          {
+            "name": "scrubbed:m",
+            "description": "scrubbed:xl",
+            "input_schema": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": "scrubbed:s",
+              "scrubbed-key-3": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-2": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-3": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-4": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-5": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                }
+              },
+              "scrubbed-key-4": false
+            }
+          },
+          {
+            "name": "scrubbed:s",
+            "description": "scrubbed:xl",
+            "input_schema": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": "scrubbed:s",
+              "scrubbed-key-3": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-2": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": "scrubbed:s"
+                }
+              },
+              "scrubbed-key-4": ["scrubbed:s"],
+              "scrubbed-key-5": false
+            }
+          },
+          {
+            "name": "scrubbed:m",
+            "description": "scrubbed:l",
+            "input_schema": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": "scrubbed:s",
+              "scrubbed-key-3": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-2": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": 0,
+                  "scrubbed-key-3": "scrubbed:s"
+                }
+              },
+              "scrubbed-key-4": ["scrubbed:s", "scrubbed:m"],
+              "scrubbed-key-5": false
+            }
+          },
+          {
+            "name": "scrubbed:s",
+            "description": "scrubbed:xl",
+            "input_schema": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": "scrubbed:s",
+              "scrubbed-key-3": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": 0
+                },
+                "scrubbed-key-2": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-3": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-4": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-5": {
+                  "scrubbed-key-1": "scrubbed:l"
+                },
+                "scrubbed-key-6": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-7": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s",
+                  "scrubbed-key-3": "scrubbed:m"
+                }
+              },
+              "scrubbed-key-4": false
+            }
+          },
+          {
+            "name": "scrubbed:m",
+            "description": "scrubbed:l",
+            "input_schema": {
+              "scrubbed-key-1": "scrubbed:s",
+              "scrubbed-key-2": {}
+            },
+            "scrubbed-key-1": true
+          },
+          {
+            "name": "scrubbed:s",
+            "description": "scrubbed:l",
+            "input_schema": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": "scrubbed:s",
+              "scrubbed-key-3": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": "scrubbed:s"
+                },
+                "scrubbed-key-2": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": "scrubbed:s"
+                }
+              },
+              "scrubbed-key-4": ["scrubbed:m", "scrubbed:s"],
+              "scrubbed-key-5": false
+            }
+          }
+        ],
+        "metadata": {
+          "user_id": "{\"device_id\":\"fake-id-0002\",\"account_uuid\":\"00000000-0000-4000-8000-000000000003\",\"session_id\":\"00000000-0000-4000-8000-000000000001\"}"
+        },
+        "max_tokens": 128000,
+        "thinking": {
+          "type": "adaptive",
+          "scrubbed-key-1": "scrubbed:s"
+        },
+        "context_management": {
+          "edits": [
+            {
+              "type": "clear_thinking_20251015",
+              "keep": "scrubbed:s"
+            }
+          ]
+        },
+        "scrubbed-key-1": [
+          {
+            "scrubbed-key-1": "scrubbed:m",
+            "scrubbed-key-2": {
+              "scrubbed-key-1": 0,
+              "scrubbed-key-2": "scrubbed:s",
+              "scrubbed-key-3": "scrubbed:s",
+              "scrubbed-key-4": "scrubbed:l",
+              "scrubbed-key-5": "scrubbed:m",
+              "scrubbed-key-6": {
+                "scrubbed-key-1": "scrubbed:m",
+                "scrubbed-key-2": "scrubbed:l",
+                "scrubbed-key-3": "scrubbed:l",
+                "scrubbed-key-4": "scrubbed:l",
+                "scrubbed-key-5": "scrubbed:l",
+                "scrubbed-key-6": "scrubbed:l",
+                "scrubbed-key-7": "scrubbed:l",
+                "scrubbed-key-8": "scrubbed:l",
+                "scrubbed-key-9": "scrubbed:l",
+                "scrubbed-key-10": "scrubbed:l",
+                "scrubbed-key-11": "scrubbed:l"
+              },
+              "scrubbed-key-7": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": ["scrubbed:l"]
+                },
+                "scrubbed-key-2": [
+                  {
+                    "scrubbed-key-1": "scrubbed:m",
+                    "scrubbed-key-2": ["scrubbed:m", "scrubbed:l"],
+                    "scrubbed-key-3": "scrubbed:s"
+                  }
+                ],
+                "scrubbed-key-3": [],
+                "scrubbed-key-4": false
+              },
+              "scrubbed-key-8": {
+                "scrubbed-key-1": [],
+                "scrubbed-key-2": [],
+                "scrubbed-key-3": []
+              },
+              "scrubbed-key-9": {
+                "scrubbed-key-1": [],
+                "scrubbed-key-2": [],
+                "scrubbed-key-3": [],
+                "scrubbed-key-4": []
+              },
+              "scrubbed-key-10": true,
+              "scrubbed-key-11": false,
+              "scrubbed-key-12": false,
+              "scrubbed-key-13": false,
+              "scrubbed-key-14": false,
+              "scrubbed-key-15": "scrubbed:m",
+              "scrubbed-key-16": {
+                "scrubbed-key-1": "scrubbed:l",
+                "scrubbed-key-2": null,
+                "scrubbed-key-3": null,
+                "scrubbed-key-4": null,
+                "scrubbed-key-5": null,
+                "scrubbed-key-6": {
+                  "scrubbed-key-1": null,
+                  "scrubbed-key-2": null,
+                  "scrubbed-key-3": [],
+                  "scrubbed-key-4": []
+                },
+                "scrubbed-key-7": "scrubbed:m"
+              },
+              "scrubbed-key-17": {
+                "scrubbed-key-1": {},
+                "scrubbed-key-2": {},
+                "scrubbed-key-3": [],
+                "scrubbed-key-4": [],
+                "scrubbed-key-5": {},
+                "scrubbed-key-6": {
+                  "scrubbed-key-1": "scrubbed:s",
+                  "scrubbed-key-2": "scrubbed:m",
+                  "scrubbed-key-3": true,
+                  "scrubbed-key-4": false,
+                  "scrubbed-key-5": true,
+                  "scrubbed-key-6": false,
+                  "scrubbed-key-7": false,
+                  "scrubbed-key-8": false,
+                  "scrubbed-key-9": "scrubbed:l",
+                  "scrubbed-key-10": "scrubbed:l",
+                  "scrubbed-key-11": true,
+                  "scrubbed-key-12": false,
+                  "scrubbed-key-13": false,
+                  "scrubbed-key-14": false,
+                  "scrubbed-key-15": true,
+                  "scrubbed-key-16": true,
+                  "scrubbed-key-17": true,
+                  "scrubbed-key-18": true,
+                  "scrubbed-key-19": "scrubbed:s",
+                  "scrubbed-key-20": true
+                }
+              },
+              "scrubbed-key-18": {
+                "scrubbed-key-1": "scrubbed:s"
+              }
+            }
+          }
+        ],
+        "output_config": {
+          "effort": "medium"
+        },
+        "stream": true
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "anthropic-organization-id": "00000000-0000-4000-8000-000000000004",
+      "anthropic-ratelimit-unified-7d-reset": "1800000000",
+      "anthropic-ratelimit-unified-7d-status": "scrubbed:s",
+      "anthropic-ratelimit-unified-7d-utilization": "0",
+      "anthropic-ratelimit-unified-fallback-percentage": "0",
+      "anthropic-ratelimit-unified-overage-disabled-reason": "scrubbed:m",
+      "anthropic-ratelimit-unified-overage-status": "scrubbed:s",
+      "anthropic-ratelimit-unified-representative-claim": "scrubbed:m",
+      "anthropic-ratelimit-unified-reset": "1800000000",
+      "anthropic-ratelimit-unified-status": "allowed",
+      "cache-control": "no-cache",
+      "cf-ray": "fake-id-0009",
+      "content-encoding": "gzip",
+      "content-type": "text/event-stream; charset=utf-8",
+      "request-id": "req_FAKE0010"
+    },
+    "body": {
+      "events": [
+        {
+          "event": "message_start",
+          "data": {
+            "type": "message_start",
+            "message": {
+              "model": "claude-opus-5-5",
+              "id": "msg_FAKE0011",
+              "type": "message",
+              "role": "assistant",
+              "content": [],
+              "scrubbed-key-1": null,
+              "stop_reason": null,
+              "stop_sequence": null,
+              "scrubbed-key-2": null,
+              "usage": {
+                "input_tokens": 2,
+                "cache_creation_input_tokens": 14886,
+                "cache_read_input_tokens": 28214,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 14886
+                },
+                "output_tokens": 8,
+                "service_tier": "standard",
+                "inference_geo": "global",
+                "speed": "standard"
+              },
+              "scrubbed-key-3": null,
+              "context_management": null
+            }
+          }
+        },
+        {
+          "event": "content_block_start",
+          "data": {
+            "type": "content_block_start",
+            "index": 0,
+            "content_block": {
+              "type": "thinking",
+              "thinking": "",
+              "signature": ""
+            }
+          }
+        },
+        {
+          "event": "ping",
+          "data": {
+            "type": "ping"
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 0,
+            "delta": {
+              "type": "thinking_delta",
+              "thinking": "",
+              "scrubbed-key-1": null
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 0,
+            "delta": {
+              "type": "signature_delta",
+              "signature": "scrubbed:l"
+            }
+          }
+        },
+        {
+          "event": "content_block_stop",
+          "data": {
+            "type": "content_block_stop",
+            "index": 0
+          }
+        },
+        {
+          "event": "content_block_start",
+          "data": {
+            "type": "content_block_start",
+            "index": 1,
+            "content_block": {
+              "type": "text",
+              "text": ""
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 1,
+            "delta": {
+              "type": "text_delta",
+              "text": "scrubbed:s"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 1,
+            "delta": {
+              "type": "text_delta",
+              "text": "scrubbed:s"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 1,
+            "delta": {
+              "type": "text_delta",
+              "text": "scrubbed:m"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 1,
+            "delta": {
+              "type": "text_delta",
+              "text": "scrubbed:m"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 1,
+            "delta": {
+              "type": "text_delta",
+              "text": "scrubbed:m"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 1,
+            "delta": {
+              "type": "text_delta",
+              "text": "scrubbed:s"
+            }
+          }
+        },
+        {
+          "event": "content_block_stop",
+          "data": {
+            "type": "content_block_stop",
+            "index": 1
+          }
+        },
+        {
+          "event": "content_block_start",
+          "data": {
+            "type": "content_block_start",
+            "index": 2,
+            "content_block": {
+              "type": "tool_use",
+              "id": "toolu_FAKE0012",
+              "name": "scrubbed:s",
+              "input": {},
+              "scrubbed-key-1": {
+                "scrubbed-key-1": "scrubbed:s"
+              }
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": ""
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": "{\"s"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": "cru"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": "bbe"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": "d-k"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": "ey-"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": "1\":"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": "\"sc"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": "rub"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": "bed"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": ":m\""
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": ",\""
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": "scr"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": "ubb"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": "ed-"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": "key"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": "-2\""
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": ":\"s"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": "cru"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": "bbe"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": "d:m"
+            }
+          }
+        },
+        {
+          "event": "content_block_delta",
+          "data": {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+              "type": "input_json_delta",
+              "partial_json": "\"}"
+            }
+          }
+        },
+        {
+          "event": "content_block_stop",
+          "data": {
+            "type": "content_block_stop",
+            "index": 2
+          }
+        },
+        {
+          "event": "message_delta",
+          "data": {
+            "type": "message_delta",
+            "delta": {
+              "stop_reason": "tool_use",
+              "stop_sequence": null,
+              "scrubbed-key-1": null,
+              "scrubbed-key-2": null,
+              "scrubbed-key-3": [
+                {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": {
+                    "scrubbed-key-1": "scrubbed:m",
+                    "scrubbed-key-2": {
+                      "scrubbed-key-1": {
+                        "scrubbed-key-1": "scrubbed:m",
+                        "scrubbed-key-2": "scrubbed:m"
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            "usage": {
+              "input_tokens": 2,
+              "cache_creation_input_tokens": 14886,
+              "cache_read_input_tokens": 28214,
+              "output_tokens": 185,
+              "output_tokens_details": {
+                "thinking_tokens": 32
+              },
+              "iterations": [
+                {
+                  "input_tokens": 2,
+                  "output_tokens": 185,
+                  "cache_read_input_tokens": 28214,
+                  "cache_creation_input_tokens": 14886,
+                  "cache_creation": {
+                    "ephemeral_5m_input_tokens": 0,
+                    "ephemeral_1h_input_tokens": 14886
+                  },
+                  "type": "message"
+                }
+              ]
+            },
+            "context_management": {
+              "scrubbed-key-1": []
+            }
+          }
+        },
+        {
+          "event": "message_stop",
+          "data": {
+            "type": "message_stop"
+          }
+        }
+      ]
+    }
+  },
+  "expects": {
+    "logged": {
+      "session": "00000000-0000-4000-8000-000000000001",
+      "sessionSource": "x-claude-code-session-id",
+      "machine": "",
+      "project": "",
+      "client": "claude-code",
+      "clientVersion": "2.1.322",
+      "userAgent": "claude-cli/2.1.322",
+      "divertedFrom": null,
+      "follows": null,
+      "loginFingerprint": "4404dcf514dbc9376a8eb4c4090b783210521621b64e77f6aaa86b5b03e87351",
+      "refusalReset": null,
+      "protocol": "anthropic-messages",
+      "operation": "messages",
+      "purpose": "main",
+      "model": "claude-opus-5-5",
+      "servedModel": "",
+      "stream": true,
+      "outcome": "ok",
+      "upstreamStatus": 200,
+      "errorType": "",
+      "errorMessage": "",
+      "stopReason": "tool_use",
+      "usage": {
+        "tokens": {
+          "input": 2,
+          "cacheRead": 28214,
+          "cacheWriteShort": 0,
+          "cacheWriteLong": 14886,
+          "output": 185
+        },
+        "reasoning": 32,
+        "reported": "{\"input_tokens\":2,\"cache_creation_input_tokens\":14886,\"cache_read_input_tokens\":28214,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":14886},\"output_tokens\":185,\"service_tier\":\"standard\",\"inference_geo\":\"global\",\"speed\":\"standard\",\"output_tokens_details\":{\"thinking_tokens\":32},\"iterations\":[{\"input_tokens\":2,\"output_tokens\":185,\"cache_read_input_tokens\":28214,\"cache_creation_input_tokens\":14886,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":14886},\"type\":\"message\"}]}"
+      },
+      "serviceTier": "standard",
+      "providerRequestId": "req_FAKE0010",
+      "rateLimits": {
+        "anthropic-ratelimit-unified-7d-reset": "1800000000",
+        "anthropic-ratelimit-unified-7d-status": "scrubbed:s",
+        "anthropic-ratelimit-unified-7d-utilization": "0",
+        "anthropic-ratelimit-unified-fallback-percentage": "0",
+        "anthropic-ratelimit-unified-overage-disabled-reason": "scrubbed:m",
+        "anthropic-ratelimit-unified-overage-status": "scrubbed:s",
+        "anthropic-ratelimit-unified-representative-claim": "scrubbed:m",
+        "anthropic-ratelimit-unified-reset": "1800000000",
+        "anthropic-ratelimit-unified-status": "allowed"
+      },
+      "clientHeaders": {
+        "anthropic-beta": "claude-code-20250219,oauth-2025-04-20,interleaved-thinking-2025-05-14,context-management-2025-06-27,per-turn-control-2026-07-01,mid-conversation-tool-changes-2026-07-01,inline-tools-2026-09-15,advisor-tool-2026-03-01,thinking-token-count-2026-05-13,advanced-tool-use-2025-11-20,effort-2025-11-24,dangerous-tool-use-2026-09-03,afk-mode-2026-01-31,extended-cache-ttl-2025-04-11",
+        "anthropic-version": "2023-06-01",
+        "x-app": "cli",
+        "x-claude-code-request-class": "main",
+        "x-claude-code-prompt-id": "00000000-0000-4000-8000-000000000008",
+        "x-stainless-retry-count": "0"
+      },
+      "conversation": {
+        "params": {
+          "model": "claude-opus-5-5",
+          "metadata": {
+            "user_id": "{\"device_id\":\"fake-id-0002\",\"account_uuid\":\"00000000-0000-4000-8000-000000000003\",\"session_id\":\"00000000-0000-4000-8000-000000000001\"}"
+          },
+          "max_tokens": 128000,
+          "thinking": {
+            "type": "adaptive",
+            "scrubbed-key-1": "scrubbed:s"
+          },
+          "context_management": {
+            "edits": [
+              {
+                "type": "clear_thinking_20251015",
+                "keep": "scrubbed:s"
+              }
+            ]
+          },
+          "scrubbed-key-1": [
+            {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": {
+                "scrubbed-key-1": 0,
+                "scrubbed-key-2": "scrubbed:s",
+                "scrubbed-key-3": "scrubbed:s",
+                "scrubbed-key-4": "scrubbed:l",
+                "scrubbed-key-5": "scrubbed:m",
+                "scrubbed-key-6": {
+                  "scrubbed-key-1": "scrubbed:m",
+                  "scrubbed-key-2": "scrubbed:l",
+                  "scrubbed-key-3": "scrubbed:l",
+                  "scrubbed-key-4": "scrubbed:l",
+                  "scrubbed-key-5": "scrubbed:l",
+                  "scrubbed-key-6": "scrubbed:l",
+                  "scrubbed-key-7": "scrubbed:l",
+                  "scrubbed-key-8": "scrubbed:l",
+                  "scrubbed-key-9": "scrubbed:l",
+                  "scrubbed-key-10": "scrubbed:l",
+                  "scrubbed-key-11": "scrubbed:l"
+                },
+                "scrubbed-key-7": {
+                  "scrubbed-key-1": {
+                    "scrubbed-key-1": "scrubbed:l",
+                    "scrubbed-key-2": ["scrubbed:l"]
+                  },
+                  "scrubbed-key-2": [
+                    {
+                      "scrubbed-key-1": "scrubbed:m",
+                      "scrubbed-key-2": ["scrubbed:m", "scrubbed:l"],
+                      "scrubbed-key-3": "scrubbed:s"
+                    }
+                  ],
+                  "scrubbed-key-3": [],
+                  "scrubbed-key-4": false
+                },
+                "scrubbed-key-8": {
+                  "scrubbed-key-1": [],
+                  "scrubbed-key-2": [],
+                  "scrubbed-key-3": []
+                },
+                "scrubbed-key-9": {
+                  "scrubbed-key-1": [],
+                  "scrubbed-key-2": [],
+                  "scrubbed-key-3": [],
+                  "scrubbed-key-4": []
+                },
+                "scrubbed-key-10": true,
+                "scrubbed-key-11": false,
+                "scrubbed-key-12": false,
+                "scrubbed-key-13": false,
+                "scrubbed-key-14": false,
+                "scrubbed-key-15": "scrubbed:m",
+                "scrubbed-key-16": {
+                  "scrubbed-key-1": "scrubbed:l",
+                  "scrubbed-key-2": null,
+                  "scrubbed-key-3": null,
+                  "scrubbed-key-4": null,
+                  "scrubbed-key-5": null,
+                  "scrubbed-key-6": {
+                    "scrubbed-key-1": null,
+                    "scrubbed-key-2": null,
+                    "scrubbed-key-3": [],
+                    "scrubbed-key-4": []
+                  },
+                  "scrubbed-key-7": "scrubbed:m"
+                },
+                "scrubbed-key-17": {
+                  "scrubbed-key-1": {},
+                  "scrubbed-key-2": {},
+                  "scrubbed-key-3": [],
+                  "scrubbed-key-4": [],
+                  "scrubbed-key-5": {},
+                  "scrubbed-key-6": {
+                    "scrubbed-key-1": "scrubbed:s",
+                    "scrubbed-key-2": "scrubbed:m",
+                    "scrubbed-key-3": true,
+                    "scrubbed-key-4": false,
+                    "scrubbed-key-5": true,
+                    "scrubbed-key-6": false,
+                    "scrubbed-key-7": false,
+                    "scrubbed-key-8": false,
+                    "scrubbed-key-9": "scrubbed:l",
+                    "scrubbed-key-10": "scrubbed:l",
+                    "scrubbed-key-11": true,
+                    "scrubbed-key-12": false,
+                    "scrubbed-key-13": false,
+                    "scrubbed-key-14": false,
+                    "scrubbed-key-15": true,
+                    "scrubbed-key-16": true,
+                    "scrubbed-key-17": true,
+                    "scrubbed-key-18": true,
+                    "scrubbed-key-19": "scrubbed:s",
+                    "scrubbed-key-20": true
+                  }
+                },
+                "scrubbed-key-18": {
+                  "scrubbed-key-1": "scrubbed:s"
+                }
+              }
+            }
+          ],
+          "output_config": {
+            "effort": "medium"
+          },
+          "stream": true
+        },
+        "layout": [
+          {
+            "part": "system",
+            "field": "system",
+            "layout": "list"
+          },
+          {
+            "part": "tools",
+            "field": "tools",
+            "layout": "list"
+          },
+          {
+            "part": "input",
+            "field": "messages",
+            "layout": "list"
+          }
+        ],
+        "overlay": [
+          {
+            "part": "system",
+            "position": 1,
+            "path": ["cache_control"],
+            "value": {
+              "type": "ephemeral",
+              "ttl": "1h"
+            }
+          },
+          {
+            "part": "system",
+            "position": 2,
+            "path": ["cache_control"],
+            "value": {
+              "type": "ephemeral",
+              "ttl": "1h"
+            }
+          },
+          {
+            "part": "input",
+            "position": 1,
+            "path": ["content", 3, "cache_control"],
+            "value": {
+              "type": "ephemeral",
+              "ttl": "1h"
+            }
+          }
+        ],
+        "system": [
+          {
+            "digest": "f7b6577d33f09251a5ffb8840a7c7a61",
+            "type": "text",
+            "role": "",
+            "text": "scrubbed:l"
+          },
+          {
+            "digest": "ae8da140dfea32c8429b4e425754d71d",
+            "type": "text",
+            "role": "",
+            "text": "scrubbed:m"
+          },
+          {
+            "digest": "8df089231c7b82ad424d2e9ed4dbe263",
+            "type": "text",
+            "role": "",
+            "text": "scrubbed:xl"
+          }
+        ],
+        "tools": [
+          {
+            "digest": "26b89366d356a987d1124d39855d6d0e",
+            "type": "",
+            "role": "",
+            "text": ""
+          },
+          {
+            "digest": "87acaad9e097cf0b7e4af5a42a8a1b6e",
+            "type": "",
+            "role": "",
+            "text": ""
+          },
+          {
+            "digest": "602924ac06f01030dd29cfe19206c787",
+            "type": "",
+            "role": "",
+            "text": ""
+          },
+          {
+            "digest": "2f6cd1c6226878479c2b8b7fcee3865a",
+            "type": "",
+            "role": "",
+            "text": ""
+          },
+          {
+            "digest": "8e98afbafb12f20b07e2292774adb44c",
+            "type": "",
+            "role": "",
+            "text": ""
+          },
+          {
+            "digest": "fad723c38247bf01f78eee3078c0ada8",
+            "type": "",
+            "role": "",
+            "text": ""
+          },
+          {
+            "digest": "0c94dee023d702efc5ae6533f8f41efc",
+            "type": "",
+            "role": "",
+            "text": ""
+          },
+          {
+            "digest": "8e4b2b3ee76c58789881fc8922a052f7",
+            "type": "",
+            "role": "",
+            "text": ""
+          },
+          {
+            "digest": "ac01a2233503d03f635a8d7b95ca0f9c",
+            "type": "",
+            "role": "",
+            "text": ""
+          },
+          {
+            "digest": "ae5a0dbcff74f8461162cf359a0f0516",
+            "type": "",
+            "role": "",
+            "text": ""
+          },
+          {
+            "digest": "01992a990c0caf268ad8087afc3d4b87",
+            "type": "",
+            "role": "",
+            "text": ""
+          },
+          {
+            "digest": "53e208aed6131839619382c56e072b86",
+            "type": "",
+            "role": "",
+            "text": ""
+          },
+          {
+            "digest": "90c2fe9c2aac2bf36b0b7f33bf73474a",
+            "type": "",
+            "role": "",
+            "text": ""
+          }
+        ],
+        "input": [
+          {
+            "digest": "191b2c1aaa5342e8a7ce0abdbaded42d",
+            "type": "",
+            "role": "user",
+            "text": "scrubbed:xl\n\nscrubbed:l\n\nscrubbed:l"
+          },
+          {
+            "digest": "2fd8936ed52ae74ad3dde2a41db5ee00",
+            "type": "",
+            "role": "system",
+            "text": "scrubbed:xl"
+          }
+        ],
+        "output": [
+          {
+            "digest": "f45c865f7eb225c725f6f15962de6609",
+            "type": "",
+            "role": "assistant",
+            "text": "scrubbed:sscrubbed:sscrubbed:mscrubbed:mscrubbed:mscrubbed:s\n\n{\"scrubbed-key-1\":\"scrubbed:m\",\"scrubbed-key-2\":\"scrubbed:m\"}"
+          }
+        ]
+      },
+      "errorBody": "",
+      "requestBytes": 18316,
+      "responseBytes": 737,
+      "readingComplete": true
+    }
+  }
+}

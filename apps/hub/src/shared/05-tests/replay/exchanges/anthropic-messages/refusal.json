@@ -1,0 +1,200 @@
+{
+  "source": {
+    "kind": "constructed",
+    "from": [
+      "https://platform.claude.com/docs/en/api/rate-limits",
+      "https://platform.claude.com/docs/en/api/errors",
+      "Milestone 1 research, Anthropic wire facts (2026-11-12), from the Claude Code 2.1.322 binary, section 6"
+    ],
+    "note": "A subscription refusal has not been recorded. The status and the unified headers are what Claude Code reads; the body's type and message are a guess, and the hub does not read them."
+  },
+  "request": {
+    "method": "POST",
+    "path": "/v1/messages?beta=true",
+    "headers": {
+      "accept": "application/json",
+      "anthropic-beta": "claude-code-20250219,oauth-2025-04-20,interleaved-thinking-2025-05-14,context-management-2025-06-27",
+      "anthropic-dangerous-direct-browser-access": "true",
+      "anthropic-version": "2023-06-01",
+      "authorization": "Bearer sk-ant-oat01-FAKE-login-for-tests-only-0000",
+      "content-type": "application/json",
+      "user-agent": "claude-cli/2.1.322 (external, cli)",
+      "x-app": "cli",
+      "x-stainless-retry-count": "0",
+      "x-stainless-timeout": "600",
+      "x-claude-code-session-id": "0f6c1a52-7a3e-4c55-9d0e-c4553e7d1a01"
+    },
+    "body": {
+      "json": {
+        "model": "claude-opus-5-5",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "What is in notes.txt?"
+              }
+            ]
+          }
+        ],
+        "system": [
+          {
+            "type": "text",
+            "text": "x-anthropic-billing-header: cc_version=2.1.322.f00; cc_entrypoint=cli;"
+          },
+          {
+            "type": "text",
+            "text": "You are Claude Code, Anthropic's official CLI for Claude.",
+            "cache_control": {
+              "type": "ephemeral",
+              "ttl": "1h"
+            }
+          }
+        ],
+        "metadata": {
+          "user_id": "{\"device_id\":\"d3v1ce0000\",\"account_uuid\":\"00000000-0000-4000-8000-000000000000\",\"session_id\":\"0f6c1a52-7a3e-4c55-9d0e-c4553e7d1a01\"}"
+        },
+        "max_tokens": 64000,
+        "stream": true
+      }
+    }
+  },
+  "response": {
+    "status": 429,
+    "headers": {
+      "content-type": "application/json",
+      "request-id": "req_011FAKErefused0000000000",
+      "retry-after": "8400",
+      "x-should-retry": "false",
+      "anthropic-ratelimit-unified-status": "rejected",
+      "anthropic-ratelimit-unified-reset": "1794450000",
+      "anthropic-ratelimit-unified-representative-claim": "five_hour",
+      "anthropic-ratelimit-unified-5h-utilization": "1.0",
+      "anthropic-ratelimit-unified-5h-status": "rejected",
+      "anthropic-ratelimit-unified-overage-status": "rejected",
+      "anthropic-ratelimit-unified-overage-disabled-reason": "org_level_disabled"
+    },
+    "body": {
+      "json": {
+        "type": "error",
+        "error": {
+          "type": "rate_limit_error",
+          "message": "This request would exceed your account's rate limit. Please try again later."
+        },
+        "request_id": "req_011FAKErefused0000000000"
+      }
+    }
+  },
+  "expects": {
+    "logged": {
+      "session": "0f6c1a52-7a3e-4c55-9d0e-c4553e7d1a01",
+      "sessionSource": "x-claude-code-session-id",
+      "machine": "",
+      "project": "",
+      "client": "claude-code",
+      "clientVersion": "2.1.322",
+      "userAgent": "claude-cli/2.1.322 (external, cli)",
+      "divertedFrom": null,
+      "follows": null,
+      "loginFingerprint": "4404dcf514dbc9376a8eb4c4090b783210521621b64e77f6aaa86b5b03e87351",
+      "refusalReset": "2026-11-12T02:20:00.000Z",
+      "protocol": "anthropic-messages",
+      "operation": "messages",
+      "purpose": "",
+      "model": "claude-opus-5-5",
+      "servedModel": "",
+      "stream": false,
+      "outcome": "refused",
+      "upstreamStatus": 429,
+      "errorType": "rate_limit_error",
+      "errorMessage": "This request would exceed your account's rate limit. Please try again later.",
+      "stopReason": "",
+      "usage": null,
+      "serviceTier": "",
+      "providerRequestId": "req_011FAKErefused0000000000",
+      "rateLimits": {
+        "anthropic-ratelimit-unified-5h-status": "rejected",
+        "anthropic-ratelimit-unified-5h-utilization": "1.0",
+        "anthropic-ratelimit-unified-overage-disabled-reason": "org_level_disabled",
+        "anthropic-ratelimit-unified-overage-status": "rejected",
+        "anthropic-ratelimit-unified-representative-claim": "five_hour",
+        "anthropic-ratelimit-unified-reset": "1794450000",
+        "anthropic-ratelimit-unified-status": "rejected",
+        "retry-after": "8400"
+      },
+      "clientHeaders": {
+        "anthropic-beta": "claude-code-20250219,oauth-2025-04-20,interleaved-thinking-2025-05-14,context-management-2025-06-27",
+        "anthropic-version": "2023-06-01",
+        "x-app": "cli",
+        "x-stainless-retry-count": "0"
+      },
+      "conversation": {
+        "params": {
+          "model": "claude-opus-5-5",
+          "metadata": {
+            "user_id": "{\"device_id\":\"d3v1ce0000\",\"account_uuid\":\"00000000-0000-4000-8000-000000000000\",\"session_id\":\"0f6c1a52-7a3e-4c55-9d0e-c4553e7d1a01\"}"
+          },
+          "max_tokens": 64000,
+          "stream": true
+        },
+        "layout": [
+          {
+            "part": "system",
+            "field": "system",
+            "layout": "list"
+          },
+          {
+            "part": "tools",
+            "field": "tools",
+            "layout": "absent"
+          },
+          {
+            "part": "input",
+            "field": "messages",
+            "layout": "list"
+          }
+        ],
+        "overlay": [
+          {
+            "part": "system",
+            "position": 1,
+            "path": ["cache_control"],
+            "value": {
+              "type": "ephemeral",
+              "ttl": "1h"
+            }
+          }
+        ],
+        "system": [
+          {
+            "digest": "13225830e622bdb7f95125078ff8783c",
+            "type": "text",
+            "role": "",
+            "text": "x-anthropic-billing-header: cc_version=2.1.322.f00; cc_entrypoint=cli;"
+          },
+          {
+            "digest": "e90eb6c1f1c41656aa09bf382fe3a878",
+            "type": "text",
+            "role": "",
+            "text": "You are Claude Code, Anthropic's official CLI for Claude."
+          }
+        ],
+        "tools": [],
+        "input": [
+          {
+            "digest": "03672c8ed9934de06dda1f5f92118d48",
+            "type": "",
+            "role": "user",
+            "text": "What is in notes.txt?"
+          }
+        ],
+        "output": []
+      },
+      "errorBody": "{\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"This request would exceed your account's rate limit. Please try again later.\"},\"request_id\":\"req_011FAKErefused0000000000\"}",
+      "requestBytes": 556,
+      "responseBytes": 185,
+      "readingComplete": true
+    }
+  }
+}

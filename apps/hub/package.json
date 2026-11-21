@@ -1,0 +1,25 @@
+{
+  "name": "@cota/hub",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./api": "./src/api.ts",
+    "./fallback": "./src/modules/relay/03-domain/fallback.ts",
+    "./harness": "./src/shared/05-tests/harness.ts",
+    "./ids": "./src/shared/03-domain/ids.ts",
+    "./shim": "./src/shared/03-domain/shim.ts"
+  },
+  "imports": {
+    "#package.json": "./package.json",
+    "#*": "./src/*"
+  },
+  "scripts": {
+    "typecheck": "effect-tsgo tsc -p ."
+  },
+  "dependencies": {
+    "@effect/platform-bun": "4.1.4",
+    "@simplewebauthn/server": "14.1.0",
+    "effect": "4.1.4"
+  }
+}

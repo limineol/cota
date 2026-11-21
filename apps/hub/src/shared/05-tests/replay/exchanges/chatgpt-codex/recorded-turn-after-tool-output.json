@@ -1,0 +1,2551 @@
+{
+  "source": {
+    "kind": "recorded",
+    "date": "2026-11-12",
+    "client": "codex",
+    "version": "0.167.2"
+  },
+  "request": {
+    "method": "POST",
+    "path": "/backend-api/codex/responses",
+    "headers": {
+      "accept": "text/event-stream",
+      "authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDEwIiwiY2hhdGdwdF9hY2NvdW50X3VzZXJfaWQiOiJmYWtlLWlkLTAwMTcifX0.RkFLRS1zaWduYXR1cmUtZm9yLXRlc3RzLW9ubHk",
+      "chatgpt-account-id": "00000000-0000-4000-8000-000000000010",
+      "content-type": "application/json",
+      "originator": "codex_exec",
+      "session-id": "00000000-0000-4000-8000-000000000016",
+      "thread-id": "00000000-0000-4000-8000-000000000016",
+      "user-agent": "codex_exec/0.167.2",
+      "x-client-request-id": "00000000-0000-4000-8000-000000000016",
+      "x-codex-beta-features": "remote_compaction_v2",
+      "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-000000000017\",\"session_id\":\"00000000-0000-4000-8000-000000000016\",\"thread_id\":\"00000000-0000-4000-8000-000000000016\",\"agent_name\":\"scrubbed:s\",\"turn_id\":\"00000000-0000-4000-8000-000000000018\",\"window_id\":\"fake-id-0025\",\"window_number\":0,\"context_window_id\":\"00000000-0000-4000-8000-00000000001a\",\"request_kind\":\"turn\",\"history_initialization\":\"scrubbed:s\",\"root_turn_id\":\"00000000-0000-4000-8000-000000000018\",\"thread_source\":\"scrubbed:s\",\"turn_trigger\":\"scrubbed:s\",\"sandbox\":\"scrubbed:s\",\"sandbox_mode\":\"scrubbed:m\",\"auto_review_enabled\":true,\"node_repl_auto_review_required\":true,\"node_repl_disabled\":false,\"turn_started_at_unix_ms\":1794483049093,\"analytics_enabled\":true,\"model\":\"gpt-6.1-sol\",\"scrubbed-key-1\":\"scrubbed:s\"}",
+      "x-codex-turn-state": "fake-id-0035",
+      "x-codex-window-id": "fake-id-0025"
+    },
+    "body": {
+      "json": {
+        "model": "gpt-6.1-sol",
+        "stream": true,
+        "input": [
+          {
+            "type": "additional_tools",
+            "id": "at_FAKE0027",
+            "role": "developer",
+            "tools": [
+              {
+                "type": "scrubbed:m",
+                "name": "scrubbed:m",
+                "description": "",
+                "tools": [
+                  {
+                    "type": "custom",
+                    "name": "scrubbed:s",
+                    "description": "scrubbed:xl",
+                    "format": {
+                      "type": "grammar",
+                      "syntax": "lark",
+                      "definition": "scrubbed:l"
+                    }
+                  },
+                  {
+                    "type": "function",
+                    "name": "scrubbed:s",
+                    "description": "scrubbed:l",
+                    "strict": false,
+                    "parameters": {
+                      "scrubbed-key-1": "scrubbed:s",
+                      "scrubbed-key-2": {
+                        "scrubbed-key-1": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:m"
+                        },
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:l"
+                        },
+                        "scrubbed-key-3": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:l"
+                        },
+                        "scrubbed-key-4": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:m"
+                        }
+                      },
+                      "scrubbed-key-3": ["scrubbed:s"],
+                      "scrubbed-key-4": false
+                    }
+                  },
+                  {
+                    "type": "function",
+                    "name": "scrubbed:m",
+                    "description": "scrubbed:l",
+                    "strict": false,
+                    "parameters": {
+                      "scrubbed-key-1": "scrubbed:s",
+                      "scrubbed-key-2": {
+                        "scrubbed-key-1": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:m",
+                          "scrubbed-key-3": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": {
+                              "scrubbed-key-1": {
+                                "scrubbed-key-1": "scrubbed:s",
+                                "scrubbed-key-2": "scrubbed:m"
+                              },
+                              "scrubbed-key-2": {
+                                "scrubbed-key-1": "scrubbed:s",
+                                "scrubbed-key-2": "scrubbed:m"
+                              },
+                              "scrubbed-key-3": {
+                                "scrubbed-key-1": "scrubbed:s",
+                                "scrubbed-key-2": "scrubbed:l",
+                                "scrubbed-key-3": {
+                                  "scrubbed-key-1": "scrubbed:s",
+                                  "scrubbed-key-2": {
+                                    "scrubbed-key-1": {
+                                      "scrubbed-key-1": "scrubbed:s",
+                                      "scrubbed-key-2": "scrubbed:m"
+                                    },
+                                    "scrubbed-key-2": {
+                                      "scrubbed-key-1": "scrubbed:s",
+                                      "scrubbed-key-2": "scrubbed:m"
+                                    }
+                                  },
+                                  "scrubbed-key-3": [
+                                    "scrubbed:s",
+                                    "scrubbed:m"
+                                  ],
+                                  "scrubbed-key-4": false
+                                }
+                              },
+                              "scrubbed-key-4": {
+                                "scrubbed-key-1": "scrubbed:s",
+                                "scrubbed-key-2": "scrubbed:m"
+                              }
+                            },
+                            "scrubbed-key-3": [
+                              "scrubbed:s",
+                              "scrubbed:s",
+                              "scrubbed:s",
+                              "scrubbed:s"
+                            ],
+                            "scrubbed-key-4": false
+                          }
+                        }
+                      },
+                      "scrubbed-key-3": ["scrubbed:m"],
+                      "scrubbed-key-4": false
+                    }
+                  },
+                  {
+                    "type": "function",
+                    "name": "scrubbed:m",
+                    "description": "scrubbed:l",
+                    "strict": false,
+                    "parameters": {
+                      "scrubbed-key-1": "scrubbed:s",
+                      "scrubbed-key-2": {
+                        "scrubbed-key-1": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:l",
+                          "scrubbed-key-3": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": {
+                              "scrubbed-key-1": {
+                                "scrubbed-key-1": "scrubbed:s",
+                                "scrubbed-key-2": "scrubbed:l",
+                                "scrubbed-key-3": {
+                                  "scrubbed-key-1": "scrubbed:s"
+                                },
+                                "scrubbed-key-4": 0
+                              },
+                              "scrubbed-key-2": {
+                                "scrubbed-key-1": "scrubbed:s",
+                                "scrubbed-key-2": "scrubbed:l"
+                              }
+                            },
+                            "scrubbed-key-3": ["scrubbed:s"],
+                            "scrubbed-key-4": false
+                          },
+                          "scrubbed-key-4": 0
+                        }
+                      },
+                      "scrubbed-key-3": ["scrubbed:m"],
+                      "scrubbed-key-4": false
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "scrubbed:m",
+                "name": "scrubbed:s",
+                "description": "scrubbed:m",
+                "tools": [
+                  {
+                    "type": "function",
+                    "name": "scrubbed:s",
+                    "description": "scrubbed:l",
+                    "strict": false,
+                    "parameters": {
+                      "scrubbed-key-1": "scrubbed:s",
+                      "scrubbed-key-2": {
+                        "scrubbed-key-1": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:l"
+                        }
+                      },
+                      "scrubbed-key-3": ["scrubbed:m"],
+                      "scrubbed-key-4": false
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "scrubbed:m",
+                "name": "scrubbed:s",
+                "description": "scrubbed:m",
+                "tools": [
+                  {
+                    "type": "function",
+                    "name": "scrubbed:m",
+                    "description": "scrubbed:l",
+                    "strict": false,
+                    "parameters": {
+                      "scrubbed-key-1": "scrubbed:s",
+                      "scrubbed-key-2": {
+                        "scrubbed-key-1": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:m",
+                          "scrubbed-key-3": true
+                        },
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:l"
+                        }
+                      },
+                      "scrubbed-key-3": ["scrubbed:s", "scrubbed:s"],
+                      "scrubbed-key-4": false
+                    }
+                  },
+                  {
+                    "type": "function",
+                    "name": "scrubbed:m",
+                    "description": "scrubbed:l",
+                    "strict": false,
+                    "parameters": {
+                      "scrubbed-key-1": "scrubbed:s",
+                      "scrubbed-key-2": {
+                        "scrubbed-key-1": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:m"
+                        }
+                      },
+                      "scrubbed-key-3": ["scrubbed:s"],
+                      "scrubbed-key-4": false
+                    }
+                  },
+                  {
+                    "type": "function",
+                    "name": "scrubbed:m",
+                    "description": "scrubbed:l",
+                    "strict": false,
+                    "parameters": {
+                      "scrubbed-key-1": "scrubbed:s",
+                      "scrubbed-key-2": {
+                        "scrubbed-key-1": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:l"
+                        }
+                      },
+                      "scrubbed-key-3": false
+                    }
+                  },
+                  {
+                    "type": "function",
+                    "name": "scrubbed:m",
+                    "description": "scrubbed:l",
+                    "strict": false,
+                    "parameters": {
+                      "scrubbed-key-1": "scrubbed:s",
+                      "scrubbed-key-2": {
+                        "scrubbed-key-1": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:m",
+                          "scrubbed-key-3": true
+                        },
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:m"
+                        }
+                      },
+                      "scrubbed-key-3": ["scrubbed:s", "scrubbed:s"],
+                      "scrubbed-key-4": false
+                    }
+                  },
+                  {
+                    "type": "function",
+                    "name": "scrubbed:m",
+                    "description": "scrubbed:xl",
+                    "strict": false,
+                    "parameters": {
+                      "scrubbed-key-1": "scrubbed:s",
+                      "scrubbed-key-2": {
+                        "scrubbed-key-1": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:l"
+                        },
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:m",
+                          "scrubbed-key-3": true
+                        },
+                        "scrubbed-key-3": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:l"
+                        },
+                        "scrubbed-key-4": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:l"
+                        },
+                        "scrubbed-key-5": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:l"
+                        }
+                      },
+                      "scrubbed-key-3": ["scrubbed:m", "scrubbed:s"],
+                      "scrubbed-key-4": false
+                    }
+                  },
+                  {
+                    "type": "function",
+                    "name": "scrubbed:m",
+                    "description": "scrubbed:l",
+                    "strict": false,
+                    "parameters": {
+                      "scrubbed-key-1": "scrubbed:s",
+                      "scrubbed-key-2": {
+                        "scrubbed-key-1": {
+                          "scrubbed-key-1": "scrubbed:s",
+                          "scrubbed-key-2": "scrubbed:l"
+                        }
+                      },
+                      "scrubbed-key-3": false
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "id": "msg_FAKE0028",
+            "role": "developer",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "scrubbed:xl"
+              }
+            ],
+            "scrubbed-key-1": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": 0,
+              "scrubbed-key-3": ["scrubbed:m"],
+              "scrubbed-key-4": [
+                {
+                  "scrubbed-key-1": {
+                    "scrubbed-key-1": "scrubbed:s",
+                    "scrubbed-key-2": false
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "message",
+            "id": "msg_FAKE0029",
+            "role": "developer",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "scrubbed:xl"
+              },
+              {
+                "type": "input_text",
+                "text": "scrubbed:l"
+              },
+              {
+                "type": "input_text",
+                "text": "scrubbed:xl"
+              },
+              {
+                "type": "input_text",
+                "text": "scrubbed:xl"
+              },
+              {
+                "type": "input_text",
+                "text": "scrubbed:l"
+              }
+            ],
+            "scrubbed-key-1": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": 0,
+              "scrubbed-key-3": [
+                "scrubbed:m",
+                "scrubbed:m",
+                "scrubbed:m",
+                "scrubbed:m",
+                "scrubbed:m"
+              ],
+              "scrubbed-key-4": [
+                {
+                  "scrubbed-key-1": {
+                    "scrubbed-key-1": "scrubbed:s"
+                  }
+                },
+                {
+                  "scrubbed-key-1": {
+                    "scrubbed-key-1": "scrubbed:s",
+                    "scrubbed-key-2": false
+                  }
+                },
+                {
+                  "scrubbed-key-1": {
+                    "scrubbed-key-1": "scrubbed:s",
+                    "scrubbed-key-2": false
+                  }
+                },
+                {
+                  "scrubbed-key-1": {
+                    "scrubbed-key-1": "scrubbed:s",
+                    "scrubbed-key-2": "scrubbed:m"
+                  }
+                },
+                {
+                  "scrubbed-key-1": {
+                    "scrubbed-key-1": "scrubbed:s",
+                    "scrubbed-key-2": false
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "message",
+            "id": "msg_FAKE0030",
+            "role": "developer",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "scrubbed:xl"
+              }
+            ],
+            "scrubbed-key-1": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": 0,
+              "scrubbed-key-3": ["scrubbed:m"],
+              "scrubbed-key-4": [
+                {
+                  "scrubbed-key-1": {
+                    "scrubbed-key-1": "scrubbed:s",
+                    "scrubbed-key-2": "scrubbed:s"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "message",
+            "id": "msg_FAKE0031",
+            "role": "developer",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "scrubbed:l"
+              }
+            ],
+            "scrubbed-key-1": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": 0,
+              "scrubbed-key-3": ["scrubbed:m"],
+              "scrubbed-key-4": [
+                {
+                  "scrubbed-key-1": {
+                    "scrubbed-key-1": "scrubbed:s",
+                    "scrubbed-key-2": "scrubbed:s"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "message",
+            "id": "msg_FAKE0032",
+            "role": "user",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "scrubbed:xl"
+              },
+              {
+                "type": "input_text",
+                "text": "scrubbed:xl"
+              }
+            ],
+            "scrubbed-key-1": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": 0,
+              "scrubbed-key-3": ["scrubbed:m", "scrubbed:m"],
+              "scrubbed-key-4": [
+                {
+                  "scrubbed-key-1": {
+                    "scrubbed-key-1": "scrubbed:m"
+                  }
+                },
+                {
+                  "scrubbed-key-1": {
+                    "scrubbed-key-1": "scrubbed:s",
+                    "scrubbed-key-2": false
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "message",
+            "id": "msg_FAKE0033",
+            "role": "user",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-1": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": 0,
+              "scrubbed-key-3": ["scrubbed:m"],
+              "scrubbed-key-4": [
+                {
+                  "scrubbed-key-1": {
+                    "scrubbed-key-1": "scrubbed:s"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "configuration_update",
+            "reasoning": {
+              "effort": "low"
+            }
+          },
+          {
+            "type": "message",
+            "status": "completed",
+            "id": "msg_FAKE0038",
+            "role": "assistant",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "scrubbed:m",
+                "annotations": [],
+                "logprobs": []
+              }
+            ],
+            "phase": "commentary",
+            "scrubbed-key-1": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": 0,
+              "scrubbed-key-3": ["scrubbed:s"]
+            }
+          },
+          {
+            "type": "custom_tool_call",
+            "id": "ctc_FAKE0039",
+            "status": "completed",
+            "call_id": "call_FAKE0040",
+            "name": "scrubbed:s",
+            "input": "scrubbed:l",
+            "scrubbed-key-1": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": 0
+            }
+          },
+          {
+            "type": "custom_tool_call_output",
+            "id": "fake-id-0041",
+            "call_id": "call_FAKE0040",
+            "output": [
+              {
+                "type": "input_text",
+                "text": "scrubbed:m"
+              },
+              {
+                "type": "input_text",
+                "text": "scrubbed:l"
+              }
+            ],
+            "scrubbed-key-1": {
+              "scrubbed-key-1": "scrubbed:m",
+              "scrubbed-key-2": 0
+            }
+          }
+        ],
+        "tool_choice": "auto",
+        "parallel_tool_calls": false,
+        "reasoning": {
+          "effort": "low",
+          "summary": "auto",
+          "context": "scrubbed:m"
+        },
+        "store": false,
+        "include": ["reasoning.encrypted_content"],
+        "prompt_cache_key": "00000000-0000-4000-8000-000000000016",
+        "text": {
+          "verbosity": "low"
+        },
+        "client_metadata": {
+          "x-codex-installation-id": "00000000-0000-4000-8000-000000000017",
+          "session_id": "00000000-0000-4000-8000-000000000016",
+          "scrubbed-key-1": "scrubbed:s",
+          "thread_id": "00000000-0000-4000-8000-000000000016",
+          "x-codex-window-id": "fake-id-0025",
+          "root_turn_id": "00000000-0000-4000-8000-000000000018",
+          "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-000000000017\",\"session_id\":\"00000000-0000-4000-8000-000000000016\",\"thread_id\":\"00000000-0000-4000-8000-000000000016\",\"agent_name\":\"scrubbed:s\",\"turn_id\":\"00000000-0000-4000-8000-000000000018\",\"window_id\":\"fake-id-0025\",\"window_number\":0,\"context_window_id\":\"00000000-0000-4000-8000-00000000001a\",\"request_kind\":\"turn\",\"history_initialization\":\"scrubbed:s\",\"root_turn_id\":\"00000000-0000-4000-8000-000000000018\",\"thread_source\":\"scrubbed:s\",\"turn_trigger\":\"scrubbed:s\",\"sandbox\":\"scrubbed:s\",\"sandbox_mode\":\"scrubbed:m\",\"auto_review_enabled\":true,\"node_repl_auto_review_required\":true,\"node_repl_disabled\":false,\"turn_started_at_unix_ms\":1794483049093,\"analytics_enabled\":true,\"model\":\"gpt-6.1-sol\",\"scrubbed-key-1\":\"scrubbed:s\"}",
+          "turn_id": "00000000-0000-4000-8000-000000000018"
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "cf-ray": "fake-id-0042",
+      "x-codex-active-limit": "scrubbed:s",
+      "x-codex-credits-balance": "0",
+      "x-codex-credits-has-credits": "scrubbed:s",
+      "x-codex-credits-unlimited": "scrubbed:s",
+      "x-codex-plan-type": "scrubbed:s",
+      "x-codex-primary-over-secondary-limit-percent": "0",
+      "x-codex-primary-reset-after-seconds": "0",
+      "x-codex-primary-reset-at": "1800000000",
+      "x-codex-primary-used-percent": "0",
+      "x-codex-primary-window-minutes": "0",
+      "x-codex-safety-buffering-enabled": "scrubbed:s",
+      "x-codex-safety-buffering-faster-model": "scrubbed:m",
+      "x-codex-secondary-reset-after-seconds": "0",
+      "x-codex-secondary-reset-at": "",
+      "x-codex-secondary-used-percent": "0",
+      "x-codex-secondary-window-minutes": "0",
+      "x-oai-request-id": "00000000-0000-4000-8000-00000000002b"
+    },
+    "body": {
+      "events": [
+        {
+          "event": "response.created",
+          "data": {
+            "type": "response.created",
+            "sequence_number": 0,
+            "scrubbed-key-1": false,
+            "response": {
+              "id": "resp_FAKE0044",
+              "object": "response",
+              "created_at": 1794483055,
+              "scrubbed-key-1": null,
+              "status": "in_progress",
+              "scrubbed-key-2": false,
+              "scrubbed-key-3": 0,
+              "scrubbed-key-4": 0,
+              "scrubbed-key-5": null,
+              "model": "gpt-6.1-sol",
+              "scrubbed-key-6": {
+                "scrubbed-key-1": "scrubbed:s"
+              },
+              "previous_response_id": null,
+              "instructions": null,
+              "output": [],
+              "error": null,
+              "incomplete_details": null,
+              "tools": [
+                {
+                  "type": "scrubbed:m",
+                  "name": "scrubbed:m",
+                  "description": "",
+                  "tools": [
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:s",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m"
+                          },
+                          "scrubbed-key-2": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          },
+                          "scrubbed-key-3": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          },
+                          "scrubbed-key-4": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m"
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:s"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m",
+                            "scrubbed-key-3": {
+                              "scrubbed-key-1": "scrubbed:s",
+                              "scrubbed-key-2": {
+                                "scrubbed-key-1": {
+                                  "scrubbed-key-1": "scrubbed:s",
+                                  "scrubbed-key-2": "scrubbed:m"
+                                },
+                                "scrubbed-key-2": {
+                                  "scrubbed-key-1": "scrubbed:s",
+                                  "scrubbed-key-2": "scrubbed:m"
+                                },
+                                "scrubbed-key-3": {
+                                  "scrubbed-key-1": "scrubbed:s",
+                                  "scrubbed-key-2": "scrubbed:l",
+                                  "scrubbed-key-3": {
+                                    "scrubbed-key-1": "scrubbed:s",
+                                    "scrubbed-key-2": {
+                                      "scrubbed-key-1": {
+                                        "scrubbed-key-1": "scrubbed:s",
+                                        "scrubbed-key-2": "scrubbed:m"
+                                      },
+                                      "scrubbed-key-2": {
+                                        "scrubbed-key-1": "scrubbed:s",
+                                        "scrubbed-key-2": "scrubbed:m"
+                                      }
+                                    },
+                                    "scrubbed-key-3": [
+                                      "scrubbed:s",
+                                      "scrubbed:m"
+                                    ],
+                                    "scrubbed-key-4": false
+                                  }
+                                },
+                                "scrubbed-key-4": {
+                                  "scrubbed-key-1": "scrubbed:s",
+                                  "scrubbed-key-2": "scrubbed:m"
+                                }
+                              },
+                              "scrubbed-key-3": [
+                                "scrubbed:s",
+                                "scrubbed:s",
+                                "scrubbed:s",
+                                "scrubbed:s"
+                              ],
+                              "scrubbed-key-4": false
+                            }
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:m"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l",
+                            "scrubbed-key-3": {
+                              "scrubbed-key-1": "scrubbed:s",
+                              "scrubbed-key-2": {
+                                "scrubbed-key-1": {
+                                  "scrubbed-key-1": "scrubbed:s",
+                                  "scrubbed-key-2": "scrubbed:l",
+                                  "scrubbed-key-3": {
+                                    "scrubbed-key-1": "scrubbed:s"
+                                  },
+                                  "scrubbed-key-4": 0
+                                },
+                                "scrubbed-key-2": {
+                                  "scrubbed-key-1": "scrubbed:s",
+                                  "scrubbed-key-2": "scrubbed:l"
+                                }
+                              },
+                              "scrubbed-key-3": ["scrubbed:s"],
+                              "scrubbed-key-4": false
+                            },
+                            "scrubbed-key-4": 0
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:m"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "custom",
+                      "name": "scrubbed:s",
+                      "description": "scrubbed:xl",
+                      "format": {
+                        "type": "grammar",
+                        "syntax": "lark",
+                        "definition": "scrubbed:l"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "scrubbed:m",
+                  "name": "scrubbed:s",
+                  "description": "scrubbed:m",
+                  "tools": [
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:s",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:m"],
+                        "scrubbed-key-4": false
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "scrubbed:m",
+                  "name": "scrubbed:s",
+                  "description": "scrubbed:m",
+                  "tools": [
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m",
+                            "scrubbed-key-3": true
+                          },
+                          "scrubbed-key-2": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:s", "scrubbed:s"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m"
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:s"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          }
+                        },
+                        "scrubbed-key-3": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m",
+                            "scrubbed-key-3": true
+                          },
+                          "scrubbed-key-2": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m"
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:s", "scrubbed:s"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:xl",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          },
+                          "scrubbed-key-2": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m",
+                            "scrubbed-key-3": true
+                          },
+                          "scrubbed-key-3": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          },
+                          "scrubbed-key-4": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          },
+                          "scrubbed-key-5": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:m", "scrubbed:s"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          }
+                        },
+                        "scrubbed-key-3": false
+                      }
+                    }
+                  ]
+                }
+              ],
+              "tool_choice": "auto",
+              "parallel_tool_calls": false,
+              "prompt_cache_key": "00000000-0000-4000-8000-000000000016",
+              "scrubbed-key-7": "scrubbed:s",
+              "text": {
+                "format": {
+                  "type": "text"
+                },
+                "verbosity": "low"
+              },
+              "scrubbed-key-8": 0,
+              "scrubbed-key-9": 0,
+              "scrubbed-key-10": 0,
+              "reasoning": {
+                "effort": "low",
+                "summary": "detailed",
+                "context": "scrubbed:m",
+                "scrubbed-key-1": "scrubbed:s"
+              },
+              "user": null,
+              "usage": null,
+              "scrubbed-key-11": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": 0,
+                  "scrubbed-key-2": 0,
+                  "scrubbed-key-3": 0,
+                  "scrubbed-key-4": {
+                    "scrubbed-key-1": 0,
+                    "scrubbed-key-2": 0
+                  },
+                  "scrubbed-key-5": {
+                    "scrubbed-key-1": 0,
+                    "scrubbed-key-2": 0
+                  }
+                },
+                "scrubbed-key-2": {
+                  "scrubbed-key-1": 0
+                }
+              },
+              "scrubbed-key-12": "scrubbed:m",
+              "store": false,
+              "scrubbed-key-13": {},
+              "scrubbed-key-14": null,
+              "scrubbed-key-15": null,
+              "service_tier": "auto",
+              "scrubbed-key-16": "scrubbed:s",
+              "scrubbed-key-17": {
+                "scrubbed-key-1": "scrubbed:s"
+              }
+            }
+          }
+        },
+        {
+          "event": "response.in_progress",
+          "data": {
+            "type": "response.in_progress",
+            "sequence_number": 1,
+            "scrubbed-key-1": false,
+            "response": {
+              "id": "resp_FAKE0044",
+              "object": "response",
+              "created_at": 1794483055,
+              "scrubbed-key-1": null,
+              "status": "in_progress",
+              "scrubbed-key-2": false,
+              "scrubbed-key-3": 0,
+              "scrubbed-key-4": 0,
+              "scrubbed-key-5": null,
+              "model": "gpt-6.1-sol",
+              "scrubbed-key-6": {
+                "scrubbed-key-1": "scrubbed:s"
+              },
+              "previous_response_id": null,
+              "instructions": null,
+              "output": [],
+              "error": null,
+              "incomplete_details": null,
+              "tools": [
+                {
+                  "type": "scrubbed:m",
+                  "name": "scrubbed:m",
+                  "description": "",
+                  "tools": [
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:s",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m"
+                          },
+                          "scrubbed-key-2": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          },
+                          "scrubbed-key-3": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          },
+                          "scrubbed-key-4": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m"
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:s"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m",
+                            "scrubbed-key-3": {
+                              "scrubbed-key-1": "scrubbed:s",
+                              "scrubbed-key-2": {
+                                "scrubbed-key-1": {
+                                  "scrubbed-key-1": "scrubbed:s",
+                                  "scrubbed-key-2": "scrubbed:m"
+                                },
+                                "scrubbed-key-2": {
+                                  "scrubbed-key-1": "scrubbed:s",
+                                  "scrubbed-key-2": "scrubbed:m"
+                                },
+                                "scrubbed-key-3": {
+                                  "scrubbed-key-1": "scrubbed:s",
+                                  "scrubbed-key-2": "scrubbed:l",
+                                  "scrubbed-key-3": {
+                                    "scrubbed-key-1": "scrubbed:s",
+                                    "scrubbed-key-2": {
+                                      "scrubbed-key-1": {
+                                        "scrubbed-key-1": "scrubbed:s",
+                                        "scrubbed-key-2": "scrubbed:m"
+                                      },
+                                      "scrubbed-key-2": {
+                                        "scrubbed-key-1": "scrubbed:s",
+                                        "scrubbed-key-2": "scrubbed:m"
+                                      }
+                                    },
+                                    "scrubbed-key-3": [
+                                      "scrubbed:s",
+                                      "scrubbed:m"
+                                    ],
+                                    "scrubbed-key-4": false
+                                  }
+                                },
+                                "scrubbed-key-4": {
+                                  "scrubbed-key-1": "scrubbed:s",
+                                  "scrubbed-key-2": "scrubbed:m"
+                                }
+                              },
+                              "scrubbed-key-3": [
+                                "scrubbed:s",
+                                "scrubbed:s",
+                                "scrubbed:s",
+                                "scrubbed:s"
+                              ],
+                              "scrubbed-key-4": false
+                            }
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:m"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l",
+                            "scrubbed-key-3": {
+                              "scrubbed-key-1": "scrubbed:s",
+                              "scrubbed-key-2": {
+                                "scrubbed-key-1": {
+                                  "scrubbed-key-1": "scrubbed:s",
+                                  "scrubbed-key-2": "scrubbed:l",
+                                  "scrubbed-key-3": {
+                                    "scrubbed-key-1": "scrubbed:s"
+                                  },
+                                  "scrubbed-key-4": 0
+                                },
+                                "scrubbed-key-2": {
+                                  "scrubbed-key-1": "scrubbed:s",
+                                  "scrubbed-key-2": "scrubbed:l"
+                                }
+                              },
+                              "scrubbed-key-3": ["scrubbed:s"],
+                              "scrubbed-key-4": false
+                            },
+                            "scrubbed-key-4": 0
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:m"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "custom",
+                      "name": "scrubbed:s",
+                      "description": "scrubbed:xl",
+                      "format": {
+                        "type": "grammar",
+                        "syntax": "lark",
+                        "definition": "scrubbed:l"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "scrubbed:m",
+                  "name": "scrubbed:s",
+                  "description": "scrubbed:m",
+                  "tools": [
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:s",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:m"],
+                        "scrubbed-key-4": false
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "scrubbed:m",
+                  "name": "scrubbed:s",
+                  "description": "scrubbed:m",
+                  "tools": [
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m",
+                            "scrubbed-key-3": true
+                          },
+                          "scrubbed-key-2": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:s", "scrubbed:s"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m"
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:s"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          }
+                        },
+                        "scrubbed-key-3": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m",
+                            "scrubbed-key-3": true
+                          },
+                          "scrubbed-key-2": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m"
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:s", "scrubbed:s"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:xl",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          },
+                          "scrubbed-key-2": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m",
+                            "scrubbed-key-3": true
+                          },
+                          "scrubbed-key-3": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          },
+                          "scrubbed-key-4": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          },
+                          "scrubbed-key-5": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:m", "scrubbed:s"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          }
+                        },
+                        "scrubbed-key-3": false
+                      }
+                    }
+                  ]
+                }
+              ],
+              "tool_choice": "auto",
+              "parallel_tool_calls": false,
+              "prompt_cache_key": "00000000-0000-4000-8000-000000000016",
+              "scrubbed-key-7": "scrubbed:s",
+              "text": {
+                "format": {
+                  "type": "text"
+                },
+                "verbosity": "low"
+              },
+              "scrubbed-key-8": 0,
+              "scrubbed-key-9": 0,
+              "scrubbed-key-10": 0,
+              "reasoning": {
+                "effort": "low",
+                "summary": "detailed",
+                "context": "scrubbed:m",
+                "scrubbed-key-1": "scrubbed:s"
+              },
+              "user": null,
+              "usage": null,
+              "scrubbed-key-11": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": 0,
+                  "scrubbed-key-2": 0,
+                  "scrubbed-key-3": 0,
+                  "scrubbed-key-4": {
+                    "scrubbed-key-1": 0,
+                    "scrubbed-key-2": 0
+                  },
+                  "scrubbed-key-5": {
+                    "scrubbed-key-1": 0,
+                    "scrubbed-key-2": 0
+                  }
+                },
+                "scrubbed-key-2": {
+                  "scrubbed-key-1": 0
+                }
+              },
+              "scrubbed-key-12": "scrubbed:m",
+              "store": false,
+              "scrubbed-key-13": {},
+              "scrubbed-key-14": null,
+              "scrubbed-key-15": null,
+              "service_tier": "auto",
+              "scrubbed-key-16": "scrubbed:s",
+              "scrubbed-key-17": {
+                "scrubbed-key-1": "scrubbed:s"
+              }
+            }
+          }
+        },
+        {
+          "event": "response.output_item.added",
+          "data": {
+            "type": "response.output_item.added",
+            "sequence_number": 2,
+            "output_index": 0,
+            "item": {
+              "type": "message",
+              "id": "msg_FAKE0045",
+              "scrubbed-key-1": {
+                "scrubbed-key-1": "scrubbed:m"
+              },
+              "scrubbed-key-2": {
+                "scrubbed-key-1": "scrubbed:m"
+              },
+              "role": "assistant",
+              "status": "in_progress",
+              "content": [],
+              "phase": "final_answer"
+            }
+          }
+        },
+        {
+          "event": "response.content_part.added",
+          "data": {
+            "type": "response.content_part.added",
+            "sequence_number": 3,
+            "item_id": "msg_FAKE0045",
+            "output_index": 0,
+            "content_index": 0,
+            "part": {
+              "type": "output_text",
+              "text": "",
+              "annotations": [],
+              "logprobs": []
+            }
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "sequence_number": 4,
+            "item_id": "msg_FAKE0045",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": "scrubbed:s",
+            "logprobs": [],
+            "scrubbed-key-1": false,
+            "scrubbed-key-2": "scrubbed:m"
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "sequence_number": 5,
+            "item_id": "msg_FAKE0045",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": "scrubbed:s",
+            "logprobs": [],
+            "scrubbed-key-1": false,
+            "scrubbed-key-2": "scrubbed:m"
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "sequence_number": 6,
+            "item_id": "msg_FAKE0045",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": "scrubbed:s",
+            "logprobs": [],
+            "scrubbed-key-1": false,
+            "scrubbed-key-2": "scrubbed:m"
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "sequence_number": 7,
+            "item_id": "msg_FAKE0045",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": "scrubbed:s",
+            "logprobs": [],
+            "scrubbed-key-1": false,
+            "scrubbed-key-2": "scrubbed:m"
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "sequence_number": 8,
+            "item_id": "msg_FAKE0045",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": "scrubbed:s",
+            "logprobs": [],
+            "scrubbed-key-1": false,
+            "scrubbed-key-2": "scrubbed:m"
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "sequence_number": 9,
+            "item_id": "msg_FAKE0045",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": "scrubbed:s",
+            "logprobs": [],
+            "scrubbed-key-1": false,
+            "scrubbed-key-2": "scrubbed:m"
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "sequence_number": 10,
+            "item_id": "msg_FAKE0045",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": "scrubbed:s",
+            "logprobs": [],
+            "scrubbed-key-1": false,
+            "scrubbed-key-2": "scrubbed:m"
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "sequence_number": 11,
+            "item_id": "msg_FAKE0045",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": "scrubbed:s",
+            "logprobs": [],
+            "scrubbed-key-1": false,
+            "scrubbed-key-2": "scrubbed:m"
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "sequence_number": 12,
+            "item_id": "msg_FAKE0045",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": "scrubbed:s",
+            "logprobs": [],
+            "scrubbed-key-1": false,
+            "scrubbed-key-2": "scrubbed:m"
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "sequence_number": 13,
+            "item_id": "msg_FAKE0045",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": "scrubbed:s",
+            "logprobs": [],
+            "scrubbed-key-1": false,
+            "scrubbed-key-2": "scrubbed:m"
+          }
+        },
+        {
+          "event": "response.metadata",
+          "data": {
+            "type": "response.metadata",
+            "sequence_number": 14,
+            "response_id": "resp_FAKE0044",
+            "scrubbed-key-1": {
+              "scrubbed-key-1": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": {
+                    "scrubbed-key-1": "scrubbed:s",
+                    "scrubbed-key-2": [
+                      {
+                        "scrubbed-key-1": [
+                          {
+                            "scrubbed-key-1": {
+                              "scrubbed-key-1": false,
+                              "scrubbed-key-2": false,
+                              "scrubbed-key-3": false,
+                              "scrubbed-key-4": false,
+                              "scrubbed-key-5": false,
+                              "scrubbed-key-6": false,
+                              "scrubbed-key-7": false,
+                              "scrubbed-key-8": false,
+                              "scrubbed-key-9": false,
+                              "scrubbed-key-10": false,
+                              "scrubbed-key-11": false,
+                              "scrubbed-key-12": false,
+                              "scrubbed-key-13": false,
+                              "scrubbed-key-14": false,
+                              "scrubbed-key-15": false,
+                              "scrubbed-key-16": false,
+                              "scrubbed-key-17": false,
+                              "scrubbed-key-18": false,
+                              "scrubbed-key-19": false,
+                              "scrubbed-key-20": false,
+                              "scrubbed-key-21": false,
+                              "scrubbed-key-22": false,
+                              "scrubbed-key-23": false,
+                              "scrubbed-key-24": false,
+                              "scrubbed-key-25": false,
+                              "scrubbed-key-26": false,
+                              "scrubbed-key-27": false,
+                              "scrubbed-key-28": false,
+                              "scrubbed-key-29": false,
+                              "scrubbed-key-30": false,
+                              "scrubbed-key-31": false,
+                              "scrubbed-key-32": false,
+                              "scrubbed-key-33": false,
+                              "scrubbed-key-34": false,
+                              "scrubbed-key-35": false,
+                              "scrubbed-key-36": false,
+                              "scrubbed-key-37": false,
+                              "scrubbed-key-38": false,
+                              "scrubbed-key-39": false,
+                              "scrubbed-key-40": false,
+                              "scrubbed-key-41": false,
+                              "scrubbed-key-42": false
+                            }
+                          }
+                        ],
+                        "scrubbed-key-2": false
+                      }
+                    ]
+                  }
+                },
+                "scrubbed-key-2": {},
+                "scrubbed-key-3": {},
+                "scrubbed-key-4": {}
+              }
+            }
+          }
+        },
+        {
+          "event": "response.output_text.done",
+          "data": {
+            "type": "response.output_text.done",
+            "sequence_number": 15,
+            "item_id": "msg_FAKE0045",
+            "output_index": 0,
+            "content_index": 0,
+            "text": "scrubbed:m",
+            "logprobs": []
+          }
+        },
+        {
+          "event": "response.content_part.done",
+          "data": {
+            "type": "response.content_part.done",
+            "sequence_number": 16,
+            "item_id": "msg_FAKE0045",
+            "output_index": 0,
+            "content_index": 0,
+            "part": {
+              "type": "output_text",
+              "text": "scrubbed:m",
+              "annotations": [],
+              "logprobs": []
+            }
+          }
+        },
+        {
+          "event": "response.output_item.done",
+          "data": {
+            "type": "response.output_item.done",
+            "sequence_number": 17,
+            "output_index": 0,
+            "item": {
+              "type": "message",
+              "id": "msg_FAKE0045",
+              "scrubbed-key-1": {
+                "scrubbed-key-1": "scrubbed:m"
+              },
+              "scrubbed-key-2": {
+                "scrubbed-key-1": 0,
+                "scrubbed-key-2": 0,
+                "scrubbed-key-3": "scrubbed:m"
+              },
+              "role": "assistant",
+              "status": "completed",
+              "content": [
+                {
+                  "type": "output_text",
+                  "text": "scrubbed:m",
+                  "annotations": [],
+                  "logprobs": []
+                }
+              ],
+              "phase": "final_answer"
+            }
+          }
+        },
+        {
+          "event": "response.completed",
+          "data": {
+            "type": "response.completed",
+            "sequence_number": 18,
+            "scrubbed-key-1": false,
+            "response": {
+              "id": "resp_FAKE0044",
+              "object": "response",
+              "created_at": 1794483055,
+              "scrubbed-key-1": 0,
+              "status": "completed",
+              "scrubbed-key-2": false,
+              "scrubbed-key-3": 0,
+              "scrubbed-key-4": 0,
+              "scrubbed-key-5": null,
+              "model": "gpt-6.1-sol",
+              "scrubbed-key-6": {
+                "scrubbed-key-1": "scrubbed:s"
+              },
+              "previous_response_id": null,
+              "instructions": null,
+              "output": [
+                {
+                  "type": "message",
+                  "id": "msg_FAKE0045",
+                  "scrubbed-key-1": {
+                    "scrubbed-key-1": "scrubbed:m"
+                  },
+                  "scrubbed-key-2": {
+                    "scrubbed-key-1": 0,
+                    "scrubbed-key-2": 0,
+                    "scrubbed-key-3": "scrubbed:m"
+                  },
+                  "role": "assistant",
+                  "status": "completed",
+                  "content": [
+                    {
+                      "type": "output_text",
+                      "text": "scrubbed:m",
+                      "annotations": [],
+                      "logprobs": []
+                    }
+                  ],
+                  "phase": "final_answer"
+                }
+              ],
+              "error": null,
+              "incomplete_details": null,
+              "tools": [
+                {
+                  "type": "scrubbed:m",
+                  "name": "scrubbed:m",
+                  "description": "",
+                  "tools": [
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:s",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m"
+                          },
+                          "scrubbed-key-2": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          },
+                          "scrubbed-key-3": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          },
+                          "scrubbed-key-4": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m"
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:s"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m",
+                            "scrubbed-key-3": {
+                              "scrubbed-key-1": "scrubbed:s",
+                              "scrubbed-key-2": {
+                                "scrubbed-key-1": {
+                                  "scrubbed-key-1": "scrubbed:s",
+                                  "scrubbed-key-2": "scrubbed:m"
+                                },
+                                "scrubbed-key-2": {
+                                  "scrubbed-key-1": "scrubbed:s",
+                                  "scrubbed-key-2": "scrubbed:m"
+                                },
+                                "scrubbed-key-3": {
+                                  "scrubbed-key-1": "scrubbed:s",
+                                  "scrubbed-key-2": "scrubbed:l",
+                                  "scrubbed-key-3": {
+                                    "scrubbed-key-1": "scrubbed:s",
+                                    "scrubbed-key-2": {
+                                      "scrubbed-key-1": {
+                                        "scrubbed-key-1": "scrubbed:s",
+                                        "scrubbed-key-2": "scrubbed:m"
+                                      },
+                                      "scrubbed-key-2": {
+                                        "scrubbed-key-1": "scrubbed:s",
+                                        "scrubbed-key-2": "scrubbed:m"
+                                      }
+                                    },
+                                    "scrubbed-key-3": [
+                                      "scrubbed:s",
+                                      "scrubbed:m"
+                                    ],
+                                    "scrubbed-key-4": false
+                                  }
+                                },
+                                "scrubbed-key-4": {
+                                  "scrubbed-key-1": "scrubbed:s",
+                                  "scrubbed-key-2": "scrubbed:m"
+                                }
+                              },
+                              "scrubbed-key-3": [
+                                "scrubbed:s",
+                                "scrubbed:s",
+                                "scrubbed:s",
+                                "scrubbed:s"
+                              ],
+                              "scrubbed-key-4": false
+                            }
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:m"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l",
+                            "scrubbed-key-3": {
+                              "scrubbed-key-1": "scrubbed:s",
+                              "scrubbed-key-2": {
+                                "scrubbed-key-1": {
+                                  "scrubbed-key-1": "scrubbed:s",
+                                  "scrubbed-key-2": "scrubbed:l",
+                                  "scrubbed-key-3": {
+                                    "scrubbed-key-1": "scrubbed:s"
+                                  },
+                                  "scrubbed-key-4": 0
+                                },
+                                "scrubbed-key-2": {
+                                  "scrubbed-key-1": "scrubbed:s",
+                                  "scrubbed-key-2": "scrubbed:l"
+                                }
+                              },
+                              "scrubbed-key-3": ["scrubbed:s"],
+                              "scrubbed-key-4": false
+                            },
+                            "scrubbed-key-4": 0
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:m"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "custom",
+                      "name": "scrubbed:s",
+                      "description": "scrubbed:xl",
+                      "format": {
+                        "type": "grammar",
+                        "syntax": "lark",
+                        "definition": "scrubbed:l"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "scrubbed:m",
+                  "name": "scrubbed:s",
+                  "description": "scrubbed:m",
+                  "tools": [
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:s",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:m"],
+                        "scrubbed-key-4": false
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "scrubbed:m",
+                  "name": "scrubbed:s",
+                  "description": "scrubbed:m",
+                  "tools": [
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m",
+                            "scrubbed-key-3": true
+                          },
+                          "scrubbed-key-2": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:s", "scrubbed:s"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m"
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:s"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          }
+                        },
+                        "scrubbed-key-3": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m",
+                            "scrubbed-key-3": true
+                          },
+                          "scrubbed-key-2": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m"
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:s", "scrubbed:s"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:xl",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          },
+                          "scrubbed-key-2": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:m",
+                            "scrubbed-key-3": true
+                          },
+                          "scrubbed-key-3": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          },
+                          "scrubbed-key-4": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          },
+                          "scrubbed-key-5": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          }
+                        },
+                        "scrubbed-key-3": ["scrubbed:m", "scrubbed:s"],
+                        "scrubbed-key-4": false
+                      }
+                    },
+                    {
+                      "type": "function",
+                      "strict": false,
+                      "name": "scrubbed:m",
+                      "description": "scrubbed:l",
+                      "scrubbed-key-1": null,
+                      "parameters": {
+                        "scrubbed-key-1": "scrubbed:s",
+                        "scrubbed-key-2": {
+                          "scrubbed-key-1": {
+                            "scrubbed-key-1": "scrubbed:s",
+                            "scrubbed-key-2": "scrubbed:l"
+                          }
+                        },
+                        "scrubbed-key-3": false
+                      }
+                    }
+                  ]
+                }
+              ],
+              "tool_choice": "auto",
+              "parallel_tool_calls": false,
+              "prompt_cache_key": "00000000-0000-4000-8000-000000000016",
+              "scrubbed-key-7": "scrubbed:s",
+              "text": {
+                "format": {
+                  "type": "text"
+                },
+                "verbosity": "low"
+              },
+              "scrubbed-key-8": 0,
+              "scrubbed-key-9": 0,
+              "scrubbed-key-10": 0,
+              "reasoning": {
+                "effort": "low",
+                "summary": "detailed",
+                "context": "scrubbed:m",
+                "scrubbed-key-1": "scrubbed:s"
+              },
+              "user": null,
+              "usage": {
+                "input_tokens": 19581,
+                "input_tokens_details": {
+                  "cached_tokens": 19328,
+                  "cache_write_tokens": 0
+                },
+                "output_tokens": 14,
+                "output_tokens_details": {
+                  "reasoning_tokens": 0
+                },
+                "total_tokens": 19595,
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": {
+                    "scrubbed-key-1": {
+                      "scrubbed-key-1": 0,
+                      "scrubbed-key-2": 0,
+                      "scrubbed-key-3": 0,
+                      "scrubbed-key-4": 0
+                    },
+                    "scrubbed-key-2": {
+                      "scrubbed-key-1": 0,
+                      "scrubbed-key-2": 0,
+                      "scrubbed-key-3": 0,
+                      "scrubbed-key-4": 0
+                    },
+                    "scrubbed-key-3": {
+                      "scrubbed-key-1": 0,
+                      "scrubbed-key-2": 0,
+                      "scrubbed-key-3": 0,
+                      "scrubbed-key-4": 0
+                    },
+                    "scrubbed-key-4": {
+                      "scrubbed-key-1": 0,
+                      "scrubbed-key-2": 0,
+                      "scrubbed-key-3": 0,
+                      "scrubbed-key-4": 0,
+                      "scrubbed-key-5": [
+                        {
+                          "scrubbed-key-1": 0,
+                          "scrubbed-key-2": 0,
+                          "scrubbed-key-3": 0,
+                          "scrubbed-key-4": 0
+                        },
+                        {
+                          "scrubbed-key-1": 0,
+                          "scrubbed-key-2": 0,
+                          "scrubbed-key-3": 0,
+                          "scrubbed-key-4": 0
+                        }
+                      ]
+                    },
+                    "scrubbed-key-5": {
+                      "scrubbed-key-1": 0,
+                      "scrubbed-key-2": 0,
+                      "scrubbed-key-3": 0,
+                      "scrubbed-key-4": 0,
+                      "scrubbed-key-5": [
+                        {
+                          "scrubbed-key-1": 0,
+                          "scrubbed-key-2": 0,
+                          "scrubbed-key-3": 0,
+                          "scrubbed-key-4": 0
+                        }
+                      ]
+                    },
+                    "scrubbed-key-6": {
+                      "scrubbed-key-1": 0,
+                      "scrubbed-key-2": 0,
+                      "scrubbed-key-3": 0,
+                      "scrubbed-key-4": 0,
+                      "scrubbed-key-5": [
+                        {
+                          "scrubbed-key-1": 0,
+                          "scrubbed-key-2": 0,
+                          "scrubbed-key-3": 0,
+                          "scrubbed-key-4": 0
+                        }
+                      ]
+                    },
+                    "scrubbed-key-7": {
+                      "scrubbed-key-1": 0,
+                      "scrubbed-key-2": 0,
+                      "scrubbed-key-3": 0,
+                      "scrubbed-key-4": 0,
+                      "scrubbed-key-5": [
+                        {
+                          "scrubbed-key-1": 0,
+                          "scrubbed-key-2": 0,
+                          "scrubbed-key-3": 0,
+                          "scrubbed-key-4": 0
+                        }
+                      ]
+                    },
+                    "scrubbed-key-8": {
+                      "scrubbed-key-1": 0,
+                      "scrubbed-key-2": 0,
+                      "scrubbed-key-3": 0,
+                      "scrubbed-key-4": 0,
+                      "scrubbed-key-5": [
+                        {
+                          "scrubbed-key-1": 0,
+                          "scrubbed-key-2": 0,
+                          "scrubbed-key-3": 0,
+                          "scrubbed-key-4": 0
+                        },
+                        {
+                          "scrubbed-key-1": 0,
+                          "scrubbed-key-2": 0,
+                          "scrubbed-key-3": 0,
+                          "scrubbed-key-4": 0
+                        },
+                        {
+                          "scrubbed-key-1": 0,
+                          "scrubbed-key-2": 0,
+                          "scrubbed-key-3": 0,
+                          "scrubbed-key-4": 0
+                        },
+                        {
+                          "scrubbed-key-1": 0,
+                          "scrubbed-key-2": 0,
+                          "scrubbed-key-3": 0,
+                          "scrubbed-key-4": 0
+                        },
+                        {
+                          "scrubbed-key-1": 0,
+                          "scrubbed-key-2": 0,
+                          "scrubbed-key-3": 0,
+                          "scrubbed-key-4": 0
+                        }
+                      ]
+                    },
+                    "scrubbed-key-9": {
+                      "scrubbed-key-1": 0,
+                      "scrubbed-key-2": 0,
+                      "scrubbed-key-3": 0,
+                      "scrubbed-key-4": 0,
+                      "scrubbed-key-5": [
+                        {
+                          "scrubbed-key-1": 0,
+                          "scrubbed-key-2": 0,
+                          "scrubbed-key-3": 0,
+                          "scrubbed-key-4": 0
+                        }
+                      ]
+                    },
+                    "scrubbed-key-10": {
+                      "scrubbed-key-1": 0,
+                      "scrubbed-key-2": 0,
+                      "scrubbed-key-3": 0,
+                      "scrubbed-key-4": 0,
+                      "scrubbed-key-5": [
+                        {
+                          "scrubbed-key-1": 0,
+                          "scrubbed-key-2": 0,
+                          "scrubbed-key-3": 0,
+                          "scrubbed-key-4": 0
+                        }
+                      ]
+                    },
+                    "scrubbed-key-11": {
+                      "scrubbed-key-1": 0,
+                      "scrubbed-key-2": 0,
+                      "scrubbed-key-3": 0,
+                      "scrubbed-key-4": 0,
+                      "scrubbed-key-5": [
+                        {
+                          "scrubbed-key-1": 0,
+                          "scrubbed-key-2": 0,
+                          "scrubbed-key-3": 0,
+                          "scrubbed-key-4": 0
+                        },
+                        {
+                          "scrubbed-key-1": 0,
+                          "scrubbed-key-2": 0,
+                          "scrubbed-key-3": 0,
+                          "scrubbed-key-4": 0
+                        }
+                      ]
+                    },
+                    "scrubbed-key-12": {
+                      "scrubbed-key-1": 0,
+                      "scrubbed-key-2": 0,
+                      "scrubbed-key-3": 0,
+                      "scrubbed-key-4": 0,
+                      "scrubbed-key-5": [
+                        {
+                          "scrubbed-key-1": 0,
+                          "scrubbed-key-2": 0,
+                          "scrubbed-key-3": 0,
+                          "scrubbed-key-4": 0
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              "scrubbed-key-11": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": 0,
+                  "scrubbed-key-2": 0,
+                  "scrubbed-key-3": 0,
+                  "scrubbed-key-4": {
+                    "scrubbed-key-1": 0,
+                    "scrubbed-key-2": 0
+                  },
+                  "scrubbed-key-5": {
+                    "scrubbed-key-1": 0,
+                    "scrubbed-key-2": 0
+                  }
+                },
+                "scrubbed-key-2": {
+                  "scrubbed-key-1": 0
+                }
+              },
+              "scrubbed-key-12": "scrubbed:m",
+              "store": false,
+              "scrubbed-key-13": {},
+              "scrubbed-key-14": null,
+              "scrubbed-key-15": null,
+              "service_tier": "default",
+              "scrubbed-key-16": "scrubbed:s",
+              "scrubbed-key-17": {
+                "scrubbed-key-1": "scrubbed:s"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "expects": {
+    "logged": {
+      "session": "00000000-0000-4000-8000-000000000016",
+      "sessionSource": "session-id",
+      "machine": "",
+      "project": "",
+      "client": "codex",
+      "clientVersion": "0.167.2",
+      "userAgent": "codex_exec/0.167.2",
+      "divertedFrom": null,
+      "follows": null,
+      "loginFingerprint": "26a67268eab69f7cc51766339a19b4a5c8ef0f89c7ddb8f40378b50a7c89092b",
+      "refusalReset": null,
+      "protocol": "chatgpt-codex",
+      "operation": "responses",
+      "purpose": "turn",
+      "model": "gpt-6.1-sol",
+      "servedModel": "",
+      "stream": true,
+      "outcome": "ok",
+      "upstreamStatus": 200,
+      "errorType": "",
+      "errorMessage": "",
+      "stopReason": "completed",
+      "usage": {
+        "tokens": {
+          "input": 253,
+          "cacheRead": 19328,
+          "cacheWriteShort": 0,
+          "cacheWriteLong": 0,
+          "output": 14
+        },
+        "reasoning": 0,
+        "reported": "{\"input_tokens\":19581,\"input_tokens_details\":{\"cached_tokens\":19328,\"cache_write_tokens\":0},\"output_tokens\":14,\"output_tokens_details\":{\"reasoning_tokens\":0},\"total_tokens\":19595,\"scrubbed-key-1\":{\"scrubbed-key-1\":{\"scrubbed-key-1\":{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0},\"scrubbed-key-2\":{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0},\"scrubbed-key-3\":{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0},\"scrubbed-key-4\":{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0,\"scrubbed-key-5\":[{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0},{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0}]},\"scrubbed-key-5\":{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0,\"scrubbed-key-5\":[{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0}]},\"scrubbed-key-6\":{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0,\"scrubbed-key-5\":[{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0}]},\"scrubbed-key-7\":{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0,\"scrubbed-key-5\":[{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0}]},\"scrubbed-key-8\":{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0,\"scrubbed-key-5\":[{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0},{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0},{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0},{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0},{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0}]},\"scrubbed-key-9\":{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0,\"scrubbed-key-5\":[{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0}]},\"scrubbed-key-10\":{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0,\"scrubbed-key-5\":[{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0}]},\"scrubbed-key-11\":{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0,\"scrubbed-key-5\":[{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0},{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0}]},\"scrubbed-key-12\":{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0,\"scrubbed-key-5\":[{\"scrubbed-key-1\":0,\"scrubbed-key-2\":0,\"scrubbed-key-3\":0,\"scrubbed-key-4\":0}]}}}}"
+      },
+      "serviceTier": "",
+      "providerRequestId": "00000000-0000-4000-8000-00000000002b",
+      "rateLimits": {
+        "x-codex-active-limit": "scrubbed:s",
+        "x-codex-credits-balance": "0",
+        "x-codex-credits-has-credits": "scrubbed:s",
+        "x-codex-credits-unlimited": "scrubbed:s",
+        "x-codex-plan-type": "scrubbed:s",
+        "x-codex-primary-over-secondary-limit-percent": "0",
+        "x-codex-primary-reset-after-seconds": "0",
+        "x-codex-primary-reset-at": "1800000000",
+        "x-codex-primary-used-percent": "0",
+        "x-codex-primary-window-minutes": "0",
+        "x-codex-safety-buffering-enabled": "scrubbed:s",
+        "x-codex-safety-buffering-faster-model": "scrubbed:m",
+        "x-codex-secondary-reset-after-seconds": "0",
+        "x-codex-secondary-reset-at": "",
+        "x-codex-secondary-used-percent": "0",
+        "x-codex-secondary-window-minutes": "0"
+      },
+      "clientHeaders": {
+        "originator": "codex_exec",
+        "thread-id": "00000000-0000-4000-8000-000000000016",
+        "x-codex-window-id": "fake-id-0025",
+        "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-000000000017\",\"session_id\":\"00000000-0000-4000-8000-000000000016\",\"thread_id\":\"00000000-0000-4000-8000-000000000016\",\"agent_name\":\"scrubbed:s\",\"turn_id\":\"00000000-0000-4000-8000-000000000018\",\"window_id\":\"fake-id-0025\",\"window_number\":0,\"context_window_id\":\"00000000-0000-4000-8000-00000000001a\",\"request_kind\":\"turn\",\"history_initialization\":\"scrubbed:s\",\"root_turn_id\":\"00000000-0000-4000-8000-000000000018\",\"thread_source\":\"scrubbed:s\",\"turn_trigger\":\"scrubbed:s\",\"sandbox\":\"scrubbed:s\",\"sandbox_mode\":\"scrubbed:m\",\"auto_review_enabled\":true,\"node_repl_auto_review_required\":true,\"node_repl_disabled\":false,\"turn_started_at_unix_ms\":1794483049093,\"analytics_enabled\":true,\"model\":\"gpt-6.1-sol\",\"scrubbed-key-1\":\"scrubbed:s\"}",
+        "x-codex-beta-features": "remote_compaction_v2"
+      },
+      "conversation": {
+        "params": {
+          "model": "gpt-6.1-sol",
+          "stream": true,
+          "tool_choice": "auto",
+          "parallel_tool_calls": false,
+          "reasoning": {
+            "effort": "low",
+            "summary": "auto",
+            "context": "scrubbed:m"
+          },
+          "store": false,
+          "include": ["reasoning.encrypted_content"],
+          "prompt_cache_key": "00000000-0000-4000-8000-000000000016",
+          "text": {
+            "verbosity": "low"
+          },
+          "client_metadata": {
+            "x-codex-installation-id": "00000000-0000-4000-8000-000000000017",
+            "session_id": "00000000-0000-4000-8000-000000000016",
+            "scrubbed-key-1": "scrubbed:s",
+            "thread_id": "00000000-0000-4000-8000-000000000016",
+            "x-codex-window-id": "fake-id-0025",
+            "root_turn_id": "00000000-0000-4000-8000-000000000018",
+            "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-000000000017\",\"session_id\":\"00000000-0000-4000-8000-000000000016\",\"thread_id\":\"00000000-0000-4000-8000-000000000016\",\"agent_name\":\"scrubbed:s\",\"turn_id\":\"00000000-0000-4000-8000-000000000018\",\"window_id\":\"fake-id-0025\",\"window_number\":0,\"context_window_id\":\"00000000-0000-4000-8000-00000000001a\",\"request_kind\":\"turn\",\"history_initialization\":\"scrubbed:s\",\"root_turn_id\":\"00000000-0000-4000-8000-000000000018\",\"thread_source\":\"scrubbed:s\",\"turn_trigger\":\"scrubbed:s\",\"sandbox\":\"scrubbed:s\",\"sandbox_mode\":\"scrubbed:m\",\"auto_review_enabled\":true,\"node_repl_auto_review_required\":true,\"node_repl_disabled\":false,\"turn_started_at_unix_ms\":1794483049093,\"analytics_enabled\":true,\"model\":\"gpt-6.1-sol\",\"scrubbed-key-1\":\"scrubbed:s\"}",
+            "turn_id": "00000000-0000-4000-8000-000000000018"
+          }
+        },
+        "layout": [
+          {
+            "part": "system",
+            "field": "instructions",
+            "layout": "absent"
+          },
+          {
+            "part": "tools",
+            "field": "tools",
+            "layout": "absent"
+          },
+          {
+            "part": "input",
+            "field": "input",
+            "layout": "list"
+          }
+        ],
+        "overlay": [],
+        "system": [],
+        "tools": [],
+        "input": [
+          {
+            "digest": "9abf802bceb607880a91e51df7274a1d",
+            "type": "additional_tools",
+            "role": "developer",
+            "text": ""
+          },
+          {
+            "digest": "afd9a2bd88dd59c775989464e25d3014",
+            "type": "message",
+            "role": "developer",
+            "text": "scrubbed:xl"
+          },
+          {
+            "digest": "5caf89ad12f4f1ceb8a02e86a5a5a3c5",
+            "type": "message",
+            "role": "developer",
+            "text": "scrubbed:xl\n\nscrubbed:l\n\nscrubbed:xl\n\nscrubbed:xl\n\nscrubbed:l"
+          },
+          {
+            "digest": "38883f0cc5a89ce14e63ef0ab215b721",
+            "type": "message",
+            "role": "developer",
+            "text": "scrubbed:xl"
+          },
+          {
+            "digest": "701afe809b345837a67a865a50fdae7a",
+            "type": "message",
+            "role": "developer",
+            "text": "scrubbed:l"
+          },
+          {
+            "digest": "db3d3de0e6c050aa9fe6c6c947eded9c",
+            "type": "message",
+            "role": "user",
+            "text": "scrubbed:xl\n\nscrubbed:xl"
+          },
+          {
+            "digest": "802f1d9c718533f96b1e7869aac1a077",
+            "type": "message",
+            "role": "user",
+            "text": "scrubbed:m"
+          },
+          {
+            "digest": "db9ce2e9bc8ec685539660f0a74d5f0b",
+            "type": "configuration_update",
+            "role": "",
+            "text": ""
+          },
+          {
+            "digest": "e7d16cf0a46c834f05cced98edf783cb",
+            "type": "message",
+            "role": "assistant",
+            "text": "scrubbed:m"
+          },
+          {
+            "digest": "247e58d9b3568944a650f1672bd7d4dd",
+            "type": "custom_tool_call",
+            "role": "",
+            "text": "scrubbed:l"
+          },
+          {
+            "digest": "23abd54dea207360a39ca5ac0e584177",
+            "type": "custom_tool_call_output",
+            "role": "",
+            "text": "scrubbed:m\n\nscrubbed:l"
+          }
+        ],
+        "output": [
+          {
+            "digest": "699c044c83a0dd0af746355ef09fb545",
+            "type": "message",
+            "role": "assistant",
+            "text": "scrubbed:m"
+          }
+        ]
+      },
+      "errorBody": "",
+      "requestBytes": 9887,
+      "responseBytes": 28121,
+      "readingComplete": true
+    }
+  }
+}

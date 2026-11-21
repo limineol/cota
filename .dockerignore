@@ -1,0 +1,20 @@
+# Only what the hub image's stages read is sent to the builder: the workspace's
+# manifests, the hub's source and what the dashboard is built from. Tests are
+# never sent, so none can reach the image.
+*
+!package.json
+!bun.lock
+!tsconfig.base.json
+!apps/hub/package.json
+!apps/hub/tsconfig.json
+!apps/hub/src
+!apps/cli/package.json
+!apps/web
+!packages/ui
+!proofs/package.json
+**/node_modules
+**/dist
+**/*.test.ts
+**/*.test.tsx
+**/05-tests
+apps/web/storybook-static

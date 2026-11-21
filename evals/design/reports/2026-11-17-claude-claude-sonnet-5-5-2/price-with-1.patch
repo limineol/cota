@@ -1,0 +1,746 @@
+diff --git a/apps/web/src/screens/price/price.stories.tsx b/apps/web/src/screens/price/price.stories.tsx
+new file mode 100644
+index 0000000..49420d6
+--- /dev/null
++++ b/apps/web/src/screens/price/price.stories.tsx
+@@ -0,0 +1,273 @@
++import type { Meta, StoryObj } from "@storybook/react-vite";
++import { expect, fn } from "storybook/test";
++import {
++  invalidPrice,
++  keptAs,
++  listedAndOwn,
++  listedOnly,
++  noSuchPool,
++  ownPrices,
++  storeUnavailable,
++  unknownToTheList,
++  unknownWithOwn,
++  unreachable,
++} from "#stories/price.ts";
++import { type Outcome, Price } from "./price.tsx";
++
++const never = () => new Promise<Outcome>(() => {});
++
++const meta = {
++  title: "Screens/Price",
++  component: Price,
++  args: {
++    answer: { _tag: "Read", price: listedOnly },
++    save: fn(async () => keptAs(listedAndOwn)),
++    drop: fn(async () => keptAs(listedOnly)),
++    onRetry: fn(),
++  },
++} satisfies Meta<typeof Price>;
++
++export default meta;
++type Story = StoryObj<typeof meta>;
++
++export const WhileItReads: Story = {
++  args: { answer: { _tag: "Reading" } },
++  play: async ({ canvas }) => {
++    await expect(await canvas.findByLabelText("Price loading")).toBeVisible();
++  },
++};
++
++export const ListedPriceInForce: Story = {
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByText("The price list's price is in force."),
++    ).toBeVisible();
++    await expect(canvas.getByText("$3.75")).toBeVisible();
++    await expect(
++      canvas.getByRole("textbox", {
++        name: "Cache write price, dollars per million tokens",
++      }),
++    ).toHaveValue("3.75");
++    await expect(
++      canvas.queryByRole("button", { name: "Drop the pool's price" }),
++    ).not.toBeInTheDocument();
++  },
++};
++
++export const OwnPriceInForce: Story = {
++  args: { answer: { _tag: "Read", price: listedAndOwn } },
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByText("The pool's own price is in force."),
++    ).toBeVisible();
++    await expect(
++      canvas.getByRole("textbox", {
++        name: "Input price, dollars per million tokens",
++      }),
++    ).toHaveValue("2.5");
++    await expect(canvas.getByText("$3.00")).toBeVisible();
++    await expect(
++      canvas.getByRole("button", { name: "Drop the pool's price" }),
++    ).toBeEnabled();
++    await expect(
++      canvas.getByRole("button", { name: "Save the pool's price" }),
++    ).toBeDisabled();
++  },
++};
++
++export const ModelTheListDoesNotKnow: Story = {
++  args: { answer: { _tag: "Read", price: unknownToTheList } },
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByText(
++        "No price is in force, so 42 requests of the last 7 days to this model through this pool have no cost.",
++      ),
++    ).toBeVisible();
++    await expect(
++      canvas.getByText("The price list does not know this model."),
++    ).toBeVisible();
++    await expect(canvas.getAllByText("—")).toHaveLength(4);
++  },
++};
++
++export const ModelTheListDoesNotKnowWithOwnPrice: Story = {
++  args: { answer: { _tag: "Read", price: unknownWithOwn } },
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByText("The pool's own price is in force."),
++    ).toBeVisible();
++    await expect(
++      canvas.getByRole("textbox", {
++        name: "Cache write price, dollars per million tokens",
++      }),
++    ).toHaveValue("0");
++  },
++};
++
++export const Saving: Story = {
++  args: { save: fn(never) },
++  play: async ({ canvas, userEvent }) => {
++    const input = await canvas.findByRole("textbox", {
++      name: "Input price, dollars per million tokens",
++    });
++    await userEvent.clear(input);
++    await userEvent.type(input, "2.5");
++    await userEvent.click(
++      canvas.getByRole("button", { name: "Save the pool's price" }),
++    );
++    await expect(await canvas.findByText("Saving…")).toBeVisible();
++    await expect(
++      canvas.getByRole("button", { name: "Save the pool's price" }),
++    ).toBeDisabled();
++  },
++};
++
++export const Saved: Story = {
++  args: { save: fn(async () => keptAs(listedAndOwn)) },
++  play: async ({ canvas, userEvent, args }) => {
++    const input = await canvas.findByRole("textbox", {
++      name: "Input price, dollars per million tokens",
++    });
++    await userEvent.clear(input);
++    await userEvent.type(input, "2.5");
++    for (const [name, value] of [
++      ["Output", "12"],
++      ["Cache read", "0.25"],
++      ["Cache write", "3"],
++    ] as const) {
++      const field = canvas.getByRole("textbox", {
++        name: `${name} price, dollars per million tokens`,
++      });
++      await userEvent.clear(field);
++      await userEvent.type(field, value);
++    }
++    await userEvent.click(
++      canvas.getByRole("button", { name: "Save the pool's price" }),
++    );
++    await expect(
++      await canvas.findByText("Saved. The pool's own price is in force."),
++    ).toBeVisible();
++    await expect(args.save).toHaveBeenCalledWith(ownPrices);
++    await expect(
++      canvas.getByText("The pool's own price is in force."),
++    ).toBeVisible();
++    await expect(
++      canvas.getByRole("button", { name: "Drop the pool's price" }),
++    ).toBeVisible();
++  },
++};
++
++export const Dropped: Story = {
++  args: { answer: { _tag: "Read", price: listedAndOwn } },
++  play: async ({ canvas, userEvent, args }) => {
++    await userEvent.click(
++      await canvas.findByRole("button", { name: "Drop the pool's price" }),
++    );
++    await expect(
++      await canvas.findByText("Dropped. The price list's price is in force."),
++    ).toBeVisible();
++    await expect(args.drop).toHaveBeenCalled();
++    await expect(
++      canvas.queryByRole("button", { name: "Drop the pool's price" }),
++    ).not.toBeInTheDocument();
++  },
++};
++
++export const NotANumberIsNotSent: Story = {
++  play: async ({ canvas, userEvent, args }) => {
++    const field = await canvas.findByRole("textbox", {
++      name: "Cache read price, dollars per million tokens",
++    });
++    await userEvent.clear(field);
++    await userEvent.type(field, "-1");
++    await userEvent.click(
++      canvas.getByRole("button", { name: "Save the pool's price" }),
++    );
++    await expect(await canvas.findByRole("alert")).toHaveTextContent(
++      "Not saved: Cache read must be a number of dollars, zero or more, so nothing was sent.",
++    );
++    await expect(field).toHaveAttribute("aria-invalid", "true");
++    await expect(args.save).not.toHaveBeenCalled();
++  },
++};
++
++export const RefusedAsInvalid: Story = {
++  args: { save: fn(async () => invalidPrice) },
++  play: async ({ canvas, userEvent }) => {
++    const field = await canvas.findByRole("textbox", {
++      name: "Input price, dollars per million tokens",
++    });
++    await userEvent.clear(field);
++    await userEvent.type(field, "1");
++    await userEvent.click(
++      canvas.getByRole("button", { name: "Save the pool's price" }),
++    );
++    await expect(await canvas.findByRole("alert")).toHaveTextContent(
++      "Not saved: cacheRead is -1.",
++    );
++    await expect(field).toHaveValue("1");
++  },
++};
++
++export const RefusedForWantOfThePool: Story = {
++  args: { save: fn(async () => noSuchPool) },
++  play: async ({ canvas, userEvent }) => {
++    const field = await canvas.findByRole("textbox", {
++      name: "Input price, dollars per million tokens",
++    });
++    await userEvent.clear(field);
++    await userEvent.type(field, "1");
++    await userEvent.click(
++      canvas.getByRole("button", { name: "Save the pool's price" }),
++    );
++    await expect(await canvas.findByRole("alert")).toHaveTextContent(
++      "Not saved: The hub has no pool named personal.",
++    );
++  },
++};
++
++export const RefusedWhenTheStoreIsDown: Story = {
++  args: {
++    answer: { _tag: "Read", price: listedAndOwn },
++    drop: fn(async () => storeUnavailable),
++  },
++  play: async ({ canvas, userEvent }) => {
++    await userEvent.click(
++      await canvas.findByRole("button", { name: "Drop the pool's price" }),
++    );
++    await expect(await canvas.findByRole("alert")).toHaveTextContent(
++      "Not dropped: The hub store did not answer: the disk is full.",
++    );
++    await expect(
++      canvas.getByText("The pool's own price is in force."),
++    ).toBeVisible();
++  },
++};
++
++export const HubCannotBeReachedWhileSaving: Story = {
++  args: { save: fn(async () => unreachable) },
++  play: async ({ canvas, userEvent }) => {
++    const field = await canvas.findByRole("textbox", {
++      name: "Input price, dollars per million tokens",
++    });
++    await userEvent.clear(field);
++    await userEvent.type(field, "1");
++    await userEvent.click(
++      canvas.getByRole("button", { name: "Save the pool's price" }),
++    );
++    await expect(await canvas.findByRole("alert")).toHaveTextContent(
++      "Not saved: The hub did not answer.",
++    );
++  },
++};
++
++export const HubCannotBeReachedWhileReading: Story = {
++  args: { answer: { _tag: "Unreachable" } },
++  play: async ({ canvas, userEvent, args }) => {
++    await expect(
++      await canvas.findByText("The hub could not read the price."),
++    ).toBeVisible();
++    await userEvent.click(canvas.getByRole("button", { name: "Try again" }));
++    await expect(args.onRetry).toHaveBeenCalled();
++  },
++};
+diff --git a/apps/web/src/screens/price/price.tsx b/apps/web/src/screens/price/price.tsx
+new file mode 100644
+index 0000000..9d7e1db
+--- /dev/null
++++ b/apps/web/src/screens/price/price.tsx
+@@ -0,0 +1,286 @@
++import { Badge } from "@cota/ui/components/badge";
++import { Button } from "@cota/ui/components/button";
++import {
++  Card,
++  CardContent,
++  CardDescription,
++  CardHeader,
++  CardTitle,
++} from "@cota/ui/components/card";
++import { FieldNote } from "@cota/ui/components/field-note";
++import { Input } from "@cota/ui/components/input";
++import { Note } from "@cota/ui/components/note";
++import { Skeleton } from "@cota/ui/components/skeleton";
++import {
++  Table,
++  TableBody,
++  TableCell,
++  TableHead,
++  TableHeader,
++  TableRow,
++} from "@cota/ui/components/table";
++import { type FormEvent, useState } from "react";
++import { Problem } from "#shared/problem.tsx";
++import { plural } from "#shared/words.ts";
++import {
++  type Drafts,
++  draftsOf,
++  fields,
++  inForce,
++  isKept,
++  type ModelPrice,
++  type Prices,
++  parseDrafts,
++  priceText,
++} from "./prices.ts";
++
++/** What the hub did with a save or a drop. */
++export type Outcome =
++  | { readonly _tag: "Kept"; readonly price: ModelPrice }
++  | {
++      readonly _tag: "Refused";
++      readonly title: string;
++      readonly detail: string;
++    }
++  | { readonly _tag: "Unreachable" };
++
++/** What the hub answered to reading the price, as the screen is given it. */
++export type Answer =
++  | { readonly _tag: "Reading" }
++  | { readonly _tag: "Read"; readonly price: ModelPrice }
++  | { readonly _tag: "Unreachable" };
++
++type Said = { readonly tone: "quiet" | "danger"; readonly text: string } | null;
++
++const unreachable =
++  "The hub did not answer. Check that it is running and reachable from this browser.";
++
++function Reading() {
++  return (
++    <Card role="status" aria-label="Price loading" aria-busy="true">
++      <Skeleton className="h-6 w-48" />
++      <Skeleton className="h-4 w-80" />
++      <Skeleton className="h-40 w-full" />
++    </Card>
++  );
++}
++
++function inForceText(price: ModelPrice) {
++  const force = inForce(price);
++  if (force === null) {
++    return price.unpricedRequests === 0
++      ? "No price is in force: neither the list nor the pool has one for this model."
++      : `No price is in force, so ${plural(price.unpricedRequests, "request")} of the last 7 days to this model through this pool have no cost.`;
++  }
++  return force.from === "own"
++    ? "The pool's own price is in force."
++    : "The price list's price is in force.";
++}
++
++const listedText = (listed: Prices | null, field: keyof Prices) =>
++  listed === null ? "—" : priceText(listed[field]);
++
++function PriceForm({
++  price,
++  save,
++  drop,
++}: {
++  readonly price: ModelPrice;
++  readonly save: (prices: Prices) => Promise<Outcome>;
++  readonly drop: () => Promise<Outcome>;
++}) {
++  const [kept, setKept] = useState(price);
++  const [drafts, setDrafts] = useState<Drafts>(() => draftsOf(price));
++  const [note, setNote] = useState<Said>(null);
++  const [refusedField, setRefusedField] = useState<string | null>(null);
++  const [working, setWorking] = useState<"saving" | "dropping" | null>(null);
++
++  const force = inForce(kept);
++  const unchanged = isKept(drafts, kept.own);
++
++  const settle = async (
++    doing: "saving" | "dropping",
++    run: () => Promise<Outcome>,
++    done: string,
++    failed: string,
++  ) => {
++    setWorking(doing);
++    setNote(null);
++    setRefusedField(null);
++    const outcome = await run().catch((): Outcome => ({ _tag: "Unreachable" }));
++    setWorking(null);
++    switch (outcome._tag) {
++      case "Kept":
++        setKept(outcome.price);
++        setDrafts(draftsOf(outcome.price));
++        setNote({ tone: "quiet", text: done });
++        return;
++      case "Refused":
++        setNote({ tone: "danger", text: `${failed} ${outcome.detail}` });
++        return;
++      case "Unreachable":
++        setNote({ tone: "danger", text: `${failed} ${unreachable}` });
++    }
++  };
++
++  const submit = (event: FormEvent<HTMLFormElement>) => {
++    event.preventDefault();
++    if (working !== null) return;
++    const parsed = parseDrafts(drafts);
++    if (parsed._tag === "Refused") {
++      setRefusedField(parsed.field);
++      setNote({
++        tone: "danger",
++        text: `Not saved: ${parsed.label} must be a number of dollars, zero or more, so nothing was sent.`,
++      });
++      return;
++    }
++    void settle(
++      "saving",
++      () => save(parsed.prices),
++      "Saved. The pool's own price is in force.",
++      "Not saved:",
++    );
++  };
++
++  const dropOwn = () =>
++    void settle(
++      "dropping",
++      drop,
++      kept.listed === null
++        ? "Dropped. No price is in force now."
++        : "Dropped. The price list's price is in force.",
++      "Not dropped:",
++    );
++
++  const said: Said =
++    working === null
++      ? note
++      : {
++          tone: "quiet",
++          text: working === "saving" ? "Saving…" : "Dropping…",
++        };
++
++  return (
++    <Card>
++      <CardHeader>
++        <CardTitle>
++          <code>{kept.model}</code>
++        </CardTitle>
++        <CardDescription>
++          Through the pool <code>{kept.pool}</code>, in dollars per million
++          tokens.
++        </CardDescription>
++      </CardHeader>
++      <CardContent>
++        <p className="m-0 flex flex-wrap items-center gap-2 text-text-2">
++          {force === null ? (
++            <Badge variant="outline">None</Badge>
++          ) : (
++            <Badge variant="outline">
++              {force.from === "own" ? "Pool's own" : "Price list"}
++            </Badge>
++          )}
++          <span>{inForceText(kept)}</span>
++        </p>
++        <form
++          className="flex flex-col gap-4"
++          aria-label={`Price of ${kept.model} for ${kept.pool}`}
++          onSubmit={submit}
++          noValidate
++        >
++          <Table aria-label="Prices">
++            <TableHeader>
++              <TableRow>
++                <TableHead scope="col">Usage</TableHead>
++                <TableHead scope="col" numeric>
++                  Price list
++                </TableHead>
++                <TableHead scope="col" className="w-40">
++                  Pool's own
++                </TableHead>
++              </TableRow>
++            </TableHeader>
++            <TableBody>
++              {fields.map(({ field, label }) => (
++                <TableRow key={field}>
++                  <TableCell>{label}</TableCell>
++                  <TableCell numeric>
++                    {listedText(kept.listed, field)}
++                  </TableCell>
++                  <TableCell>
++                    <Input
++                      aria-label={`${label} price, dollars per million tokens`}
++                      inputMode="decimal"
++                      autoComplete="off"
++                      spellCheck={false}
++                      value={drafts[field]}
++                      placeholder={
++                        kept.listed === null ? "0" : String(kept.listed[field])
++                      }
++                      aria-invalid={refusedField === field || undefined}
++                      onChange={(event) => {
++                        setDrafts({ ...drafts, [field]: event.target.value });
++                        setNote(null);
++                        setRefusedField(null);
++                      }}
++                    />
++                  </TableCell>
++                </TableRow>
++              ))}
++            </TableBody>
++          </Table>
++          {kept.listed === null ? (
++            <Note>The price list does not know this model.</Note>
++          ) : null}
++          <div className="flex flex-wrap items-center gap-2">
++            <Button type="submit" disabled={working !== null || unchanged}>
++              Save the pool's price
++            </Button>
++            {kept.own === null ? null : (
++              <Button
++                type="button"
++                variant="outline"
++                disabled={working !== null}
++                onClick={dropOwn}
++              >
++                Drop the pool's price
++              </Button>
++            )}
++          </div>
++          {said === null ? null : (
++            <FieldNote tone={said.tone}>{said.text}</FieldNote>
++          )}
++        </form>
++      </CardContent>
++    </Card>
++  );
++}
++
++/** A model's price for a pool: the four prices beside the list's, which is in force, and a way to save the pool's own or drop it. */
++export function Price({
++  answer,
++  save,
++  drop,
++  onRetry,
++}: {
++  readonly answer: Answer;
++  readonly save: (prices: Prices) => Promise<Outcome>;
++  readonly drop: () => Promise<Outcome>;
++  readonly onRetry: () => void;
++}) {
++  switch (answer._tag) {
++    case "Reading":
++      return <Reading />;
++    case "Unreachable":
++      return (
++        <Problem
++          title="The hub could not read the price."
++          error={null}
++          onRetry={onRetry}
++        />
++      );
++    case "Read":
++      return <PriceForm price={answer.price} save={save} drop={drop} />;
++  }
++}
+diff --git a/apps/web/src/screens/price/prices.ts b/apps/web/src/screens/price/prices.ts
+new file mode 100644
+index 0000000..f9e3de5
+--- /dev/null
++++ b/apps/web/src/screens/price/prices.ts
+@@ -0,0 +1,98 @@
++/** Dollars per million tokens, by usage class. */
++export interface Prices {
++  readonly input: number;
++  readonly output: number;
++  readonly cacheRead: number;
++  readonly cacheWrite: number;
++}
++
++export interface ModelPrice {
++  readonly pool: string;
++  readonly model: string;
++  /** The shipped price list's price, or null when the list does not know the model. */
++  readonly listed: Prices | null;
++  /** The pool's own price, or null when it has none. */
++  readonly own: Prices | null;
++  /** Requests of the last 7 days to this model through this pool that have no cost because neither price exists. */
++  readonly unpricedRequests: number;
++}
++
++export type Field = keyof Prices;
++
++export const fields: ReadonlyArray<{
++  readonly field: Field;
++  readonly label: string;
++}> = [
++  { field: "input", label: "Input" },
++  { field: "output", label: "Output" },
++  { field: "cacheRead", label: "Cache read" },
++  { field: "cacheWrite", label: "Cache write" },
++];
++
++export type Drafts = Record<Field, string>;
++
++const dollars = new Intl.NumberFormat("en-US", {
++  minimumFractionDigits: 2,
++  maximumFractionDigits: 6,
++});
++
++/** A price in dollars per million tokens, as `$3.75`. */
++export const priceText = (price: number): string => `$${dollars.format(price)}`;
++
++/** The price in force: the pool's own, else the list's, else none. */
++export const inForce = (
++  price: ModelPrice,
++): { readonly from: "own" | "listed"; readonly prices: Prices } | null => {
++  if (price.own !== null) return { from: "own", prices: price.own };
++  if (price.listed !== null) return { from: "listed", prices: price.listed };
++  return null;
++};
++
++const written = (price: number): string => String(price);
++
++/** The fields as they start: the price in force, or empty where there is none. */
++export const draftsOf = (price: ModelPrice): Drafts => {
++  const force = inForce(price)?.prices;
++  return {
++    input: force === undefined ? "" : written(force.input),
++    output: force === undefined ? "" : written(force.output),
++    cacheRead: force === undefined ? "" : written(force.cacheRead),
++    cacheWrite: force === undefined ? "" : written(force.cacheWrite),
++  };
++};
++
++const number = /^\d+(\.\d+)?$/;
++
++export type Parsed =
++  | { readonly _tag: "Prices"; readonly prices: Prices }
++  | { readonly _tag: "Refused"; readonly field: Field; readonly label: string };
++
++/** The four fields as prices, or the first that is not a number of dollars, zero or more. */
++export const parseDrafts = (drafts: Drafts): Parsed => {
++  const values: Partial<Record<Field, number>> = {};
++  for (const { field, label } of fields) {
++    const text = drafts[field].trim();
++    const value = number.test(text) ? Number(text) : Number.NaN;
++    if (!Number.isFinite(value)) return { _tag: "Refused", field, label };
++    values[field] = value;
++  }
++  return {
++    _tag: "Prices",
++    prices: {
++      input: values.input ?? 0,
++      output: values.output ?? 0,
++      cacheRead: values.cacheRead ?? 0,
++      cacheWrite: values.cacheWrite ?? 0,
++    },
++  };
++};
++
++/** Whether the fields, read as prices, are the pool's own price as kept. */
++export const isKept = (drafts: Drafts, own: Prices | null): boolean => {
++  if (own === null) return false;
++  const parsed = parseDrafts(drafts);
++  return (
++    parsed._tag === "Prices" &&
++    fields.every(({ field }) => parsed.prices[field] === own[field])
++  );
++};
+diff --git a/apps/web/src/stories/price.ts b/apps/web/src/stories/price.ts
+new file mode 100644
+index 0000000..d1fce2b
+--- /dev/null
++++ b/apps/web/src/stories/price.ts
+@@ -0,0 +1,65 @@
++import type { Outcome } from "#screens/price/price.tsx";
++import type { ModelPrice, Prices } from "#screens/price/prices.ts";
++
++export const listedPrices: Prices = {
++  input: 3,
++  output: 15,
++  cacheRead: 0.3,
++  cacheWrite: 3.75,
++};
++
++export const ownPrices: Prices = {
++  input: 2.5,
++  output: 12,
++  cacheRead: 0.25,
++  cacheWrite: 3,
++};
++
++export const listedOnly: ModelPrice = {
++  pool: "personal",
++  model: "claude-sonnet-4-5",
++  listed: listedPrices,
++  own: null,
++  unpricedRequests: 0,
++};
++
++export const listedAndOwn: ModelPrice = { ...listedOnly, own: ownPrices };
++
++export const unknownToTheList: ModelPrice = {
++  pool: "personal",
++  model: "glm-4.6",
++  listed: null,
++  own: null,
++  unpricedRequests: 42,
++};
++
++export const unknownWithOwn: ModelPrice = {
++  ...unknownToTheList,
++  own: { input: 0.6, output: 2.2, cacheRead: 0.11, cacheWrite: 0 },
++  unpricedRequests: 0,
++};
++
++export const keptAs = (price: ModelPrice): Outcome => ({
++  _tag: "Kept",
++  price,
++});
++
++export const noSuchPool: Outcome = {
++  _tag: "Refused",
++  title: "The hub has no such pool.",
++  detail: "The hub has no pool named personal.",
++};
++
++export const invalidPrice: Outcome = {
++  _tag: "Refused",
++  title: "A price must be a number of dollars, zero or more.",
++  detail: "cacheRead is -1.",
++};
++
++export const storeUnavailable: Outcome = {
++  _tag: "Refused",
++  title: "The hub store did not answer.",
++  detail: "The hub store did not answer: the disk is full.",
++};
++
++export const unreachable: Outcome = { _tag: "Unreachable" };

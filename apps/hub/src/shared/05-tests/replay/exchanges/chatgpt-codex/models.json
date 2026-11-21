@@ -1,0 +1,108 @@
+{
+  "source": {
+    "kind": "constructed",
+    "from": [
+      "Codex 0.167.1 source (codex-rs, tag rust-v0.167.1): codex-api/src/endpoint/models.rs, model-provider/src/models_endpoint.rs, protocol/src/openai_models.rs, models-manager/models.json",
+      "Milestone 1 research, Codex wire facts (2026-11-12), from the Codex 0.167.1 source, section 9"
+    ],
+    "note": "Not recorded. One made-up model in the catalog's shape."
+  },
+  "request": {
+    "method": "GET",
+    "path": "/backend-api/codex/models?client_version=0.167.1",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC1mYWtlLTAwMDEiLCJjaGF0Z3B0X2FjY291bnRfdXNlcl9pZCI6InVzZXItZmFrZS0wMDAxX19hY2N0LWZha2UtMDAwMSJ9LCJleHAiOjE3OTQ0NDE2MDB9.RkFLRS1zaWduYXR1cmUtZm9yLXRlc3RzLW9ubHk",
+      "chatgpt-account-id": "acct-fake-0001",
+      "originator": "codex_cli_rs",
+      "user-agent": "codex_cli_rs/0.167.1 (Mac OS 26.1.0; arm64) iTerm.app/3.6.6"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "etag": "W/\"fake-etag-0001\"",
+      "x-request-id": "req_fake0007"
+    },
+    "body": {
+      "json": {
+        "models": [
+          {
+            "slug": "gpt-5.5-codex",
+            "display_name": "gpt-5.5-codex",
+            "description": "A made-up model for a test.",
+            "default_reasoning_level": "medium",
+            "supported_reasoning_levels": [
+              {
+                "effort": "low",
+                "description": "Fast"
+              },
+              {
+                "effort": "medium",
+                "description": "Balanced"
+              }
+            ],
+            "shell_type": "shell_command",
+            "visibility": "list",
+            "supported_in_api": true,
+            "priority": 1,
+            "support_verbosity": false,
+            "truncation_policy": {
+              "mode": "tokens",
+              "limit": 10000
+            },
+            "experimental_supported_tools": [],
+            "context_window": 272000,
+            "use_responses_lite": false,
+            "service_tiers": [
+              {
+                "id": "priority",
+                "name": "Fast",
+                "description": "Made up."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "expects": {
+    "logged": {
+      "session": "request:<id>",
+      "sessionSource": "",
+      "machine": "",
+      "project": "",
+      "client": "codex",
+      "clientVersion": "0.167.1",
+      "userAgent": "codex_cli_rs/0.167.1 (Mac OS 26.1.0; arm64) iTerm.app/3.6.6",
+      "divertedFrom": null,
+      "follows": null,
+      "loginFingerprint": "b078b30895acad342351ab2b63a1eb73eec9729dd460c36821700be56d640ec8",
+      "refusalReset": null,
+      "protocol": "chatgpt-codex",
+      "operation": "models",
+      "purpose": "",
+      "model": "",
+      "servedModel": "",
+      "stream": false,
+      "outcome": "ok",
+      "upstreamStatus": 200,
+      "errorType": "",
+      "errorMessage": "",
+      "stopReason": "",
+      "usage": null,
+      "serviceTier": "",
+      "providerRequestId": "req_fake0007",
+      "rateLimits": {},
+      "clientHeaders": {
+        "originator": "codex_cli_rs"
+      },
+      "conversation": null,
+      "errorBody": "",
+      "requestBytes": 0,
+      "responseBytes": 585,
+      "readingComplete": true
+    }
+  }
+}

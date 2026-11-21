@@ -1,0 +1,50 @@
+# The hub's configuration in a deployment (ADR-0024): the settings of
+# examples/cota.example.toml with the paths of the hub's container. The hub
+# directory's secrets/ is mounted read-only at /etc/cota/secrets, its store/ at
+# /var/lib/cota/store and its archive/ at /var/lib/cota/archive.
+#
+# No secret is written here, and none is an environment variable: each is a
+# file of secrets/, named as { file = "/etc/cota/secrets/<name>" }.
+
+# Inside the container. The address and port the hub is published on are
+# COTA_BIND and COTA_PORT in .env.
+[hub]
+host = "0.0.0.0"
+port = 8080
+
+# The deployment's own ClickHouse, reached by its service's name. Its password
+# is the one the install made, which ClickHouse reads from the same file.
+[clickhouse]
+url = "http://clickhouse:8123"
+database = "cota"
+user = "cota"
+password = { file = "/etc/cota/secrets/clickhouse" }
+
+[store]
+path = "/var/lib/cota/store/cota.sqlite"
+
+[archive]
+directory = "/var/lib/cota/archive"
+
+# The subscription key, for Claude Code and Codex.
+[[hub_keys]]
+name = "clients"
+scope = "subscription"
+secret = { file = "/etc/cota/secrets/clients" }
+
+# The keyed key, which spends the keys the hub holds, for OpenCode and Pi.
+[[hub_keys]]
+name = "fleet"
+scope = "keyed"
+secret = { file = "/etc/cota/secrets/fleet" }
+
+# The reader key, which reads the request log and opens no pool.
+[[hub_keys]]
+name = "agents"
+scope = "reader"
+secret = { file = "/etc/cota/secrets/agents" }
+
+# The pools follow, one table each, copied from examples/cota.example.toml's
+# of the same kind, with each key and kept login a file of secrets/:
+#   key = { file = "/etc/cota/secrets/<pool>" }
+#   kept_login = { file = "/etc/cota/secrets/<pool>-login" }

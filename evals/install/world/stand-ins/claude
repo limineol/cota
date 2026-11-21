@@ -1,0 +1,51 @@
+#!/usr/bin/env bun
+// A stand-in for Claude Code, never the real one. It records its arguments,
+// and with `-p <message>` sends one message as Claude Code does, with its own
+// login (a fake) or CLAUDE_CODE_OAUTH_TOKEN, and writes a transcript with a
+// title where Claude Code keeps them.
+const { appendFileSync, mkdirSync, writeFileSync } = require("node:fs");
+const { join } = require("node:path");
+
+const home = process.env.HOME;
+const args = process.argv.slice(2);
+const at = args.indexOf("-p");
+const session = at === -1 ? null : crypto.randomUUID();
+mkdirSync(join(home, ".stand-ins"), { recursive: true });
+appendFileSync(
+  join(home, ".stand-ins", "claude.jsonl"),
+  `${JSON.stringify({ args, cwd: process.cwd(), session })}\n`,
+);
+if (session === null) process.exit(0);
+
+const message = args[at + 1] ?? "hello";
+const base = process.env.ANTHROPIC_BASE_URL ?? "https://api.anthropic.com";
+const headers = {
+  "content-type": "application/json",
+  "anthropic-version": "2023-06-01",
+  "user-agent": "claude-cli/2.1.322 (external, cli)",
+  "x-app": "cli",
+  "x-claude-code-session-id": session,
+  authorization: `Bearer ${process.env.CLAUDE_CODE_OAUTH_TOKEN ?? "sk-ant-oat01-stand-in-own-login-0000"}`,
+};
+for (const line of (process.env.ANTHROPIC_CUSTOM_HEADERS ?? "").split("\n")) {
+  const colon = line.indexOf(":");
+  if (colon > 0) headers[line.slice(0, colon).trim()] = line.slice(colon + 1).trim();
+}
+const answer = await fetch(`${base}/v1/messages`, {
+  method: "POST",
+  headers,
+  body: JSON.stringify({
+    model: "claude-sonnet-4-5",
+    max_tokens: 64,
+    messages: [{ role: "user", content: message }],
+  }),
+});
+const body = await answer.text();
+const projects = join(home, ".claude", "projects", process.cwd().replaceAll("/", "-"));
+mkdirSync(projects, { recursive: true });
+writeFileSync(
+  join(projects, `${session}.jsonl`),
+  `${JSON.stringify({ type: "user", sessionId: session, message: { role: "user", content: message } })}\n${JSON.stringify({ type: "ai-title", sessionId: session, aiTitle: `Stand-in: ${message}` })}\n`,
+);
+console.log(answer.ok ? (JSON.parse(body).content?.[0]?.text ?? body) : body);
+process.exit(answer.ok ? 0 : 1);

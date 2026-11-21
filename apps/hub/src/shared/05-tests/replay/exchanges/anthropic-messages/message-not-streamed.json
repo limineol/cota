@@ -1,0 +1,189 @@
+{
+  "source": {
+    "kind": "constructed",
+    "from": [
+      "Milestone 1 research, Anthropic wire facts (2026-11-12), from the Claude Code 2.1.322 binary, sections 3, 5 and 8"
+    ],
+    "note": "An auxiliary request that does not stream. Its answer is gzip-compressed to exercise the player; whether Anthropic compresses answers for Claude Code is unverified."
+  },
+  "request": {
+    "method": "POST",
+    "path": "/v1/messages?beta=true",
+    "headers": {
+      "accept": "application/json",
+      "anthropic-beta": "claude-code-20250219,oauth-2025-04-20,interleaved-thinking-2025-05-14,context-management-2025-06-27",
+      "anthropic-dangerous-direct-browser-access": "true",
+      "anthropic-version": "2023-06-01",
+      "authorization": "Bearer sk-ant-oat01-FAKE-login-for-tests-only-0000",
+      "content-type": "application/json",
+      "user-agent": "claude-cli/2.1.322 (external, cli)",
+      "x-app": "cli",
+      "x-stainless-retry-count": "0",
+      "x-stainless-timeout": "600",
+      "x-claude-code-session-id": "0f6c1a52-7a3e-4c55-9d0e-c4553e7d1a01",
+      "accept-encoding": "gzip, deflate, br, zstd"
+    },
+    "body": {
+      "json": {
+        "model": "claude-haiku-4-5",
+        "max_tokens": 1024,
+        "system": [
+          {
+            "type": "text",
+            "text": "Summarise the change in five words."
+          }
+        ],
+        "messages": [
+          {
+            "role": "user",
+            "content": "The parser now reads numbers past a double."
+          }
+        ],
+        "tools": [],
+        "temperature": 0,
+        "metadata": {
+          "user_id": "{\"device_id\":\"d3v1ce0000\",\"account_uuid\":\"00000000-0000-4000-8000-000000000000\",\"session_id\":\"0f6c1a52-7a3e-4c55-9d0e-c4553e7d1a01\"}"
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "content-encoding": "gzip",
+      "request-id": "req_011FAKEnotstreamed000000",
+      "anthropic-ratelimit-unified-status": "allowed",
+      "anthropic-ratelimit-unified-5h-utilization": "0.12"
+    },
+    "body": {
+      "json": {
+        "id": "msg_01FAKEnotstreamed",
+        "type": "message",
+        "role": "assistant",
+        "model": "claude-haiku-4-5-20251001",
+        "content": [
+          {
+            "type": "text",
+            "text": "Parser reads very large numbers"
+          }
+        ],
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 120,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "output_tokens": 7,
+          "service_tier": "standard"
+        }
+      }
+    }
+  },
+  "expects": {
+    "logged": {
+      "session": "0f6c1a52-7a3e-4c55-9d0e-c4553e7d1a01",
+      "sessionSource": "x-claude-code-session-id",
+      "machine": "",
+      "project": "",
+      "client": "claude-code",
+      "clientVersion": "2.1.322",
+      "userAgent": "claude-cli/2.1.322 (external, cli)",
+      "divertedFrom": null,
+      "follows": null,
+      "loginFingerprint": "4404dcf514dbc9376a8eb4c4090b783210521621b64e77f6aaa86b5b03e87351",
+      "refusalReset": null,
+      "protocol": "anthropic-messages",
+      "operation": "messages",
+      "purpose": "",
+      "model": "claude-haiku-4-5",
+      "servedModel": "claude-haiku-4-5-20251001",
+      "stream": false,
+      "outcome": "ok",
+      "upstreamStatus": 200,
+      "errorType": "",
+      "errorMessage": "",
+      "stopReason": "end_turn",
+      "usage": {
+        "tokens": {
+          "input": 120,
+          "cacheRead": 0,
+          "cacheWriteShort": 0,
+          "cacheWriteLong": 0,
+          "output": 7
+        },
+        "reasoning": 0,
+        "reported": "{\"input_tokens\":120,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":7,\"service_tier\":\"standard\"}"
+      },
+      "serviceTier": "standard",
+      "providerRequestId": "req_011FAKEnotstreamed000000",
+      "rateLimits": {
+        "anthropic-ratelimit-unified-5h-utilization": "0.12",
+        "anthropic-ratelimit-unified-status": "allowed"
+      },
+      "clientHeaders": {
+        "anthropic-beta": "claude-code-20250219,oauth-2025-04-20,interleaved-thinking-2025-05-14,context-management-2025-06-27",
+        "anthropic-version": "2023-06-01",
+        "x-app": "cli",
+        "x-stainless-retry-count": "0"
+      },
+      "conversation": {
+        "params": {
+          "model": "claude-haiku-4-5",
+          "max_tokens": 1024,
+          "temperature": 0,
+          "metadata": {
+            "user_id": "{\"device_id\":\"d3v1ce0000\",\"account_uuid\":\"00000000-0000-4000-8000-000000000000\",\"session_id\":\"0f6c1a52-7a3e-4c55-9d0e-c4553e7d1a01\"}"
+          }
+        },
+        "layout": [
+          {
+            "part": "system",
+            "field": "system",
+            "layout": "list"
+          },
+          {
+            "part": "tools",
+            "field": "tools",
+            "layout": "list"
+          },
+          {
+            "part": "input",
+            "field": "messages",
+            "layout": "list"
+          }
+        ],
+        "overlay": [],
+        "system": [
+          {
+            "digest": "11c917a48f0da80c18941f8e41ed50db",
+            "type": "text",
+            "role": "",
+            "text": "Summarise the change in five words."
+          }
+        ],
+        "tools": [],
+        "input": [
+          {
+            "digest": "a7547d5c52223ceef5fb58821077036d",
+            "type": "",
+            "role": "user",
+            "text": "The parser now reads numbers past a double."
+          }
+        ],
+        "output": [
+          {
+            "digest": "d3671959a4cb49d2a6a4c6d9dd82eba5",
+            "type": "",
+            "role": "assistant",
+            "text": "Parser reads very large numbers"
+          }
+        ]
+      },
+      "errorBody": "",
+      "requestBytes": 400,
+      "responseBytes": 243,
+      "readingComplete": true
+    }
+  }
+}

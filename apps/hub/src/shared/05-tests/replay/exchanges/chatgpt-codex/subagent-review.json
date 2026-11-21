@@ -1,0 +1,428 @@
+{
+  "source": {
+    "kind": "constructed",
+    "from": [
+      "Codex 0.167.1 source (codex-rs, tag rust-v0.167.1): codex-api/src/requests/headers.rs and core/src/responses_metadata.rs (x-openai-subagent, x-codex-parent-thread-id, client_metadata)",
+      "Milestone 1 research, Codex wire facts (2026-11-12), from the Codex 0.167.1 source, section 2"
+    ],
+    "note": "Not recorded. A review sub-agent's request, sent without compression to show a plain body; its session is the sub-agent's own."
+  },
+  "request": {
+    "method": "POST",
+    "path": "/backend-api/codex/responses",
+    "headers": {
+      "accept": "text/event-stream",
+      "authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC1mYWtlLTAwMDEiLCJjaGF0Z3B0X2FjY291bnRfdXNlcl9pZCI6InVzZXItZmFrZS0wMDAxX19hY2N0LWZha2UtMDAwMSJ9LCJleHAiOjE3OTQ0NDE2MDB9.RkFLRS1zaWduYXR1cmUtZm9yLXRlc3RzLW9ubHk",
+      "chatgpt-account-id": "acct-fake-0001",
+      "content-type": "application/json",
+      "originator": "codex_cli_rs",
+      "session-id": "00000000-0000-7000-8000-00000000c0df",
+      "thread-id": "00000000-0000-7000-8000-00000000c0df",
+      "user-agent": "codex_cli_rs/0.167.1 (Mac OS 26.1.0; arm64) iTerm.app/3.6.6",
+      "x-client-request-id": "00000000-0000-7000-8000-00000000c0df",
+      "x-codex-beta-features": "remote_compaction_v2",
+      "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000102\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}",
+      "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+      "x-codex-routing-hint": "model=gpt-5.5-codex;tier=priority",
+      "x-openai-subagent": "review",
+      "x-codex-parent-thread-id": "00000000-0000-7000-8000-00000000c0de"
+    },
+    "body": {
+      "json": {
+        "model": "gpt-5.5-codex",
+        "stream": true,
+        "service_tier": "priority",
+        "input": [
+          {
+            "type": "message",
+            "role": "developer",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "Review the made-up diff."
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "role": "user",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "diff --git a/src/fake.ts b/src/fake.ts"
+              }
+            ]
+          }
+        ],
+        "tool_choice": "auto",
+        "parallel_tool_calls": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        },
+        "store": false,
+        "include": ["reasoning.encrypted_content"],
+        "prompt_cache_key": "00000000-0000-7000-8000-00000000c0de",
+        "client_metadata": {
+          "x-codex-installation-id": "00000000-0000-4000-8000-0000000000aa",
+          "session_id": "00000000-0000-7000-8000-00000000c0df",
+          "thread_id": "00000000-0000-7000-8000-00000000c0df",
+          "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+          "turn_id": "00000000-0000-7000-8000-000000000102",
+          "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000102\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}",
+          "x-openai-subagent": "review",
+          "x-codex-parent-thread-id": "00000000-0000-7000-8000-00000000c0de"
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "text/event-stream; charset=utf-8",
+      "x-request-id": "req_fake0008",
+      "openai-model": "gpt-5.5-codex",
+      "x-codex-turn-state": "FAKE-turn-state-0001",
+      "x-models-etag": "W/\"fake-etag-0001\"",
+      "cf-ray": "0000000000000000-FAK",
+      "x-codex-primary-used-percent": "12",
+      "x-codex-primary-window-minutes": "300",
+      "x-codex-primary-reset-at": "1794459600",
+      "x-codex-secondary-used-percent": "3",
+      "x-codex-secondary-window-minutes": "10080",
+      "x-codex-secondary-reset-at": "1794960000",
+      "x-codex-credits-has-credits": "false",
+      "x-codex-credits-unlimited": "false"
+    },
+    "body": {
+      "events": [
+        {
+          "event": "response.created",
+          "data": {
+            "type": "response.created",
+            "response": {
+              "id": "resp_fake0008",
+              "object": "response",
+              "created_at": 1794441600,
+              "status": "in_progress",
+              "model": "gpt-5.5-codex",
+              "output": [],
+              "usage": null
+            },
+            "sequence_number": 0
+          }
+        },
+        {
+          "event": "response.output_item.added",
+          "data": {
+            "type": "response.output_item.added",
+            "output_index": 0,
+            "item": {
+              "id": "msg_fake0008",
+              "type": "message",
+              "status": "in_progress",
+              "role": "assistant",
+              "content": []
+            },
+            "sequence_number": 1
+          }
+        },
+        {
+          "event": "response.content_part.added",
+          "data": {
+            "type": "response.content_part.added",
+            "item_id": "msg_fake0008",
+            "output_index": 0,
+            "content_index": 0,
+            "part": {
+              "type": "output_text",
+              "annotations": [],
+              "logprobs": [],
+              "text": ""
+            },
+            "sequence_number": 2
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "item_id": "msg_fake0008",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": "No",
+            "logprobs": [],
+            "sequence_number": 3
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "item_id": "msg_fake0008",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": " findings",
+            "logprobs": [],
+            "sequence_number": 4
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "item_id": "msg_fake0008",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": " in",
+            "logprobs": [],
+            "sequence_number": 5
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "item_id": "msg_fake0008",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": " the",
+            "logprobs": [],
+            "sequence_number": 6
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "item_id": "msg_fake0008",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": " made-up",
+            "logprobs": [],
+            "sequence_number": 7
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "item_id": "msg_fake0008",
+            "output_index": 0,
+            "content_index": 0,
+            "delta": " diff.",
+            "logprobs": [],
+            "sequence_number": 8
+          }
+        },
+        {
+          "event": "response.output_text.done",
+          "data": {
+            "type": "response.output_text.done",
+            "item_id": "msg_fake0008",
+            "output_index": 0,
+            "content_index": 0,
+            "text": "No findings in the made-up diff.",
+            "logprobs": [],
+            "sequence_number": 9
+          }
+        },
+        {
+          "event": "response.content_part.done",
+          "data": {
+            "type": "response.content_part.done",
+            "item_id": "msg_fake0008",
+            "output_index": 0,
+            "content_index": 0,
+            "part": {
+              "type": "output_text",
+              "annotations": [],
+              "logprobs": [],
+              "text": "No findings in the made-up diff."
+            },
+            "sequence_number": 10
+          }
+        },
+        {
+          "event": "response.output_item.done",
+          "data": {
+            "type": "response.output_item.done",
+            "output_index": 0,
+            "item": {
+              "id": "msg_fake0008",
+              "type": "message",
+              "status": "completed",
+              "role": "assistant",
+              "content": [
+                {
+                  "type": "output_text",
+                  "annotations": [],
+                  "logprobs": [],
+                  "text": "No findings in the made-up diff."
+                }
+              ],
+              "phase": "final_answer"
+            },
+            "sequence_number": 11
+          }
+        },
+        {
+          "event": "response.completed",
+          "data": {
+            "type": "response.completed",
+            "response": {
+              "id": "resp_fake0008",
+              "object": "response",
+              "created_at": 1794441600,
+              "status": "completed",
+              "model": "gpt-5.5-codex",
+              "end_turn": true,
+              "usage": {
+                "input_tokens": 1200,
+                "input_tokens_details": {
+                  "cached_tokens": 0
+                },
+                "output_tokens": 40,
+                "output_tokens_details": {
+                  "reasoning_tokens": 16
+                },
+                "total_tokens": 1240
+              }
+            },
+            "sequence_number": 12
+          }
+        }
+      ]
+    }
+  },
+  "expects": {
+    "logged": {
+      "session": "00000000-0000-7000-8000-00000000c0df",
+      "sessionSource": "session-id",
+      "machine": "",
+      "project": "",
+      "client": "codex",
+      "clientVersion": "0.167.1",
+      "userAgent": "codex_cli_rs/0.167.1 (Mac OS 26.1.0; arm64) iTerm.app/3.6.6",
+      "divertedFrom": null,
+      "follows": null,
+      "loginFingerprint": "b078b30895acad342351ab2b63a1eb73eec9729dd460c36821700be56d640ec8",
+      "refusalReset": null,
+      "protocol": "chatgpt-codex",
+      "operation": "responses",
+      "purpose": "review",
+      "model": "gpt-5.5-codex",
+      "servedModel": "",
+      "stream": true,
+      "outcome": "ok",
+      "upstreamStatus": 200,
+      "errorType": "",
+      "errorMessage": "",
+      "stopReason": "completed",
+      "usage": {
+        "tokens": {
+          "input": 1200,
+          "cacheRead": 0,
+          "cacheWriteShort": 0,
+          "cacheWriteLong": 0,
+          "output": 40
+        },
+        "reasoning": 16,
+        "reported": "{\"input_tokens\":1200,\"input_tokens_details\":{\"cached_tokens\":0},\"output_tokens\":40,\"output_tokens_details\":{\"reasoning_tokens\":16},\"total_tokens\":1240}"
+      },
+      "serviceTier": "priority",
+      "providerRequestId": "req_fake0008",
+      "rateLimits": {
+        "x-codex-credits-has-credits": "false",
+        "x-codex-credits-unlimited": "false",
+        "x-codex-primary-reset-at": "1794459600",
+        "x-codex-primary-used-percent": "12",
+        "x-codex-primary-window-minutes": "300",
+        "x-codex-secondary-reset-at": "1794960000",
+        "x-codex-secondary-used-percent": "3",
+        "x-codex-secondary-window-minutes": "10080"
+      },
+      "clientHeaders": {
+        "originator": "codex_cli_rs",
+        "thread-id": "00000000-0000-7000-8000-00000000c0df",
+        "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+        "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000102\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}",
+        "x-openai-subagent": "review",
+        "x-codex-parent-thread-id": "00000000-0000-7000-8000-00000000c0de",
+        "x-codex-beta-features": "remote_compaction_v2"
+      },
+      "conversation": {
+        "params": {
+          "model": "gpt-5.5-codex",
+          "stream": true,
+          "service_tier": "priority",
+          "tool_choice": "auto",
+          "parallel_tool_calls": true,
+          "reasoning": {
+            "effort": "medium",
+            "summary": "auto"
+          },
+          "store": false,
+          "include": ["reasoning.encrypted_content"],
+          "prompt_cache_key": "00000000-0000-7000-8000-00000000c0de",
+          "client_metadata": {
+            "x-codex-installation-id": "00000000-0000-4000-8000-0000000000aa",
+            "session_id": "00000000-0000-7000-8000-00000000c0df",
+            "thread_id": "00000000-0000-7000-8000-00000000c0df",
+            "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+            "turn_id": "00000000-0000-7000-8000-000000000102",
+            "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000102\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}",
+            "x-openai-subagent": "review",
+            "x-codex-parent-thread-id": "00000000-0000-7000-8000-00000000c0de"
+          }
+        },
+        "layout": [
+          {
+            "part": "system",
+            "field": "instructions",
+            "layout": "absent"
+          },
+          {
+            "part": "tools",
+            "field": "tools",
+            "layout": "absent"
+          },
+          {
+            "part": "input",
+            "field": "input",
+            "layout": "list"
+          }
+        ],
+        "overlay": [],
+        "system": [],
+        "tools": [],
+        "input": [
+          {
+            "digest": "d3ca42349033118c86a553654d73e8fc",
+            "type": "message",
+            "role": "developer",
+            "text": "Review the made-up diff."
+          },
+          {
+            "digest": "c65deec6aa25374bc89429b1ace27b13",
+            "type": "message",
+            "role": "user",
+            "text": "diff --git a/src/fake.ts b/src/fake.ts"
+          }
+        ],
+        "output": [
+          {
+            "digest": "c8299fc8c7a60c0ae4aee457601e86c9",
+            "type": "message",
+            "role": "assistant",
+            "text": "No findings in the made-up diff."
+          }
+        ]
+      },
+      "errorBody": "",
+      "requestBytes": 1504,
+      "responseBytes": 3005,
+      "readingComplete": true
+    }
+  }
+}

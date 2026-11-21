@@ -1,0 +1,96 @@
+{
+  "source": {
+    "kind": "constructed",
+    "from": [
+      "Milestone 1 research, OpenAI-compatible adapter facts (2026-11-12), section 4 (local server, llama-swap)"
+    ]
+  },
+  "request": {
+    "method": "GET",
+    "path": "/models",
+    "headers": {
+      "authorization": "Bearer cota-FAKE-hub-key-for-tests",
+      "user-agent": "pi/1.5.2 (darwin; bun/1.4.2; arm64)"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "object": "list",
+        "data": [
+          {
+            "id": "local",
+            "object": "model",
+            "created": 1794459004,
+            "owned_by": "llama-swap",
+            "name": "Local",
+            "description": "",
+            "meta": {
+              "llamaswap": {
+                "type": "model"
+              }
+            },
+            "status": {
+              "value": "unloaded"
+            }
+          },
+          {
+            "id": "lmstudio/gemma-4-12b-it",
+            "object": "model",
+            "owned_by": "llama-swap",
+            "name": "lmstudio: gemma-4-12b-it",
+            "meta": {
+              "llamaswap": {
+                "peerID": "lmstudio",
+                "type": "peer"
+              }
+            },
+            "status": {
+              "value": "unloaded"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "expects": {
+    "logged": {
+      "session": "request:<id>",
+      "sessionSource": "",
+      "machine": "",
+      "project": "",
+      "client": "pi",
+      "clientVersion": "1.5.2",
+      "userAgent": "pi/1.5.2 (darwin; bun/1.4.2; arm64)",
+      "divertedFrom": null,
+      "follows": null,
+      "loginFingerprint": null,
+      "refusalReset": null,
+      "protocol": "openai-chat",
+      "operation": "models",
+      "purpose": "",
+      "model": "",
+      "servedModel": "",
+      "stream": false,
+      "outcome": "ok",
+      "upstreamStatus": 200,
+      "errorType": "",
+      "errorMessage": "",
+      "stopReason": "",
+      "usage": null,
+      "serviceTier": "",
+      "providerRequestId": "",
+      "rateLimits": {},
+      "clientHeaders": {},
+      "conversation": null,
+      "errorBody": "",
+      "requestBytes": 0,
+      "responseBytes": 398,
+      "readingComplete": true
+    }
+  }
+}

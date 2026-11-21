@@ -1,0 +1,199 @@
+{
+  "source": {
+    "kind": "constructed",
+    "from": [
+      "https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create",
+      "Milestone 1 research, OpenAI-compatible adapter facts (2026-11-12), section 3"
+    ]
+  },
+  "request": {
+    "method": "POST",
+    "path": "/chat/completions",
+    "headers": {
+      "authorization": "Bearer cota-FAKE-hub-key-for-tests",
+      "accept": "application/json",
+      "content-type": "application/json",
+      "user-agent": "pi/1.5.2 (darwin; bun/1.4.2; arm64)",
+      "x-stainless-lang": "js",
+      "x-stainless-retry-count": "0"
+    },
+    "body": {
+      "json": {
+        "model": "glm-5.2",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are opencode, a coding agent."
+          },
+          {
+            "role": "user",
+            "content": "What is in a.txt?"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "read",
+              "description": "Read a file",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  }
+                },
+                "required": ["path"]
+              }
+            }
+          }
+        ],
+        "stream": false
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "x-request-id": "req-FAKE-chat-0002"
+    },
+    "body": {
+      "json": {
+        "id": "chatcmpl-FAKE2",
+        "object": "chat.completion",
+        "created": 1794441600,
+        "model": "glm-5.2",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "Hi",
+              "reasoning_content": "The user greets me.",
+              "tool_calls": [
+                {
+                  "id": "call_FAKE2",
+                  "type": "function",
+                  "function": {
+                    "name": "read",
+                    "arguments": "{\"path\":\"a.txt\"}"
+                  }
+                }
+              ]
+            },
+            "finish_reason": "tool_calls"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 100,
+          "completion_tokens": 20,
+          "total_tokens": 120,
+          "prompt_tokens_details": {
+            "cached_tokens": 80
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 5
+          }
+        }
+      }
+    }
+  },
+  "expects": {
+    "logged": {
+      "session": "request:<id>",
+      "sessionSource": "",
+      "machine": "",
+      "project": "",
+      "client": "pi",
+      "clientVersion": "1.5.2",
+      "userAgent": "pi/1.5.2 (darwin; bun/1.4.2; arm64)",
+      "divertedFrom": null,
+      "follows": null,
+      "loginFingerprint": null,
+      "refusalReset": null,
+      "protocol": "openai-chat",
+      "operation": "chat",
+      "purpose": "",
+      "model": "glm-5.2",
+      "servedModel": "",
+      "stream": false,
+      "outcome": "ok",
+      "upstreamStatus": 200,
+      "errorType": "",
+      "errorMessage": "",
+      "stopReason": "tool_calls",
+      "usage": {
+        "tokens": {
+          "input": 20,
+          "cacheRead": 80,
+          "cacheWriteShort": 0,
+          "cacheWriteLong": 0,
+          "output": 20
+        },
+        "reasoning": 5,
+        "reported": "{\"prompt_tokens\":100,\"completion_tokens\":20,\"total_tokens\":120,\"prompt_tokens_details\":{\"cached_tokens\":80},\"completion_tokens_details\":{\"reasoning_tokens\":5}}"
+      },
+      "serviceTier": "",
+      "providerRequestId": "req-FAKE-chat-0002",
+      "rateLimits": {},
+      "clientHeaders": {
+        "x-stainless-retry-count": "0"
+      },
+      "conversation": {
+        "params": {
+          "model": "glm-5.2",
+          "stream": false
+        },
+        "layout": [
+          {
+            "part": "tools",
+            "field": "tools",
+            "layout": "list"
+          },
+          {
+            "part": "input",
+            "field": "messages",
+            "layout": "list"
+          }
+        ],
+        "overlay": [],
+        "system": [],
+        "tools": [
+          {
+            "digest": "b3d9513187e7bdca2993fecc6640641a",
+            "type": "function",
+            "role": "",
+            "text": ""
+          }
+        ],
+        "input": [
+          {
+            "digest": "2e9c82209e6ab1864c0964cacd601712",
+            "type": "",
+            "role": "system",
+            "text": "You are opencode, a coding agent."
+          },
+          {
+            "digest": "31426ea6a8bf626462839b2daadb9a6c",
+            "type": "",
+            "role": "user",
+            "text": "What is in a.txt?"
+          }
+        ],
+        "output": [
+          {
+            "digest": "6193f5c3ae1c3f2bb09c4cff2918396a",
+            "type": "",
+            "role": "assistant",
+            "text": "Hi\n\nThe user greets me.\n\n{\"path\":\"a.txt\"}"
+          }
+        ]
+      },
+      "errorBody": "",
+      "requestBytes": 333,
+      "responseBytes": 513,
+      "readingComplete": true
+    }
+  }
+}

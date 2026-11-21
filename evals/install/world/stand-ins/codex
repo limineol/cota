@@ -1,0 +1,11 @@
+#!/usr/bin/env bun
+// A stand-in for Codex, never the real one: it records its arguments and ends.
+const { appendFileSync, mkdirSync } = require("node:fs");
+const { join } = require("node:path");
+
+const home = process.env.HOME;
+mkdirSync(join(home, ".stand-ins"), { recursive: true });
+appendFileSync(
+  join(home, ".stand-ins", "codex.jsonl"),
+  `${JSON.stringify({ args: process.argv.slice(2), cwd: process.cwd(), session: null })}\n`,
+);

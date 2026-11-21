@@ -1,0 +1,62 @@
+# A hub to try on this machine, against compose.dev.yaml's ClickHouse:
+#
+#   docker compose -f compose.dev.yaml up -d --wait
+#   COTA_CONFIG=examples/cota.dev.toml \
+#   COTA_DEV_CLICKHOUSE_PASSWORD=throwaway-dev-password \
+#   COTA_DEV_HUB_KEY=any-long-random-string \
+#   COTA_DEV_CLIENT_KEY=another-long-random-string \
+#   COTA_DEV_OWNER_PASSWORD=a-password-you-choose \
+#   bun run hub
+#
+# No secret is written here. ClickHouse's password is compose.dev.yaml's
+# throwaway one; the hub keys and the owner password are whatever you set.
+
+[hub]
+host = "127.0.0.1"
+port = 18080
+
+[clickhouse]
+url = "http://127.0.0.1:18123"
+database = "cota"
+user = "cota"
+password = { env = "COTA_DEV_CLICKHOUSE_PASSWORD" }
+
+# The hub store, at the repository's root, where git ignores it.
+[store]
+path = "../cota.dev.sqlite"
+
+# The owner signs in to the hub's API with this password.
+[sign_in]
+password = { env = "COTA_DEV_OWNER_PASSWORD" }
+
+# A client of a keyed pool sends this one as its API key.
+[[hub_keys]]
+name = "dev"
+scope = "keyed"
+secret = { env = "COTA_DEV_HUB_KEY" }
+
+# A client of a subscription pool sends this one as x-cota-key, beside its
+# own login.
+[[hub_keys]]
+name = "dev-clients"
+scope = "subscription"
+secret = { env = "COTA_DEV_CLIENT_KEY" }
+
+# Claude Code: ANTHROPIC_BASE_URL=http://127.0.0.1:18080/pools/claude
+[pools.claude]
+protocol = "anthropic-messages"
+prices = "anthropic"
+
+# Codex: its base URL is http://127.0.0.1:18080/pools/codex/backend-api/codex
+[pools.codex]
+protocol = "chatgpt-codex"
+prices = "openai"
+
+# Any OpenAI-compatible server on this machine, without a key.
+[pools.local]
+protocol = "openai-chat"
+base_url = "http://127.0.0.1:1234/v1"
+
+[pools.local.model_prices."qwen3-coder"]
+input = 0
+output = 0

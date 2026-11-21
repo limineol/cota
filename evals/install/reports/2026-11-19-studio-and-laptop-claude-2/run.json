@@ -1,0 +1,468 @@
+{
+  "id": "20261119t1543-cad7",
+  "commit": "e478792e0dde34d5f1be3e9b565b7f504abeb7a6",
+  "dirty": false,
+  "task": "studio-and-laptop",
+  "installer": "claude",
+  "startedAt": "2026-11-19T15:43:18.157Z",
+  "minutes": 2.8096850639,
+  "limitMinutes": 30,
+  "ending": "unfinished",
+  "error": "Only the dashboard check is left.",
+  "verdicts": [
+    {
+      "id": "ended",
+      "passed": false,
+      "problems": [
+        "the installer ended its turn without saying it was done: \"Only the dashboard check is left.\""
+      ]
+    },
+    {
+      "id": "doctor",
+      "passed": true,
+      "problems": []
+    },
+    {
+      "id": "requests",
+      "passed": true,
+      "problems": []
+    },
+    {
+      "id": "titles",
+      "passed": false,
+      "problems": [
+        "the installer ran cota titles report after the launches, so a title may not have come from the schedule"
+      ]
+    },
+    {
+      "id": "routes",
+      "passed": true,
+      "problems": []
+    },
+    {
+      "id": "secrets",
+      "passed": true,
+      "problems": []
+    },
+    {
+      "id": "untouched",
+      "passed": true,
+      "problems": []
+    }
+  ],
+  "passed": false,
+  "transcript": [
+    {
+      "kind": "message",
+      "at": "2026-11-19T15:43:40.527Z",
+      "from": "installer",
+      "text": "Before I install Cota, I need four answers.\n\n1. **Hub:** Which machine runs the hub, studio or laptop? It needs Docker with `docker compose`, Git and Bun, and it should stay on. May I run Cota's Compose project `cota` there? That is two containers on your Docker engine: the hub and its own ClickHouse. Or do you already run a ClickHouse for Cota?\n2. **Pools:** Which pools should the hub use?\n   - Claude subscriptions (Pro or Max): what name do you want for each, and which is the fallback of which?\n   - A ChatGPT subscription, for Codex?\n   - API plans: Anthropic API key, OpenRouter, Z.ai, OpenCode Go, or your own OpenAI-compatible URL?\n3. **Hub address:** What address will the machines use to reach the hub? Examples are `http://studio.lan:8080`, a VPN address, or an `https://` address behind your proxy. A plain `http` address that isn't the hub machine's own sends the hub keys unencrypted. Do you accept that?\n4. **Machines:** Both studio and laptop join, as you said. Which of Claude Code, Codex, OpenCode and Pi are installed on each?"
+    },
+    {
+      "kind": "message",
+      "at": "2026-11-19T15:43:46.480Z",
+      "from": "owner",
+      "text": "Here are my answers.\n\n1. Hub: studio, the machine I am on. It stays on, and every machine reaches it. It has Docker, Git and Bun, and Cota's checkout is in ~/cota. You may run Cota's Compose project `cota` in its Docker. I do not run a ClickHouse of my own.\n\n2. Pools:\n- \"work\" is my Claude Max subscription.\n- \"personal\" is my own Claude Pro subscription, and it is work's fallback.\n- \"chatgpt\" is my ChatGPT subscription, for Codex.\n- \"zai\" is my Z.ai coding plan.\n- I have no other API plans.\nRouting: acme/* projects bill work, and everything else bills personal. Codex bills chatgpt.\n\n3. Hub address: the machines reach the hub at http://studio:8080. It is plain http on my own network, and I accept that.\n\n4. Machines: studio and laptop both join, each with its checkout of Cota in ~/cota. Both have Claude Code and Codex installed. Neither has OpenCode or Pi. Claude Code on both is signed in to personal. Laptop also gets a machine login for work, because I work on acme's projects from it."
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:43:48.853Z",
+      "actor": "installer",
+      "machine": "studio",
+      "command": "cd ~/cota && git rev-parse HEAD && docker build --build-arg COTA_REVISION=\"$(git rev-parse HEAD)\" -t \"cota-hub:$(git rev-parse --short=12 HEAD)\" . 2>&1 | tail -5; docker image ls cota-hub; cat deploy/cota.toml; cat examples/cota.example.toml",
+      "cwd": "/home/owner",
+      "stdin": false,
+      "exitCode": 0,
+      "stdout": "…the hub runs from. With no index.html there,\n# the hub serves no dashboard, says so once at start, and the API and the relay\n# work as before.\n[dashboard]\ndirectory = \"/srv/cota/dashboard\"\n\n# The owner password, which signs the owner in to the hub's API from a\n# browser, or from `bun run quota:connect`. Optional: without it, the hub is\n# not set up when it first starts, and prints a setup code in its log; the\n# owner gives that code and chooses a password in the browser, and the hub\n# store keeps its argon2id hash. A password here wins over the stored one\n# while it is here, and is the way back in if the stored one is forgotten.\n[sign_in]\npassword = { env = \"COTA_OWNER_PASSWORD\" }\n\n# A hub key opens the pools of one scope. The subscription key rides in a\n# client's environment, where every command the client runs can read it, and\n# spends nothing without that client's own login. The keyed key spends the\n# keys the hub holds, so give it only to a client you trust with them. The\n# reader key opens no pool: it reads the request log through the hub's API.\n\n# Sent as x-cota-key, beside the client's own login.\n[[hub_keys]]\nname = \"clients\"\nscope = \"subscription\"\nsecret = { env = \"COTA_HUB_KEY_CLIENTS\" }\n\n# Sent where the provider's documentation puts its key: x-cota-key, the bearer\n# token, or x-api-key.\n[[hub_keys]]\nname = \"fleet\"\nscope = \"keyed\"\nsecret = { env = \"COTA_HUB_KEY_FLEET\" }\n\n# Sent by an agent you trust to read every conversation in the request log, as\n# x-cota-key or the bearer token, to the hub's API.\n[[hub_keys]]\nname = \"agents\"\nscope = \"reader\"\nsecret = { env = \"COTA_HUB_KEY_AGENTS\" }\n\n# A subscription pool forwards the login each request arrives with. Its quota\n# windows come from its answers' headers; a quota login, which the owner gives\n# with `bun run quota:connect work --email <address>`, lets the hub read them\n# all from the provider, as Claude Code shows them.\n# Claude Code: ANTHROPIC_BASE_URL=http://<hub>:8080/pools/work\n[pools.work]\nprotocol = \"anthropic-messages\"\nfallback = \"personal\"\n\n# When the provider refuses a login of `work`, that login's requests go out\n# with this pool's kept login until the limit resets. Any pool can also be\n# used directly.\n[pools.personal]\nprotocol = \"anthropic-messages\"\nkept_login = { env = \"COTA_PERSONAL_LOGIN\" }\n\n# Codex: base URL http://<hub>:8080/pools/chatgpt/backend-api/codex\n# Its quota login: `bun run quota:connect chatgpt`.\n[pools.chatgpt]\nprotocol = \"chatgpt-codex\"\n\n# A pool that holds a key is a keyed pool: it goes out with that key, whatever\n# the client sent, in the header the client sent its own key in.\n# Claude Code: ANTHROPIC_BASE_URL=http://<hub>:8080/pools/anthropic\n#              ANTHROPIC_API_KEY=<the keyed hub key>\n[pools.anthropic]\nprotocol = \"anthropic-messages\"\nkey = { env = \"ANTHROPIC_KEY\" }\n\n# Claude Code: ANTHROPIC_BASE_URL=http://<hub>:8080/pools/openrouter\n#              ANTHROPIC_AUTH_TOKEN=<the keyed hub key>\n#              ANTHROPIC_API_KEY=\"\"\n[pools.openrouter]\nprotocol = \"anthropic-messages\"\nprovider = \"openrouter\"\nbase_url = \"https://openrouter.ai/api\"\nkey = { env = \"OPENROUTER_API_KEY\" }\n\n# A pool that speaks openai-chat is a keyed pool, with a key or without one.\n# OpenCode and Pi: an OpenAI-compatible provider at http://<hub>:8080/pools/zai\n# The hub reads Z.ai's and OpenCode Go's quota windows with the pool's key.\n[pools.zai]\nprotocol = \"openai-chat\"\nprovider = \"zai\"\nbase_url = \"https://api.z.ai/api/coding/paas/v4\"\nkey = { env = \"ZAI_API_KEY\" }\nprices = \"zai\"\n\n[pools.opencode-go]\nprotocol = \"openai-chat\"\nprovider = \"opencode-go\"\nbase_url = \"https://opencode.ai/zen/go/v1\"\nkey = { env = \"OPENCODE_GO_API_KEY\" }\nprices = \"opencode-go\"\n\n# A server that needs no key, and a price of its own for one model, in dollars\n# per million tokens. A model with no price is recorded with no cost.\n[pools.local]\nprotocol = \"openai-chat\"\nprovider = \"llama-swap\"\nbase_url = \"http://127.0.0.1:1234/v1\"\n\n[pools.local.model_prices.\"qwen3-coder\"]\ninput = 0\noutput = 0\n",
+      "stderr": "",
+      "seconds": 11.495784124999998
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:44:05.582Z",
+      "actor": "installer",
+      "machine": "studio",
+      "command": "cd ~/cota && mkdir -p \"$HOME/cota-hub\" && chmod 700 \"$HOME/cota-hub\"\n(umask 077 && mkdir -p \"$HOME/cota-hub/secrets\" \"$HOME/cota-hub/store\" \"$HOME/cota-hub/archive\")\ncp deploy/compose.yaml \"$HOME/cota-hub/compose.yaml\"\nfor name in clickhouse clients fleet agents; do (umask 077 && openssl rand -hex 24 > \"$HOME/cota-hub/secrets/$name\"); done\n(umask 077 && cat > \"$HOME/cota-hub/.env\" <<EOF\nCOTA_HUB_IMAGE=cota-hub:$(git rev-parse --short=12 HEAD)\nCOTA_UID=$(id -u)\nCOTA_GID=$(id -g)\nCOTA_BIND=0.0.0.0\nCOTA_PORT=8080\nEOF\n)\n(umask 077 && cp deploy/cota.toml \"$HOME/cota-hub/cota.toml\")\ncat >> \"$HOME/cota-hub/cota.toml\" <<'EOF'\n\n[pools.work]\nprotocol = \"anthropic-messages\"\nprices = \"anthropic\"\nfallback = \"personal\"\n\n[pools.personal]\nprotocol = \"anthropic-messages\"\nprices = \"anthropic\"\nkept_login = { file = \"/etc/cota/secrets/personal-login\" }\n\n[pools.chatgpt]\nprotocol = \"chatgpt-codex\"\nprices = \"openai\"\n\n[pools.zai]\nprotocol = \"openai-chat\"\nprovider = \"zai\"\nbase_url = \"https://api.z.ai/api/coding/paas/v4\"\nkey = { file = \"/etc/cota/secrets/zai\" }\nprices = \"zai\"\nEOF\nls -l ~/cota-hub/secrets",
+      "cwd": "/home",
+      "stdin": false,
+      "exitCode": 0,
+      "stdout": "total 16\n-rw------- 1 owner owner 49 Nov 19 15:44 agents\n-rw------- 1 owner owner 49 Nov 19 15:44 clickhouse\n-rw------- 1 owner owner 49 Nov 19 15:44 clients\n-rw------- 1 owner owner 49 Nov 19 15:44 fleet\n",
+      "stderr": "",
+      "seconds": 0.10153654200000164
+    },
+    {
+      "kind": "message",
+      "at": "2026-11-19T15:44:06.913Z",
+      "from": "installer",
+      "text": "The hub image is built and its configuration is written. I need two secret files from you, in your own terminal on studio. I never see either one. For each, run the command, paste the secret, press Enter, then Ctrl-D.\n\n1. Z.ai key:\n(umask 077 && cat > \"$HOME/cota-hub/secrets/zai\")\n\n2. Personal's kept login, because it is work's fallback. First run `claude setup-token` signed in to your Pro (personal) subscription. Then run:\n(umask 077 && cat > \"$HOME/cota-hub/secrets/personal-login\")\n\nTell me when both are done."
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:44:12.106Z",
+      "actor": "owner",
+      "machine": "studio",
+      "command": "(umask 077 && cat > \"$HOME/cota-hub/secrets/zai\")",
+      "cwd": "/home/owner",
+      "stdin": true,
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "",
+      "seconds": 0.05830774999999994
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:44:12.164Z",
+      "actor": "owner",
+      "machine": "studio",
+      "command": "(umask 077 && cat > \"$HOME/cota-hub/secrets/personal-login\")",
+      "cwd": "/home/owner",
+      "stdin": true,
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "",
+      "seconds": 0.057115540999999215
+    },
+    {
+      "kind": "message",
+      "at": "2026-11-19T15:44:12.221Z",
+      "from": "owner",
+      "text": "Both are done. I ran claude setup-token signed in to personal (Pro), then wrote the Z.ai key to $HOME/cota-hub/secrets/zai and personal's kept login to $HOME/cota-hub/secrets/personal-login on studio, each by pasting into the command and pressing Ctrl-D. I did not show you either secret. Here is what the commands printed.\n\nDone: I pasted it.\n\nDone: I pasted it."
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:44:14.123Z",
+      "actor": "installer",
+      "machine": "studio",
+      "command": "cd ~/cota-hub && ls -l secrets | awk '{print $1,$5,$9}'; docker compose up -d --wait 2>&1 | tail -8; curl -s http://studio:8080/health; echo; docker compose logs hub | grep -c 'cota hub listening'",
+      "cwd": "/home/owner",
+      "stdin": false,
+      "exitCode": 0,
+      "stdout": "total  \n-rw------- 49 agents\n-rw------- 49 clickhouse\n-rw------- 49 clients\n-rw------- 49 fleet\n-rw------- 47 personal-login\n-rw------- 22 zai\n Container cota-clickhouse-1 Waiting \n Container cota-clickhouse-1 Healthy \n Container cota-hub-1 Starting \n Container cota-hub-1 Started \n Container cota-clickhouse-1 Waiting \n Container cota-hub-1 Waiting \n Container cota-clickhouse-1 Healthy \n Container cota-hub-1 Healthy \n{\"status\":\"ok\"}\n1\n",
+      "stderr": "",
+      "seconds": 12.134273957999998
+    },
+    {
+      "kind": "message",
+      "at": "2026-11-19T15:44:28.078Z",
+      "from": "installer",
+      "text": "The hub runs at http://studio:8080. Open it in a browser and it shows the Setup screen. Give it the setup code from the line `this hub is not set up` that `docker compose logs hub` prints in `~/cota-hub`, and choose the owner password, 12 characters or more. Tell me when you are signed in."
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:44:32.397Z",
+      "actor": "owner",
+      "machine": "studio",
+      "command": "cd ~/cota-hub && docker compose logs hub | grep 'this hub is not set up' | tail -n 1",
+      "cwd": "/home/owner",
+      "stdin": false,
+      "exitCode": 0,
+      "stdout": "hub-1  | [15:44:20.908] INFO (#74): this hub is not set up: open its dashboard, give it the setup code ‹setup code› and choose the owner password\n",
+      "stderr": "",
+      "seconds": 0.1057051669999928
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:44:32.503Z",
+      "actor": "owner",
+      "machine": "studio",
+      "command": "mkdir -p /tmp/owner-browser && curl -s -w '\\n%{http_code}' --config -",
+      "cwd": "/home/owner",
+      "stdin": true,
+      "exitCode": 0,
+      "stdout": "\n204",
+      "stderr": "",
+      "seconds": 0.1308267499999929
+    },
+    {
+      "kind": "message",
+      "at": "2026-11-19T15:44:32.634Z",
+      "from": "owner",
+      "text": "Done. I opened http://studio:8080, gave the Setup screen the setup code from the hub's log, and chose the owner password myself. I am signed in to the dashboard now. I did not share the code or the password here.\n\nI am signed in."
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:44:34.923Z",
+      "actor": "installer",
+      "machine": "studio",
+      "command": "cd ~/cota && bun install 2>&1 | tail -2 && bun run cli:build 2>&1 | tail -2 && cat \"$HOME/cota-hub/secrets/clients\" \"$HOME/cota-hub/secrets/fleet\" | apps/cli/dist/cota join http://studio:8080 --allow-plain-http 2>&1; apps/cli/dist/cota doctor 2>&1",
+      "cwd": "/home",
+      "stdin": false,
+      "exitCode": 0,
+      "stdout": "\n551 packages installed [2.60s]\n  [49ms] compile  /home/owner/cota/apps/cli/dist/cota\ncli:build: bun-linux-arm64 → /home/owner/cota/apps/cli/dist/cota\ncota: joined http://studio:8080 as studio, keeping its subscription and keyed hub keys.\ncota: wrote the shims of claude, codex, opencode and pi in /home/owner/.local/share/cota/bin.\ncota: /home/owner/.bashrc now puts /home/owner/.local/share/cota/bin first on PATH, in its last line; a new shell finds the shims.\ncota: wrote /home/owner/.codex/config.toml, with cota's provider cota-chatgpt.\ncota: the title reporter was not scheduled: this system has no scheduler cota can use (systemctl --user has no user session: Failed to connect to bus: No medium found); have your own run cota titles report every 30 seconds, or every minute with cron: * * * * * '/home/owner/cota/apps/cli/dist/cota' titles report\ncota: there was no new title to send.\npassed   config\npassed   hub\npassed   hub-keys\npassed   files\npassed   shims\npassed   path\nwarned   clients   no opencode and pi on PATH beyond cota's shims, so they do not launch\n                   fix: install opencode and pi, then run cota doctor\npassed   own-pools\npassed   logins\npassed   kept-routes\npassed   configured\npassed   titles\npassed   config\npassed   hub\npassed   hub-keys\npassed   files\npassed   shims\npassed   path\nwarned   clients   no opencode and pi on PATH beyond cota's shims, so they do not launch\n                   fix: install opencode and pi, then run cota doctor\npassed   own-pools\npassed   logins\npassed   kept-routes\npassed   configured\npassed   titles\n",
+      "stderr": "",
+      "seconds": 2.956758458000011
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:44:41.864Z",
+      "actor": "installer",
+      "machine": "laptop",
+      "command": "cd ~/cota && curl -s http://studio:8080/health; echo; ssh -o BatchMode=yes studio 'test -r cota-hub/secrets/clients && echo ssh-ok' 2>&1 | tail -2",
+      "cwd": "/home",
+      "stdin": false,
+      "exitCode": 0,
+      "stdout": "{\"status\":\"ok\"}\nbash: line 1: ssh: command not found\n",
+      "stderr": "",
+      "seconds": 0.08104312500001105
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:44:43.807Z",
+      "actor": "installer",
+      "machine": "laptop",
+      "command": "cd ~/cota && bun install 2>&1 | tail -1 && bun run cli:build 2>&1 | tail -1; pwd",
+      "cwd": "/home",
+      "stdin": false,
+      "exitCode": 0,
+      "stdout": "551 packages installed [2.85s]\ncli:build: bun-linux-arm64 → /home/owner/cota/apps/cli/dist/cota\n/home/owner/cota\n",
+      "stderr": "",
+      "seconds": 3.3454425830000107
+    },
+    {
+      "kind": "message",
+      "at": "2026-11-19T15:44:52.159Z",
+      "from": "installer",
+      "text": "Studio is joined, and doctor passes there. Its only warning is that OpenCode and Pi aren't installed. The title reporter isn't scheduled on studio, because it has no systemd user session. See the crontab line at the end.\n\nThe laptop has no `ssh`, so I can't pipe the hub keys to it. I built `cota` there, and I need you to run these in your own terminal on the laptop.\n\n1. Join. It asks for the keys without showing them. Paste `clients`, press Enter, paste `fleet`, press Enter, then send an empty line. To read the keys, run `cat ~/cota-hub/secrets/clients ~/cota-hub/secrets/fleet` on studio.\n   cd ~/cota && apps/cli/dist/cota join http://studio:8080 --allow-plain-http\n\n2. Machine login for work. Run `claude setup-token` signed in to your Max (work) subscription. Then run the command below and paste what `claude setup-token` printed:\n   cd ~/cota && apps/cli/dist/cota login work\n\nTell me when both are done.\n\n**Crontab:** studio's titles reporter needs this line in `crontab -e` on studio. The laptop may print the same notice when you join, and then it needs the same line with its own path.\n* * * * * '/home/owner/cota/apps/cli/dist/cota' titles report\n\n**Routes:** please set these in the dashboard under Settings → Routes.\n- Claude Code: `acme/*` bills work, and the default is personal.\n- Codex: the default is chatgpt."
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:45:00.541Z",
+      "actor": "owner",
+      "machine": "studio",
+      "command": "cat ~/cota-hub/secrets/clients ~/cota-hub/secrets/fleet",
+      "cwd": "/home/owner",
+      "stdin": false,
+      "exitCode": 0,
+      "stdout": "‹secret in studio:~/cota-hub/secrets/clients›\n‹secret in studio:~/cota-hub/secrets/fleet›\n",
+      "stderr": "",
+      "seconds": 0.07807079199999861
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:45:00.619Z",
+      "actor": "owner",
+      "machine": "laptop",
+      "command": "apps/cli/dist/cota join http://studio:8080 --allow-plain-http",
+      "cwd": "/home/owner/cota",
+      "stdin": true,
+      "exitCode": 0,
+      "stdout": "cota: joined http://studio:8080 as laptop, keeping its subscription and keyed hub keys.\ncota: wrote the shims of claude, codex, opencode and pi in /home/owner/.local/share/cota/bin.\ncota: /home/owner/.bashrc now puts /home/owner/.local/share/cota/bin first on PATH, in its last line; a new shell finds the shims.\ncota: wrote /home/owner/.codex/config.toml, with cota's provider cota-chatgpt.\ncota: there was no new title to send.\npassed   config\npassed   hub\npassed   hub-keys\npassed   files\npassed   shims\npassed   path\nwarned   clients   no opencode and pi on PATH beyond cota's shims, so they do not launch\n                   fix: install opencode and pi, then run cota doctor\npassed   own-pools\npassed   logins\npassed   kept-routes\npassed   configured\npassed   titles\n",
+      "stderr": "cota: the title reporter was not scheduled: this system has no scheduler cota can use (systemctl --user has no user session: Failed to connect to bus: No medium found); have your own run cota titles report every 30 seconds, or every minute with cron: * * * * * '/home/owner/cota/apps/cli/dist/cota' titles report\n",
+      "seconds": 0.16489916699999593
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:45:00.784Z",
+      "actor": "owner",
+      "machine": "laptop",
+      "command": "apps/cli/dist/cota login work",
+      "cwd": "/home/owner/cota",
+      "stdin": true,
+      "exitCode": 0,
+      "stdout": "cota: kept the machine login for work.\n",
+      "stderr": "",
+      "seconds": 0.1151370420000021
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:45:00.900Z",
+      "actor": "owner",
+      "machine": "studio",
+      "command": "{ crontab -l 2>/dev/null; cat; } | crontab -",
+      "cwd": "/home/owner",
+      "stdin": true,
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "",
+      "seconds": 0.0654979170000006
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:45:00.965Z",
+      "actor": "owner",
+      "machine": "studio",
+      "command": "mkdir -p /tmp/owner-browser && curl -s -w '\\n%{http_code}' --config -",
+      "cwd": "/home/owner",
+      "stdin": true,
+      "exitCode": 0,
+      "stdout": "\n204",
+      "stderr": "",
+      "seconds": 0.115749708000003
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:45:01.081Z",
+      "actor": "owner",
+      "machine": "studio",
+      "command": "mkdir -p /tmp/owner-browser && curl -s -w '\\n%{http_code}' --config -",
+      "cwd": "/home/owner",
+      "stdin": true,
+      "exitCode": 0,
+      "stdout": "{\"clients\":[{\"client\":\"claude-code\",\"routes\":[],\"defaultPool\":null,\"revision\":0,\"changedAt\":null},{\"client\":\"codex\",\"routes\":[],\"defaultPool\":null,\"revision\":0,\"changedAt\":null}]}\n200",
+      "stderr": "",
+      "seconds": 0.059290124999999534
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:45:01.140Z",
+      "actor": "owner",
+      "machine": "studio",
+      "command": "mkdir -p /tmp/owner-browser && curl -s -w '\\n%{http_code}' --config -",
+      "cwd": "/home/owner",
+      "stdin": true,
+      "exitCode": 0,
+      "stdout": "{\"client\":\"claude-code\",\"routes\":[{\"position\":1,\"pattern\":\"acme/*\",\"pool\":\"work\",\"fits\":true}],\"defaultPool\":{\"pool\":\"personal\",\"fits\":true},\"revision\":1,\"changedAt\":\"2026-11-19T15:45:01.197Z\"}\n200",
+      "stderr": "",
+      "seconds": 0.06483208300000115
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:45:01.205Z",
+      "actor": "owner",
+      "machine": "studio",
+      "command": "mkdir -p /tmp/owner-browser && curl -s -w '\\n%{http_code}' --config -",
+      "cwd": "/home/owner",
+      "stdin": true,
+      "exitCode": 0,
+      "stdout": "{\"clients\":[{\"client\":\"claude-code\",\"routes\":[{\"position\":1,\"pattern\":\"acme/*\",\"pool\":\"work\",\"fits\":true}],\"defaultPool\":{\"pool\":\"personal\",\"fits\":true},\"revision\":1,\"changedAt\":\"2026-11-19T15:45:01.197Z\"},{\"client\":\"codex\",\"routes\":[],\"defaultPool\":null,\"revision\":0,\"changedAt\":null}]}\n200",
+      "stderr": "",
+      "seconds": 0.059202582999991135
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:45:01.265Z",
+      "actor": "owner",
+      "machine": "studio",
+      "command": "mkdir -p /tmp/owner-browser && curl -s -w '\\n%{http_code}' --config -",
+      "cwd": "/home/owner",
+      "stdin": true,
+      "exitCode": 0,
+      "stdout": "{\"client\":\"codex\",\"routes\":[],\"defaultPool\":{\"pool\":\"chatgpt\",\"fits\":true},\"revision\":1,\"changedAt\":\"2026-11-19T15:45:01.318Z\"}\n200",
+      "stderr": "",
+      "seconds": 0.0598269169999985
+    },
+    {
+      "kind": "message",
+      "at": "2026-11-19T15:45:01.325Z",
+      "from": "owner",
+      "text": "Done. I ran the join on laptop and pasted the clients and fleet keys into its prompt myself, so they never came through here. I ran claude setup-token signed in to Max (work), then ran cota login work on laptop and pasted the token into its prompt. I added the titles reporter line to studio's crontab. I also set the routes in the dashboard under Settings → Routes: Claude Code acme/* to work with default personal, and Codex default chatgpt. Here is what each printed.\n\nDone. It printed:\ncota: joined http://studio:8080 as laptop, keeping its subscription and keyed hub keys.\ncota: wrote the shims of claude, codex, opencode and pi in /home/owner/.local/share/cota/bin.\ncota: /home/owner/.bashrc now puts /home/owner/.local/share/cota/bin first on PATH, in its last line; a new shell finds the shims.\ncota: wrote /home/owner/.codex/config.toml, with cota's provider cota-chatgpt.\ncota: there was no new title to send.\npassed   config\npassed   hub\npassed   hub-keys\npassed   files\npassed   shims\npassed   path\nwarned   clients   no opencode and pi on PATH beyond cota's shims, so they do not launch\n                   fix: install opencode and pi, then run cota doctor\npassed   own-pools\npassed   logins\npassed   kept-routes\npassed   configured\npassed   titles\ncota: the title reporter was not scheduled: this system has no scheduler cota can use (systemctl --user has no user session: Failed to connect to bus: No medium found); have your own run cota titles report every 30 seconds, or every minute with cron: * * * * * '/home/owner/cota/apps/cli/dist/cota' titles report\n\nDone. It printed:\ncota: kept the machine login for work.\n\nDone. It printed:\n\n\nI set them in Settings → Routes."
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:45:04.097Z",
+      "actor": "installer",
+      "machine": "laptop",
+      "command": "cd ~/cota && apps/cli/dist/cota doctor; echo exit=$?; crontab -l 2>&1 | grep -c 'titles report'; mkdir -p /tmp/rt/acme/x && cd /tmp/rt/acme/x && ~/cota/apps/cli/dist/cota route 2>&1; ~/cota/apps/cli/dist/cota route codex 2>&1",
+      "cwd": "/home",
+      "stdin": false,
+      "exitCode": 0,
+      "stdout": "passed   config\npassed   hub\npassed   hub-keys\npassed   files\npassed   shims\npassed   path\nwarned   clients   no opencode and pi on PATH beyond cota's shims, so they do not launch\n                   fix: install opencode and pi, then run cota doctor\npassed   own-pools\npassed   logins\npassed   kept-routes\npassed   configured\npassed   titles\nexit=0\n0\nproject  x\npool     personal, a subscription pool of anthropic-messages\nby       the default pool of claude-code\nproject  x\npool     chatgpt, a subscription pool of chatgpt-codex\nby       the default pool of codex\n",
+      "stderr": "",
+      "seconds": 0.23087783299999137
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:45:05.413Z",
+      "actor": "installer",
+      "machine": "studio",
+      "command": "cd ~/cota && apps/cli/dist/cota doctor | grep -v '^passed'; echo exit=${PIPESTATUS[0]}; crontab -l 2>&1 | grep -c 'titles report'",
+      "cwd": "/home",
+      "stdin": false,
+      "exitCode": 0,
+      "stdout": "warned   clients   no opencode and pi on PATH beyond cota's shims, so they do not launch\n                   fix: install opencode and pi, then run cota doctor\nexit=0\n1\n",
+      "stderr": "",
+      "seconds": 0.14266733300000486
+    },
+    {
+      "kind": "message",
+      "at": "2026-11-19T15:45:10.196Z",
+      "from": "installer",
+      "text": "Doctor exits 0 on both machines, with no `failed` line. Two things are left.\n\n1. **Laptop crontab:** it has no titles line yet, and you only added one on studio. Without it, doctor's `titles` check starts failing after about 5 minutes. Please run `crontab -e` on the laptop and add this line:\n* * * * * '/home/owner/cota/apps/cli/dist/cota' titles report\n\n2. **Live check:** open a new terminal on one machine and start `claude` in a project. Send one message. Then open the dashboard's Sessions page at http://studio:8080. Tell me whether the session appears with its project, machine and pool, and whether a title shows up within a minute.\n\nFor the routes, I could only test a scratch directory outside any project. That bills personal and chatgpt through the defaults, as expected. I haven't confirmed that an `acme/*` project bills work. Please check one real acme project, for example by running `cota route` in it."
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:45:19.308Z",
+      "actor": "owner",
+      "machine": "laptop",
+      "command": "{ crontab -l 2>/dev/null; cat; } | crontab -",
+      "cwd": "/home/owner",
+      "stdin": true,
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "",
+      "seconds": 0.06885862500000803
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:45:19.377Z",
+      "actor": "owner",
+      "machine": "laptop",
+      "command": "bash -lic 'cd ~/src/acme-api && claude -p \"Say hello from laptop\"'",
+      "cwd": "/home/owner",
+      "stdin": false,
+      "exitCode": 0,
+      "stdout": "Hello from the install eval's fake provider.\n",
+      "stderr": "bash: cannot set terminal process group (-1): Inappropriate ioctl for device\nbash: no job control in this shell\n",
+      "seconds": 0.14192508400000226
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:45:19.519Z",
+      "actor": "owner",
+      "machine": "studio",
+      "command": "bash -lic 'cd ~/src/notes && claude -p \"Say hello from studio\"'",
+      "cwd": "/home/owner",
+      "stdin": false,
+      "exitCode": 0,
+      "stdout": "Hello from the install eval's fake provider.\n",
+      "stderr": "bash: cannot set terminal process group (-1): Inappropriate ioctl for device\nbash: no job control in this shell\n",
+      "seconds": 0.1294010419999977
+    },
+    {
+      "kind": "message",
+      "at": "2026-11-19T15:45:19.648Z",
+      "from": "owner",
+      "text": "Done: I added the titles line to the laptop's crontab, exactly as you wrote it. I also opened a new terminal, started claude in a project and sent one message, as you asked. The launch output is below.\n\nI can't tell you from here whether the session appears on the Sessions page or whether a title shows up. I haven't looked at the dashboard, and that check isn't one of the steps I can do, so please check Sessions yourself.\n\nI won't run `cota route` in an acme project. That command is yours to run. If you want me to test an acme project another way, tell me which step to do.\n\nDone. It printed:\n\n\nOn laptop, in ~/src/acme-api: Done. It printed:\nHello from the install eval's fake provider.\nbash: cannot set terminal process group (-1): Inappropriate ioctl for device\nbash: no job control in this shell\nOn studio, in ~/src/notes: Done. It printed:\nHello from the install eval's fake provider.\nbash: cannot set terminal process group (-1): Inappropriate ioctl for device\nbash: no job control in this shell"
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:45:22.814Z",
+      "actor": "installer",
+      "machine": "laptop",
+      "command": "cd ~/src/acme-api && ~/cota/apps/cli/dist/cota route; crontab -l | grep -c 'titles report'",
+      "cwd": "/home/owner",
+      "stdin": false,
+      "exitCode": 0,
+      "stdout": "project  acme/api\npool     work, a subscription pool of anthropic-messages\nby       route 1 of claude-code, acme/*\n1\n",
+      "stderr": "",
+      "seconds": 0.1243205420000013
+    },
+    {
+      "kind": "command",
+      "at": "2026-11-19T15:45:23.005Z",
+      "actor": "installer",
+      "machine": "studio",
+      "command": "cd ~/cota-hub && docker compose exec -T clickhouse sh -c 'clickhouse-client --user cota --password \"$(cat /etc/cota/secrets/clickhouse 2>/dev/null)\" -q \"select count() from cota.requests\"' 2>&1 | tail -2; docker compose logs hub --tail 15 2>&1 | cut -c1-200",
+      "cwd": "/home/owner",
+      "stdin": false,
+      "exitCode": 0,
+      "stdout": "2\nhub-1  | } {\nhub-1  |   request: \"01a1f47b-d88f-7224-a3cb-4c12e47f5b7f\",\nhub-1  |   pool: \"work\",\nhub-1  |   operation: \"messages\",\nhub-1  | }\nhub-1  | [15:45:19.644] INFO (#247): request finished {\nhub-1  |   outcome: \"ok\",\nhub-1  |   status: 200,\nhub-1  |   errorType: \"\",\nhub-1  |   readingComplete: true,\nhub-1  | } {\nhub-1  |   request: \"01a1f47b-d919-7259-9247-19884531cc61\",\nhub-1  |   pool: \"personal\",\nhub-1  |   operation: \"messages\",\nhub-1  | }\n",
+      "stderr": "",
+      "seconds": 0.18800329199999397
+    }
+  ],
+  "spend": [
+    {
+      "who": "installer",
+      "model": "claude-sonnet-5-5",
+      "costUsd": 0.159752,
+      "turns": 16
+    },
+    {
+      "who": "owner",
+      "model": "claude-haiku-5-5",
+      "costUsd": 0.00461055,
+      "turns": 5
+    }
+  ]
+}

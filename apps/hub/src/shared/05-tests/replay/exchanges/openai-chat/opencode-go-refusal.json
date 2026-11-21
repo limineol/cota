@@ -1,0 +1,127 @@
+{
+  "source": {
+    "kind": "constructed",
+    "from": [
+      "Milestone 1 research, OpenAI-compatible adapter facts (2026-11-12), section 4 (OpenCode Go)"
+    ]
+  },
+  "request": {
+    "method": "POST",
+    "path": "/chat/completions",
+    "headers": {
+      "authorization": "Bearer cota-FAKE-hub-key-for-tests",
+      "content-type": "application/json",
+      "user-agent": "opencode/1.19.5 ai-sdk/provider-utils/4.0.23 runtime/bun/1.4.2",
+      "x-opencode-session-id": "ses_FAKEopencode0002",
+      "x-session-affinity": "ses_FAKEopencode0002",
+      "x-session-id": "ses_FAKEopencode0002"
+    },
+    "body": {
+      "json": {
+        "model": "kimi-k3",
+        "max_tokens": 32000,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Name a colour."
+          }
+        ],
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 429,
+    "headers": {
+      "content-type": "application/json",
+      "retry-after": "10920"
+    },
+    "body": {
+      "json": {
+        "type": "error",
+        "error": {
+          "type": "GoUsageLimitError",
+          "message": "5-hour usage limit reached. Resets in 3h 2m. To continue using this model now, enable usage from your available balance: https://opencode.ai/workspace/wrk_FAKE/go"
+        },
+        "metadata": {
+          "workspace": "wrk_FAKE",
+          "limitName": "5 hour"
+        }
+      }
+    }
+  },
+  "expects": {
+    "logged": {
+      "session": "ses_FAKEopencode0002",
+      "sessionSource": "x-session-affinity",
+      "machine": "",
+      "project": "",
+      "client": "opencode",
+      "clientVersion": "1.19.5",
+      "userAgent": "opencode/1.19.5 ai-sdk/provider-utils/4.0.23 runtime/bun/1.4.2",
+      "divertedFrom": null,
+      "follows": null,
+      "loginFingerprint": null,
+      "refusalReset": "2026-11-12T03:02:00.000Z",
+      "protocol": "openai-chat",
+      "operation": "chat",
+      "purpose": "",
+      "model": "kimi-k3",
+      "servedModel": "",
+      "stream": false,
+      "outcome": "refused",
+      "upstreamStatus": 429,
+      "errorType": "GoUsageLimitError",
+      "errorMessage": "5-hour usage limit reached. Resets in 3h 2m. To continue using this model now, enable usage from your available balance: https://opencode.ai/workspace/wrk_FAKE/go",
+      "stopReason": "",
+      "usage": null,
+      "serviceTier": "",
+      "providerRequestId": "",
+      "rateLimits": {
+        "retry-after": "10920"
+      },
+      "clientHeaders": {},
+      "conversation": {
+        "params": {
+          "model": "kimi-k3",
+          "max_tokens": 32000,
+          "stream": true,
+          "stream_options": {
+            "include_usage": true
+          }
+        },
+        "layout": [
+          {
+            "part": "tools",
+            "field": "tools",
+            "layout": "absent"
+          },
+          {
+            "part": "input",
+            "field": "messages",
+            "layout": "list"
+          }
+        ],
+        "overlay": [],
+        "system": [],
+        "tools": [],
+        "input": [
+          {
+            "digest": "c99489eea340abd8ad149ab85b987659",
+            "type": "",
+            "role": "user",
+            "text": "Name a colour."
+          }
+        ],
+        "output": []
+      },
+      "errorBody": "{\"type\":\"error\",\"error\":{\"type\":\"GoUsageLimitError\",\"message\":\"5-hour usage limit reached. Resets in 3h 2m. To continue using this model now, enable usage from your available balance: https://opencode.ai/workspace/wrk_FAKE/go\"},\"metadata\":{\"workspace\":\"wrk_FAKE\",\"limitName\":\"5 hour\"}}",
+      "requestBytes": 148,
+      "responseBytes": 285,
+      "readingComplete": true
+    }
+  }
+}

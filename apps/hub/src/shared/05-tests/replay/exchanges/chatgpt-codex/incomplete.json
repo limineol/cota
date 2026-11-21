@@ -1,0 +1,393 @@
+{
+  "source": {
+    "kind": "constructed",
+    "from": [
+      "Codex 0.167.1 source (codex-rs, tag rust-v0.167.1): codex-api/src/sse/responses.rs (response.incomplete and incomplete_details.reason)",
+      "Milestone 1 research, Codex wire facts (2026-11-12), from the Codex 0.167.1 source, section 5"
+    ],
+    "note": "Not recorded. A turn cut at max_output_tokens: one finished reasoning item, then response.incomplete with its usage."
+  },
+  "request": {
+    "method": "POST",
+    "path": "/backend-api/codex/responses",
+    "headers": {
+      "accept": "text/event-stream",
+      "authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC1mYWtlLTAwMDEiLCJjaGF0Z3B0X2FjY291bnRfdXNlcl9pZCI6InVzZXItZmFrZS0wMDAxX19hY2N0LWZha2UtMDAwMSJ9LCJleHAiOjE3OTQ0NDE2MDB9.RkFLRS1zaWduYXR1cmUtZm9yLXRlc3RzLW9ubHk",
+      "chatgpt-account-id": "acct-fake-0001",
+      "content-type": "application/json",
+      "originator": "codex_cli_rs",
+      "session-id": "00000000-0000-7000-8000-00000000c0de",
+      "thread-id": "00000000-0000-7000-8000-00000000c0de",
+      "user-agent": "codex_cli_rs/0.167.1 (Mac OS 26.1.0; arm64) iTerm.app/3.6.6",
+      "x-client-request-id": "00000000-0000-7000-8000-00000000c0de",
+      "x-codex-beta-features": "remote_compaction_v2",
+      "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000102\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}",
+      "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+      "x-codex-routing-hint": "model=gpt-5.5-codex;tier=priority",
+      "content-encoding": "zstd"
+    },
+    "body": {
+      "json": {
+        "model": "gpt-5.5-codex",
+        "stream": true,
+        "service_tier": "priority",
+        "input": [
+          {
+            "type": "message",
+            "id": "msg_00000000000050008000000000000001",
+            "role": "developer",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "You are Codex, a coding agent. These are made-up base instructions for a test."
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "role": "user",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "Write a very long made-up story."
+              }
+            ]
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "name": "shell",
+            "description": "Runs a shell command and returns its output.",
+            "strict": false,
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "workdir": {
+                  "type": "string"
+                }
+              },
+              "required": ["command"],
+              "additionalProperties": false
+            }
+          }
+        ],
+        "tool_choice": "auto",
+        "parallel_tool_calls": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        },
+        "store": false,
+        "include": ["reasoning.encrypted_content"],
+        "prompt_cache_key": "00000000-0000-7000-8000-00000000c0de",
+        "client_metadata": {
+          "x-codex-installation-id": "00000000-0000-4000-8000-0000000000aa",
+          "session_id": "00000000-0000-7000-8000-00000000c0de",
+          "thread_id": "00000000-0000-7000-8000-00000000c0de",
+          "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+          "turn_id": "00000000-0000-7000-8000-000000000102",
+          "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000102\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}"
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "text/event-stream; charset=utf-8",
+      "x-request-id": "req_fake0003",
+      "openai-model": "gpt-5.5-codex",
+      "x-codex-turn-state": "FAKE-turn-state-0001",
+      "x-models-etag": "W/\"fake-etag-0001\"",
+      "cf-ray": "0000000000000000-FAK",
+      "x-codex-primary-used-percent": "12",
+      "x-codex-primary-window-minutes": "300",
+      "x-codex-primary-reset-at": "1794459600",
+      "x-codex-secondary-used-percent": "3",
+      "x-codex-secondary-window-minutes": "10080",
+      "x-codex-secondary-reset-at": "1794960000",
+      "x-codex-credits-has-credits": "false",
+      "x-codex-credits-unlimited": "false"
+    },
+    "body": {
+      "events": [
+        {
+          "event": "response.created",
+          "data": {
+            "type": "response.created",
+            "response": {
+              "id": "resp_fake0003",
+              "object": "response",
+              "created_at": 1794441600,
+              "status": "in_progress",
+              "model": "gpt-5.5-codex",
+              "output": [],
+              "usage": null
+            },
+            "sequence_number": 0
+          }
+        },
+        {
+          "event": "response.output_item.added",
+          "data": {
+            "type": "response.output_item.added",
+            "output_index": 0,
+            "item": {
+              "id": "rs_fake0003",
+              "type": "reasoning",
+              "summary": []
+            },
+            "sequence_number": 1
+          }
+        },
+        {
+          "event": "response.reasoning_summary_part.added",
+          "data": {
+            "type": "response.reasoning_summary_part.added",
+            "item_id": "rs_fake0003",
+            "output_index": 0,
+            "summary_index": 0,
+            "part": {
+              "type": "summary_text",
+              "text": ""
+            },
+            "sequence_number": 2
+          }
+        },
+        {
+          "event": "response.reasoning_summary_text.delta",
+          "data": {
+            "type": "response.reasoning_summary_text.delta",
+            "item_id": "rs_fake0003",
+            "output_index": 0,
+            "summary_index": 0,
+            "delta": "**Planning a ",
+            "sequence_number": 3
+          }
+        },
+        {
+          "event": "response.reasoning_summary_text.delta",
+          "data": {
+            "type": "response.reasoning_summary_text.delta",
+            "item_id": "rs_fake0003",
+            "output_index": 0,
+            "summary_index": 0,
+            "delta": "long answer**",
+            "sequence_number": 4
+          }
+        },
+        {
+          "event": "response.reasoning_summary_text.done",
+          "data": {
+            "type": "response.reasoning_summary_text.done",
+            "item_id": "rs_fake0003",
+            "output_index": 0,
+            "summary_index": 0,
+            "text": "**Planning a long answer**",
+            "sequence_number": 5
+          }
+        },
+        {
+          "event": "response.reasoning_summary_part.done",
+          "data": {
+            "type": "response.reasoning_summary_part.done",
+            "item_id": "rs_fake0003",
+            "output_index": 0,
+            "summary_index": 0,
+            "part": {
+              "type": "summary_text",
+              "text": "**Planning a long answer**"
+            },
+            "sequence_number": 6
+          }
+        },
+        {
+          "event": "response.output_item.done",
+          "data": {
+            "type": "response.output_item.done",
+            "output_index": 0,
+            "item": {
+              "id": "rs_fake0003",
+              "type": "reasoning",
+              "summary": [
+                {
+                  "type": "summary_text",
+                  "text": "**Planning a long answer**"
+                }
+              ],
+              "encrypted_content": "gAAAAABFAKE-encrypted-reasoning-three=="
+            },
+            "sequence_number": 7
+          }
+        },
+        {
+          "event": "response.incomplete",
+          "data": {
+            "type": "response.incomplete",
+            "response": {
+              "id": "resp_fake0003",
+              "object": "response",
+              "status": "incomplete",
+              "incomplete_details": {
+                "reason": "max_output_tokens"
+              },
+              "model": "gpt-5.5-codex",
+              "usage": {
+                "input_tokens": 900,
+                "input_tokens_details": {
+                  "cached_tokens": 0
+                },
+                "output_tokens": 4096,
+                "output_tokens_details": {
+                  "reasoning_tokens": 4096
+                },
+                "total_tokens": 4996
+              }
+            },
+            "sequence_number": 8
+          }
+        }
+      ]
+    }
+  },
+  "expects": {
+    "logged": {
+      "session": "00000000-0000-7000-8000-00000000c0de",
+      "sessionSource": "session-id",
+      "machine": "",
+      "project": "",
+      "client": "codex",
+      "clientVersion": "0.167.1",
+      "userAgent": "codex_cli_rs/0.167.1 (Mac OS 26.1.0; arm64) iTerm.app/3.6.6",
+      "divertedFrom": null,
+      "follows": null,
+      "loginFingerprint": "b078b30895acad342351ab2b63a1eb73eec9729dd460c36821700be56d640ec8",
+      "refusalReset": null,
+      "protocol": "chatgpt-codex",
+      "operation": "responses",
+      "purpose": "turn",
+      "model": "gpt-5.5-codex",
+      "servedModel": "",
+      "stream": true,
+      "outcome": "ok",
+      "upstreamStatus": 200,
+      "errorType": "",
+      "errorMessage": "",
+      "stopReason": "max_output_tokens",
+      "usage": {
+        "tokens": {
+          "input": 900,
+          "cacheRead": 0,
+          "cacheWriteShort": 0,
+          "cacheWriteLong": 0,
+          "output": 4096
+        },
+        "reasoning": 4096,
+        "reported": "{\"input_tokens\":900,\"input_tokens_details\":{\"cached_tokens\":0},\"output_tokens\":4096,\"output_tokens_details\":{\"reasoning_tokens\":4096},\"total_tokens\":4996}"
+      },
+      "serviceTier": "priority",
+      "providerRequestId": "req_fake0003",
+      "rateLimits": {
+        "x-codex-credits-has-credits": "false",
+        "x-codex-credits-unlimited": "false",
+        "x-codex-primary-reset-at": "1794459600",
+        "x-codex-primary-used-percent": "12",
+        "x-codex-primary-window-minutes": "300",
+        "x-codex-secondary-reset-at": "1794960000",
+        "x-codex-secondary-used-percent": "3",
+        "x-codex-secondary-window-minutes": "10080"
+      },
+      "clientHeaders": {
+        "originator": "codex_cli_rs",
+        "thread-id": "00000000-0000-7000-8000-00000000c0de",
+        "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+        "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000102\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}",
+        "x-codex-beta-features": "remote_compaction_v2"
+      },
+      "conversation": {
+        "params": {
+          "model": "gpt-5.5-codex",
+          "stream": true,
+          "service_tier": "priority",
+          "tool_choice": "auto",
+          "parallel_tool_calls": true,
+          "reasoning": {
+            "effort": "medium",
+            "summary": "auto"
+          },
+          "store": false,
+          "include": ["reasoning.encrypted_content"],
+          "prompt_cache_key": "00000000-0000-7000-8000-00000000c0de",
+          "client_metadata": {
+            "x-codex-installation-id": "00000000-0000-4000-8000-0000000000aa",
+            "session_id": "00000000-0000-7000-8000-00000000c0de",
+            "thread_id": "00000000-0000-7000-8000-00000000c0de",
+            "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+            "turn_id": "00000000-0000-7000-8000-000000000102",
+            "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000102\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}"
+          }
+        },
+        "layout": [
+          {
+            "part": "system",
+            "field": "instructions",
+            "layout": "absent"
+          },
+          {
+            "part": "tools",
+            "field": "tools",
+            "layout": "list"
+          },
+          {
+            "part": "input",
+            "field": "input",
+            "layout": "list"
+          }
+        ],
+        "overlay": [],
+        "system": [],
+        "tools": [
+          {
+            "digest": "d1c908c0585eb67beaebc618b44ba149",
+            "type": "function",
+            "role": "",
+            "text": ""
+          }
+        ],
+        "input": [
+          {
+            "digest": "512443ae75a019e63e5a317dd61cfe9a",
+            "type": "message",
+            "role": "developer",
+            "text": "You are Codex, a coding agent. These are made-up base instructions for a test."
+          },
+          {
+            "digest": "d656fccabfb73db3efc903ee78822f10",
+            "type": "message",
+            "role": "user",
+            "text": "Write a very long made-up story."
+          }
+        ],
+        "output": [
+          {
+            "digest": "3c43b26818bcc3c1808989fa8ac62ddc",
+            "type": "reasoning",
+            "role": "",
+            "text": "**Planning a long answer**"
+          }
+        ]
+      },
+      "errorBody": "",
+      "requestBytes": 779,
+      "responseBytes": 2188,
+      "readingComplete": true
+    }
+  }
+}

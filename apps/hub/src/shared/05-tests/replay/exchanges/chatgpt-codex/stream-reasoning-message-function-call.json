@@ -1,0 +1,617 @@
+{
+  "source": {
+    "kind": "constructed",
+    "from": [
+      "Codex 0.167.1 source (codex-rs, tag rust-v0.167.1): codex-api/src/sse/responses.rs (events, usage), core/src/client.rs (request body), codex-api/src/common.rs (ResponsesApiRequest), http-client/src/request.rs (zstd)",
+      "Codex 0.167.1 source (codex-rs, tag rust-v0.167.1): core/tests/common/responses.rs (event fixtures)",
+      "Milestone 1 research, Codex wire facts (2026-11-12), from the Codex 0.167.1 source, sections 2 to 5"
+    ],
+    "note": "Not recorded. The event sequence follows Codex's fixtures and the Responses API; which fields ChatGPT's backend puts in each event, and the exact quota headers, are unconfirmed. Made-up prompt, ids and login."
+  },
+  "request": {
+    "method": "POST",
+    "path": "/backend-api/codex/responses",
+    "headers": {
+      "accept": "text/event-stream",
+      "authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC1mYWtlLTAwMDEiLCJjaGF0Z3B0X2FjY291bnRfdXNlcl9pZCI6InVzZXItZmFrZS0wMDAxX19hY2N0LWZha2UtMDAwMSJ9LCJleHAiOjE3OTQ0NDE2MDB9.RkFLRS1zaWduYXR1cmUtZm9yLXRlc3RzLW9ubHk",
+      "chatgpt-account-id": "acct-fake-0001",
+      "content-type": "application/json",
+      "originator": "codex_cli_rs",
+      "session-id": "00000000-0000-7000-8000-00000000c0de",
+      "thread-id": "00000000-0000-7000-8000-00000000c0de",
+      "user-agent": "codex_cli_rs/0.167.1 (Mac OS 26.1.0; arm64) iTerm.app/3.6.6",
+      "x-client-request-id": "00000000-0000-7000-8000-00000000c0de",
+      "x-codex-beta-features": "remote_compaction_v2",
+      "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000101\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}",
+      "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+      "x-codex-routing-hint": "model=gpt-5.5-codex;tier=priority",
+      "content-encoding": "zstd"
+    },
+    "body": {
+      "json": {
+        "model": "gpt-5.5-codex",
+        "stream": true,
+        "service_tier": "priority",
+        "input": [
+          {
+            "type": "message",
+            "id": "msg_00000000000050008000000000000001",
+            "role": "developer",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "You are Codex, a coding agent. These are made-up base instructions for a test."
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "id": "msg_input_00000000-0000-4000-8000-000000000201",
+            "role": "user",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "What files are in this made-up project?"
+              }
+            ]
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "name": "shell",
+            "description": "Runs a shell command and returns its output.",
+            "strict": false,
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "workdir": {
+                  "type": "string"
+                }
+              },
+              "required": ["command"],
+              "additionalProperties": false
+            }
+          }
+        ],
+        "tool_choice": "auto",
+        "parallel_tool_calls": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        },
+        "store": false,
+        "include": ["reasoning.encrypted_content"],
+        "prompt_cache_key": "00000000-0000-7000-8000-00000000c0de",
+        "client_metadata": {
+          "x-codex-installation-id": "00000000-0000-4000-8000-0000000000aa",
+          "session_id": "00000000-0000-7000-8000-00000000c0de",
+          "thread_id": "00000000-0000-7000-8000-00000000c0de",
+          "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+          "turn_id": "00000000-0000-7000-8000-000000000101",
+          "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000101\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}"
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "text/event-stream; charset=utf-8",
+      "x-request-id": "req_fake0001",
+      "openai-model": "gpt-5.5-codex",
+      "x-codex-turn-state": "FAKE-turn-state-0001",
+      "x-models-etag": "W/\"fake-etag-0001\"",
+      "cf-ray": "0000000000000000-FAK",
+      "x-codex-primary-used-percent": "12",
+      "x-codex-primary-window-minutes": "300",
+      "x-codex-primary-reset-at": "1794459600",
+      "x-codex-secondary-used-percent": "3",
+      "x-codex-secondary-window-minutes": "10080",
+      "x-codex-secondary-reset-at": "1794960000",
+      "x-codex-credits-has-credits": "false",
+      "x-codex-credits-unlimited": "false"
+    },
+    "body": {
+      "events": [
+        {
+          "event": "response.created",
+          "data": {
+            "type": "response.created",
+            "response": {
+              "id": "resp_fake0001",
+              "object": "response",
+              "created_at": 1794441600,
+              "status": "in_progress",
+              "model": "gpt-5.5-codex",
+              "output": [],
+              "usage": null
+            },
+            "sequence_number": 0
+          }
+        },
+        {
+          "event": "response.in_progress",
+          "data": {
+            "type": "response.in_progress",
+            "response": {
+              "id": "resp_fake0001",
+              "object": "response",
+              "created_at": 1794441600,
+              "status": "in_progress",
+              "model": "gpt-5.5-codex",
+              "output": [],
+              "usage": null
+            },
+            "sequence_number": 1
+          }
+        },
+        {
+          "event": "response.output_item.added",
+          "data": {
+            "type": "response.output_item.added",
+            "output_index": 0,
+            "item": {
+              "id": "rs_fake0001",
+              "type": "reasoning",
+              "summary": []
+            },
+            "sequence_number": 2
+          }
+        },
+        {
+          "event": "response.reasoning_summary_part.added",
+          "data": {
+            "type": "response.reasoning_summary_part.added",
+            "item_id": "rs_fake0001",
+            "output_index": 0,
+            "summary_index": 0,
+            "part": {
+              "type": "summary_text",
+              "text": ""
+            },
+            "sequence_number": 3
+          }
+        },
+        {
+          "event": "response.reasoning_summary_text.delta",
+          "data": {
+            "type": "response.reasoning_summary_text.delta",
+            "item_id": "rs_fake0001",
+            "output_index": 0,
+            "summary_index": 0,
+            "delta": "**Listing the files**\n\nI will",
+            "sequence_number": 4
+          }
+        },
+        {
+          "event": "response.reasoning_summary_text.delta",
+          "data": {
+            "type": "response.reasoning_summary_text.delta",
+            "item_id": "rs_fake0001",
+            "output_index": 0,
+            "summary_index": 0,
+            "delta": " look at the directory first.",
+            "sequence_number": 5
+          }
+        },
+        {
+          "event": "response.reasoning_summary_text.done",
+          "data": {
+            "type": "response.reasoning_summary_text.done",
+            "item_id": "rs_fake0001",
+            "output_index": 0,
+            "summary_index": 0,
+            "text": "**Listing the files**\n\nI will look at the directory first.",
+            "sequence_number": 6
+          }
+        },
+        {
+          "event": "response.reasoning_summary_part.done",
+          "data": {
+            "type": "response.reasoning_summary_part.done",
+            "item_id": "rs_fake0001",
+            "output_index": 0,
+            "summary_index": 0,
+            "part": {
+              "type": "summary_text",
+              "text": "**Listing the files**\n\nI will look at the directory first."
+            },
+            "sequence_number": 7
+          }
+        },
+        {
+          "event": "response.output_item.done",
+          "data": {
+            "type": "response.output_item.done",
+            "output_index": 0,
+            "item": {
+              "id": "rs_fake0001",
+              "type": "reasoning",
+              "summary": [
+                {
+                  "type": "summary_text",
+                  "text": "**Listing the files**\n\nI will look at the directory first."
+                }
+              ],
+              "encrypted_content": "gAAAAABFAKE-encrypted-reasoning-for-tests-only=="
+            },
+            "sequence_number": 8
+          }
+        },
+        {
+          "event": "response.output_item.added",
+          "data": {
+            "type": "response.output_item.added",
+            "output_index": 1,
+            "item": {
+              "id": "msg_fake0001",
+              "type": "message",
+              "status": "in_progress",
+              "role": "assistant",
+              "content": []
+            },
+            "sequence_number": 9
+          }
+        },
+        {
+          "event": "response.content_part.added",
+          "data": {
+            "type": "response.content_part.added",
+            "item_id": "msg_fake0001",
+            "output_index": 1,
+            "content_index": 0,
+            "part": {
+              "type": "output_text",
+              "annotations": [],
+              "logprobs": [],
+              "text": ""
+            },
+            "sequence_number": 10
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "item_id": "msg_fake0001",
+            "output_index": 1,
+            "content_index": 0,
+            "delta": "I",
+            "logprobs": [],
+            "sequence_number": 11
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "item_id": "msg_fake0001",
+            "output_index": 1,
+            "content_index": 0,
+            "delta": " will",
+            "logprobs": [],
+            "sequence_number": 12
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "item_id": "msg_fake0001",
+            "output_index": 1,
+            "content_index": 0,
+            "delta": " list",
+            "logprobs": [],
+            "sequence_number": 13
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "item_id": "msg_fake0001",
+            "output_index": 1,
+            "content_index": 0,
+            "delta": " the",
+            "logprobs": [],
+            "sequence_number": 14
+          }
+        },
+        {
+          "event": "response.output_text.delta",
+          "data": {
+            "type": "response.output_text.delta",
+            "item_id": "msg_fake0001",
+            "output_index": 1,
+            "content_index": 0,
+            "delta": " files.",
+            "logprobs": [],
+            "sequence_number": 15
+          }
+        },
+        {
+          "event": "response.output_text.done",
+          "data": {
+            "type": "response.output_text.done",
+            "item_id": "msg_fake0001",
+            "output_index": 1,
+            "content_index": 0,
+            "text": "I will list the files.",
+            "logprobs": [],
+            "sequence_number": 16
+          }
+        },
+        {
+          "event": "response.content_part.done",
+          "data": {
+            "type": "response.content_part.done",
+            "item_id": "msg_fake0001",
+            "output_index": 1,
+            "content_index": 0,
+            "part": {
+              "type": "output_text",
+              "annotations": [],
+              "logprobs": [],
+              "text": "I will list the files."
+            },
+            "sequence_number": 17
+          }
+        },
+        {
+          "event": "response.output_item.done",
+          "data": {
+            "type": "response.output_item.done",
+            "output_index": 1,
+            "item": {
+              "id": "msg_fake0001",
+              "type": "message",
+              "status": "completed",
+              "role": "assistant",
+              "content": [
+                {
+                  "type": "output_text",
+                  "annotations": [],
+                  "logprobs": [],
+                  "text": "I will list the files."
+                }
+              ],
+              "phase": "commentary"
+            },
+            "sequence_number": 18
+          }
+        },
+        {
+          "event": "response.output_item.added",
+          "data": {
+            "type": "response.output_item.added",
+            "output_index": 2,
+            "item": {
+              "id": "fc_fake0001",
+              "type": "function_call",
+              "status": "in_progress",
+              "arguments": "",
+              "call_id": "call_fake0001",
+              "name": "shell"
+            },
+            "sequence_number": 19
+          }
+        },
+        {
+          "event": "response.function_call_arguments.delta",
+          "data": {
+            "type": "response.function_call_arguments.delta",
+            "item_id": "fc_fake0001",
+            "output_index": 2,
+            "delta": "{\"command\":[\"ls\",\"-a\"],\"workdir\":\"/work/demo\"}",
+            "sequence_number": 20
+          }
+        },
+        {
+          "event": "response.function_call_arguments.done",
+          "data": {
+            "type": "response.function_call_arguments.done",
+            "item_id": "fc_fake0001",
+            "output_index": 2,
+            "arguments": "{\"command\":[\"ls\",\"-a\"],\"workdir\":\"/work/demo\"}",
+            "sequence_number": 21
+          }
+        },
+        {
+          "event": "response.output_item.done",
+          "data": {
+            "type": "response.output_item.done",
+            "output_index": 2,
+            "item": {
+              "id": "fc_fake0001",
+              "type": "function_call",
+              "status": "completed",
+              "arguments": "{\"command\":[\"ls\",\"-a\"],\"workdir\":\"/work/demo\"}",
+              "call_id": "call_fake0001",
+              "name": "shell"
+            },
+            "sequence_number": 22
+          }
+        },
+        {
+          "event": "response.completed",
+          "data": {
+            "type": "response.completed",
+            "response": {
+              "id": "resp_fake0001",
+              "object": "response",
+              "created_at": 1794441600,
+              "status": "completed",
+              "model": "gpt-5.5-codex",
+              "end_turn": false,
+              "usage": {
+                "input_tokens": 5200,
+                "input_tokens_details": {
+                  "cached_tokens": 4096,
+                  "cache_write_tokens": 0
+                },
+                "output_tokens": 180,
+                "output_tokens_details": {
+                  "reasoning_tokens": 96
+                },
+                "total_tokens": 5380
+              }
+            },
+            "sequence_number": 23
+          }
+        }
+      ]
+    }
+  },
+  "expects": {
+    "logged": {
+      "session": "00000000-0000-7000-8000-00000000c0de",
+      "sessionSource": "session-id",
+      "machine": "",
+      "project": "",
+      "client": "codex",
+      "clientVersion": "0.167.1",
+      "userAgent": "codex_cli_rs/0.167.1 (Mac OS 26.1.0; arm64) iTerm.app/3.6.6",
+      "divertedFrom": null,
+      "follows": null,
+      "loginFingerprint": "b078b30895acad342351ab2b63a1eb73eec9729dd460c36821700be56d640ec8",
+      "refusalReset": null,
+      "protocol": "chatgpt-codex",
+      "operation": "responses",
+      "purpose": "turn",
+      "model": "gpt-5.5-codex",
+      "servedModel": "",
+      "stream": true,
+      "outcome": "ok",
+      "upstreamStatus": 200,
+      "errorType": "",
+      "errorMessage": "",
+      "stopReason": "completed",
+      "usage": {
+        "tokens": {
+          "input": 1104,
+          "cacheRead": 4096,
+          "cacheWriteShort": 0,
+          "cacheWriteLong": 0,
+          "output": 180
+        },
+        "reasoning": 96,
+        "reported": "{\"input_tokens\":5200,\"input_tokens_details\":{\"cached_tokens\":4096,\"cache_write_tokens\":0},\"output_tokens\":180,\"output_tokens_details\":{\"reasoning_tokens\":96},\"total_tokens\":5380}"
+      },
+      "serviceTier": "priority",
+      "providerRequestId": "req_fake0001",
+      "rateLimits": {
+        "x-codex-credits-has-credits": "false",
+        "x-codex-credits-unlimited": "false",
+        "x-codex-primary-reset-at": "1794459600",
+        "x-codex-primary-used-percent": "12",
+        "x-codex-primary-window-minutes": "300",
+        "x-codex-secondary-reset-at": "1794960000",
+        "x-codex-secondary-used-percent": "3",
+        "x-codex-secondary-window-minutes": "10080"
+      },
+      "clientHeaders": {
+        "originator": "codex_cli_rs",
+        "thread-id": "00000000-0000-7000-8000-00000000c0de",
+        "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+        "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000101\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}",
+        "x-codex-beta-features": "remote_compaction_v2"
+      },
+      "conversation": {
+        "params": {
+          "model": "gpt-5.5-codex",
+          "stream": true,
+          "service_tier": "priority",
+          "tool_choice": "auto",
+          "parallel_tool_calls": true,
+          "reasoning": {
+            "effort": "medium",
+            "summary": "auto"
+          },
+          "store": false,
+          "include": ["reasoning.encrypted_content"],
+          "prompt_cache_key": "00000000-0000-7000-8000-00000000c0de",
+          "client_metadata": {
+            "x-codex-installation-id": "00000000-0000-4000-8000-0000000000aa",
+            "session_id": "00000000-0000-7000-8000-00000000c0de",
+            "thread_id": "00000000-0000-7000-8000-00000000c0de",
+            "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+            "turn_id": "00000000-0000-7000-8000-000000000101",
+            "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000101\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}"
+          }
+        },
+        "layout": [
+          {
+            "part": "system",
+            "field": "instructions",
+            "layout": "absent"
+          },
+          {
+            "part": "tools",
+            "field": "tools",
+            "layout": "list"
+          },
+          {
+            "part": "input",
+            "field": "input",
+            "layout": "list"
+          }
+        ],
+        "overlay": [],
+        "system": [],
+        "tools": [
+          {
+            "digest": "d1c908c0585eb67beaebc618b44ba149",
+            "type": "function",
+            "role": "",
+            "text": ""
+          }
+        ],
+        "input": [
+          {
+            "digest": "512443ae75a019e63e5a317dd61cfe9a",
+            "type": "message",
+            "role": "developer",
+            "text": "You are Codex, a coding agent. These are made-up base instructions for a test."
+          },
+          {
+            "digest": "0c2ef568614049fba1842ba52a546518",
+            "type": "message",
+            "role": "user",
+            "text": "What files are in this made-up project?"
+          }
+        ],
+        "output": [
+          {
+            "digest": "5fdd1bdf49c9fc4e437087a63dbbf034",
+            "type": "reasoning",
+            "role": "",
+            "text": "**Listing the files**\n\nI will look at the directory first."
+          },
+          {
+            "digest": "0f2987b8895ffc851e997b49dc78a31a",
+            "type": "message",
+            "role": "assistant",
+            "text": "I will list the files."
+          },
+          {
+            "digest": "00c4ee7c32670a392844ffc58588b7bb",
+            "type": "function_call",
+            "role": "",
+            "text": "{\"command\":[\"ls\",\"-a\"],\"workdir\":\"/work/demo\"}"
+          }
+        ]
+      },
+      "errorBody": "",
+      "requestBytes": 799,
+      "responseBytes": 5767,
+      "readingComplete": true
+    }
+  }
+}

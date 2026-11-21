@@ -1,0 +1,1084 @@
+diff --git a/apps/web/src/screens/keys/answer.ts b/apps/web/src/screens/keys/answer.ts
+new file mode 100644
+index 0000000..2a6a111
+--- /dev/null
++++ b/apps/web/src/screens/keys/answer.ts
+@@ -0,0 +1,21 @@
++export const scopes = ["subscription", "keyed", "reader"] as const;
++
++export type Scope = (typeof scopes)[number];
++
++export interface HubKey {
++  readonly id: string;
++  readonly note: string | null;
++  readonly scope: Scope;
++  readonly pools: ReadonlyArray<string>;
++  readonly lastUsedAt: string | null;
++  readonly lastMachine: string | null;
++  readonly requests: number;
++  readonly tokens: number | null;
++}
++
++/** What `GET /api/keys` will answer; the screen takes it from whoever renders it. */
++export interface KeysAnswer {
++  readonly keys: ReadonlyArray<HubKey>;
++  readonly pools: ReadonlyArray<string>;
++  readonly logBegins: string;
++}
+diff --git a/apps/web/src/screens/keys/arrange.test.ts b/apps/web/src/screens/keys/arrange.test.ts
+new file mode 100644
+index 0000000..50c2a2f
+--- /dev/null
++++ b/apps/web/src/screens/keys/arrange.test.ts
+@@ -0,0 +1,80 @@
++import { describe, expect, it } from "@effect/vitest";
++import type { HubKey } from "./answer.ts";
++import {
++  logCoversTheWeek,
++  narrowed,
++  neverUsed,
++  ordered,
++  reordered,
++} from "./arrange.ts";
++
++const key = (id: string, shape: Partial<HubKey>): HubKey => ({
++  id,
++  note: null,
++  scope: "subscription",
++  pools: [],
++  lastUsedAt: null,
++  lastMachine: null,
++  requests: 0,
++  tokens: null,
++  ...shape,
++});
++
++const keys = [
++  key("a", { lastUsedAt: "2026-11-10T00:00:00.000Z", requests: 5 }),
++  key("b", { scope: "reader" }),
++  key("c", { lastUsedAt: "2026-11-16T00:00:00.000Z", requests: 90 }),
++  key("d", { scope: "keyed", lastUsedAt: "2026-11-12T00:00:00.000Z" }),
++  key("e", { scope: "reader" }),
++];
++
++const idsOf = (list: ReadonlyArray<HubKey>) => list.map((each) => each.id);
++
++describe("the hub keys list", () => {
++  it("lists every key while no scope is chosen", () => {
++    expect(idsOf(narrowed(keys, null))).toEqual(["a", "b", "c", "d", "e"]);
++  });
++
++  it("keeps the keys of the chosen scope in the order given", () => {
++    expect(idsOf(narrowed(keys, "reader"))).toEqual(["b", "e"]);
++  });
++
++  it("puts the most recently used key first and the keys never used last", () => {
++    expect(
++      idsOf(ordered(keys, { by: "used", direction: "descending" })),
++    ).toEqual(["c", "d", "a", "b", "e"]);
++  });
++
++  it("puts the keys never used first when the order is reversed", () => {
++    expect(
++      idsOf(ordered(keys, { by: "used", direction: "ascending" })),
++    ).toEqual(["b", "e", "a", "d", "c"]);
++  });
++
++  it("orders by requests, keeping the order given among equal keys", () => {
++    expect(
++      idsOf(ordered(keys, { by: "requests", direction: "descending" })),
++    ).toEqual(["c", "a", "b", "d", "e"]);
++  });
++
++  it("reverses the column in use and starts another with its largest first", () => {
++    const used = { by: "used", direction: "descending" } as const;
++    expect(reordered(used, "used")).toEqual({
++      by: "used",
++      direction: "ascending",
++    });
++    expect(
++      reordered({ by: "used", direction: "ascending" }, "requests"),
++    ).toEqual({ by: "requests", direction: "descending" });
++  });
++
++  it("says the log covers the week only when it began before the week did", () => {
++    const now = Date.parse("2026-11-17T12:00:00.000Z");
++    expect(logCoversTheWeek("2026-11-09", now)).toBe(true);
++    expect(logCoversTheWeek("2026-11-10", now)).toBe(false);
++  });
++
++  it("counts the keys that never sent a request", () => {
++    expect(neverUsed(keys)).toBe(2);
++  });
++});
+diff --git a/apps/web/src/screens/keys/arrange.ts b/apps/web/src/screens/keys/arrange.ts
+new file mode 100644
+index 0000000..40a0092
+--- /dev/null
++++ b/apps/web/src/screens/keys/arrange.ts
+@@ -0,0 +1,71 @@
++import type { HubKey, Scope } from "./answer.ts";
++
++export type SortBy = "used" | "requests";
++
++export type Direction = "ascending" | "descending";
++
++export interface Order {
++  readonly by: SortBy;
++  readonly direction: Direction;
++}
++
++/** What the list is narrowed to (`null` for every scope) and how it is ordered. */
++export interface Choice {
++  readonly scope: Scope | null;
++  readonly order: Order;
++}
++
++export const defaultChoice: Choice = {
++  scope: null,
++  order: { by: "used", direction: "descending" },
++};
++
++/** The keys of one scope, or all of them, in the order given. */
++export const narrowed = (
++  keys: ReadonlyArray<HubKey>,
++  scope: Scope | null,
++): ReadonlyArray<HubKey> =>
++  scope === null ? keys : keys.filter((key) => key.scope === scope);
++
++const lastUsed = (key: HubKey) =>
++  key.lastUsedAt === null
++    ? Number.NEGATIVE_INFINITY
++    : Date.parse(key.lastUsedAt);
++
++const sortedValue = (by: SortBy, key: HubKey) =>
++  by === "used" ? lastUsed(key) : key.requests;
++
++/** Keys by last use or by requests; a key never used counts as least used, and equal keys keep the order given. */
++export const ordered = (
++  keys: ReadonlyArray<HubKey>,
++  { by, direction }: Order,
++): ReadonlyArray<HubKey> => {
++  const sign = direction === "ascending" ? 1 : -1;
++  return keys.toSorted((a, b) => {
++    const left = sortedValue(by, a);
++    const right = sortedValue(by, b);
++    if (left === right) return 0;
++    return left < right ? -sign : sign;
++  });
++};
++
++/** Choosing the column the list is in the order of reverses it; choosing another starts with its largest first. */
++export const reordered = (order: Order, by: SortBy): Order =>
++  order.by === by
++    ? {
++        by,
++        direction:
++          order.direction === "descending" ? "ascending" : "descending",
++      }
++    : { by, direction: "descending" };
++
++const dayMs = 24 * 60 * 60 * 1000;
++const weekMs = 7 * dayMs;
++
++/** Whether the request log held the whole of the last 7 days: its first day, all of it, came before they began. */
++export const logCoversTheWeek = (logBegins: string, now: number) =>
++  Date.parse(logBegins) + dayMs <= now - weekMs;
++
++/** Keys that have never sent a request. */
++export const neverUsed = (keys: ReadonlyArray<HubKey>) =>
++  keys.filter((key) => key.lastUsedAt === null).length;
+diff --git a/apps/web/src/screens/keys/keys.stories.tsx b/apps/web/src/screens/keys/keys.stories.tsx
+new file mode 100644
+index 0000000..79ddf29
+--- /dev/null
++++ b/apps/web/src/screens/keys/keys.stories.tsx
+@@ -0,0 +1,244 @@
++import type { Meta, StoryObj } from "@storybook/react-vite";
++import { useState } from "react";
++import { expect, fn, screen, waitFor, within } from "storybook/test";
++import { displayNames } from "#stories/fixtures.ts";
++import { keysRead, noKeys, youngLog } from "#stories/keys.ts";
++import { withApi } from "#stories/page.tsx";
++import { type Choice, defaultChoice } from "./arrange.ts";
++import { Keys, type KeysRead } from "./keys.tsx";
++
++const meta = {
++  title: "Screens/Keys",
++  decorators: [withApi([displayNames])],
++  parameters: { layout: "fullscreen" },
++} satisfies Meta;
++
++export default meta;
++type Story = StoryObj<typeof meta>;
++
++/** Content dimmed while a newer answer is on its way is inactive, which WCAG 1.4.3 exempts from contrast. */
++const staleContrast = {
++  a11y: {
++    config: {
++      rules: [{ id: "color-contrast", selector: ":not([data-stale] *)" }],
++    },
++  },
++};
++
++function Screen({
++  read,
++  start = defaultChoice,
++}: {
++  readonly read: KeysRead;
++  readonly start?: Choice;
++}) {
++  const [choice, setChoice] = useState(start);
++  return <Keys read={read} choice={choice} onChoice={setChoice} />;
++}
++
++const screenOf = (read: KeysRead, start?: Choice): StoryObj => ({
++  render: () => (
++    <Screen read={read} {...(start === undefined ? {} : { start })} />
++  ),
++});
++
++const idsOf = (table: HTMLElement) =>
++  within(table)
++    .getAllByRole("row")
++    .slice(1)
++    .map((row) => within(row).getAllByText(/^k_[0-9a-f]{6}$/)[0]?.textContent);
++
++export const TwelveKeys: Story = {
++  ...screenOf({ status: "read", answer: keysRead }),
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByText("12 hub keys, 3 never used"),
++    ).toBeVisible();
++    const table = canvas.getByRole("table", { name: "Hub keys" });
++    await expect(within(table).getAllByRole("row")).toHaveLength(13);
++    await expect(idsOf(table)[0]).toBe("k_7f3a9c");
++    await expect(within(table).getAllByText("Never used")).toHaveLength(3);
++    await expect(within(table).getAllByText("Desk")).toHaveLength(2);
++    await expect(
++      canvas.getByText("Requests and tokens are of the last 7 days."),
++    ).toBeVisible();
++  },
++};
++
++export const WhatAKeyOpens: Story = {
++  ...screenOf({ status: "read", answer: keysRead }),
++  play: async ({ canvas }) => {
++    const table = await canvas.findByRole("table", { name: "Hub keys" });
++    const pairing = within(table).getByText("pairing session").closest("tr");
++    if (pairing === null) throw new Error("The pairing key is in no row.");
++    await expect(within(pairing).getByText("5 pools")).toBeVisible();
++    const reader = within(table).getByText("reading agent").closest("tr");
++    if (reader === null) throw new Error("The reader key is in no row.");
++    await expect(within(reader).getByText("No pool")).toBeVisible();
++    await expect(within(reader).getByText("None")).toBeVisible();
++  },
++};
++
++export const TokensUnreported: Story = {
++  ...screenOf({ status: "read", answer: keysRead }),
++  play: async ({ canvas }) => {
++    const table = await canvas.findByRole("table", { name: "Hub keys" });
++    const pairing = within(table).getByText("pairing session").closest("tr");
++    if (pairing === null) throw new Error("The pairing key is in no row.");
++    await expect(within(pairing).getByText("unreported")).toBeVisible();
++    const spare = within(table).getByText("spare phone").closest("tr");
++    if (spare === null) throw new Error("The spare key is in no row.");
++    await expect(within(spare).getByText("none")).toBeVisible();
++  },
++};
++
++export const NarrowedToAScope: Story = {
++  ...screenOf({ status: "read", answer: keysRead }),
++  parameters: staleContrast,
++  play: async ({ canvas, userEvent }) => {
++    await userEvent.click(await canvas.findByRole("button", { name: "Scope" }));
++    await userEvent.click(
++      await screen.findByRole("menuitemcheckbox", { name: /Reader/ }),
++    );
++    await userEvent.keyboard("{Escape}");
++    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
++    const table = canvas.getByRole("table", { name: "Hub keys" });
++    await expect(idsOf(table)).toEqual(["k_e6a30b", "k_a1c2f8", "k_d95e41"]);
++    await expect(canvas.getByText("3 hub keys")).toBeVisible();
++    await expect(
++      canvas.getByRole("button", { name: "Scope Reader" }),
++    ).toBeVisible();
++  },
++};
++
++export const ResettingTheScope: Story = {
++  ...screenOf(
++    { status: "read", answer: keysRead },
++    { ...defaultChoice, scope: "keyed" },
++  ),
++  parameters: staleContrast,
++  play: async ({ canvas, userEvent }) => {
++    const table = await canvas.findByRole("table", { name: "Hub keys" });
++    await expect(within(table).getAllByRole("row")).toHaveLength(4);
++    await userEvent.click(canvas.getByRole("button", { name: /Reset/ }));
++    await expect(within(table).getAllByRole("row")).toHaveLength(13);
++    await expect(canvas.getByRole("button", { name: "Scope" })).toBeVisible();
++  },
++};
++
++export const SortedByRequests: Story = {
++  ...screenOf({ status: "read", answer: keysRead }),
++  play: async ({ canvas, userEvent }) => {
++    const table = await canvas.findByRole("table", { name: "Hub keys" });
++    await expect(
++      within(table).getByRole("columnheader", { name: /Last used/ }),
++    ).toHaveAttribute("aria-sort", "descending");
++    await userEvent.click(
++      within(table).getByRole("button", { name: /Requests/ }),
++    );
++    await expect(
++      within(table).getByRole("columnheader", { name: /Requests/ }),
++    ).toHaveAttribute("aria-sort", "descending");
++    await expect(idsOf(table).slice(0, 3)).toEqual([
++      "k_7f3a9c",
++      "k_2b81de",
++      "k_c04e17",
++    ]);
++    await userEvent.click(
++      within(table).getByRole("button", { name: /Requests/ }),
++    );
++    await expect(idsOf(table).slice(-1)).toEqual(["k_7f3a9c"]);
++  },
++};
++
++export const LeastRecentlyUsedFirst: Story = {
++  ...screenOf({ status: "read", answer: keysRead }),
++  play: async ({ canvas, userEvent }) => {
++    const table = await canvas.findByRole("table", { name: "Hub keys" });
++    await userEvent.click(
++      within(table).getByRole("button", { name: /Last used/ }),
++    );
++    await expect(
++      within(table).getByRole("columnheader", { name: /Last used/ }),
++    ).toHaveAttribute("aria-sort", "ascending");
++    await expect(idsOf(table).slice(0, 3)).toEqual([
++      "k_3d7f60",
++      "k_6e09b3",
++      "k_d95e41",
++    ]);
++    await expect(idsOf(table).slice(-1)).toEqual(["k_7f3a9c"]);
++  },
++};
++
++export const ARequestLogYoungerThanTheWeek: Story = {
++  ...screenOf({ status: "read", answer: youngLog }),
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByText(
++        /The request log begins on .*, so they may count/,
++      ),
++    ).toBeVisible();
++  },
++};
++
++export const NoKeys: Story = {
++  ...screenOf({ status: "read", answer: noKeys }),
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByText("The hub has no hub keys."),
++    ).toBeVisible();
++    await expect(canvas.getByText("The hub has no hub keys")).toBeVisible();
++  },
++};
++
++export const NoKeyOfTheScope: Story = {
++  ...screenOf(
++    {
++      status: "read",
++      answer: {
++        ...keysRead,
++        keys: keysRead.keys.filter((key) => key.scope !== "reader"),
++      },
++    },
++    { ...defaultChoice, scope: "reader" },
++  ),
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByText("The hub has no reader hub keys."),
++    ).toBeVisible();
++  },
++};
++
++export const WhileANewerAnswerIsRead: Story = {
++  ...screenOf({ status: "read", answer: keysRead, stale: true }),
++  parameters: staleContrast,
++};
++
++export const Loading: Story = screenOf({ status: "loading" });
++
++export const Failed: Story = {
++  ...screenOf({
++    status: "failed",
++    error: new Error("down"),
++    onRetry: fn(),
++  }),
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByText("The hub could not read the hub keys."),
++    ).toBeVisible();
++    await expect(
++      canvas.getByRole("button", { name: "Try again" }),
++    ).toBeVisible();
++  },
++};
++
++export const Narrow: Story = {
++  ...screenOf({ status: "read", answer: keysRead }),
++  globals: { viewport: { value: "mobile2" } },
++  play: async ({ canvas }) => {
++    const table = await canvas.findByRole("table", { name: "Hub keys" });
++    await expect(
++      within(table).getAllByText(/ · 4,120 requests · 182.4M tokens$/)[0],
++    ).toBeVisible();
++  },
++};
+diff --git a/apps/web/src/screens/keys/keys.tsx b/apps/web/src/screens/keys/keys.tsx
+new file mode 100644
+index 0000000..9b50171
+--- /dev/null
++++ b/apps/web/src/screens/keys/keys.tsx
+@@ -0,0 +1,245 @@
++import { Button } from "@cota/ui/components/button";
++import { Empty, EmptyDescription, EmptyTitle } from "@cota/ui/components/empty";
++import { FilterMenu, FilterMenuItem } from "@cota/ui/components/filter-menu";
++import {
++  ListPanel,
++  ListPanelBody,
++  ListPanelFilters,
++  ListPanelFoot,
++  ListPanelHead,
++} from "@cota/ui/components/list-panel";
++import { Note } from "@cota/ui/components/note";
++import {
++  Page,
++  PageDescription,
++  PageHeader,
++  PageTitle,
++} from "@cota/ui/components/page";
++import { Skeleton } from "@cota/ui/components/skeleton";
++import { Table } from "@cota/ui/components/table";
++import { X } from "lucide-react";
++import { useMemo } from "react";
++import { poolHues } from "#shared/domain/hues.ts";
++import { NowProvider, useNow } from "#shared/now.tsx";
++import { Problem } from "#shared/problem.tsx";
++import { counted, plural } from "#shared/words.ts";
++import { type KeysAnswer, type Scope, scopes } from "./answer.ts";
++import {
++  type Choice,
++  defaultChoice,
++  logCoversTheWeek,
++  narrowed,
++  neverUsed,
++  ordered,
++  reordered,
++  type SortBy,
++} from "./arrange.ts";
++import { KeyItem, KeySkeleton, KeysHead, scopeName } from "./rows.tsx";
++
++/** What the screen has of the hub's answer: still being read, failed, or read. */
++export type KeysRead =
++  | { readonly status: "loading" }
++  | {
++      readonly status: "failed";
++      readonly error: unknown;
++      readonly onRetry: () => void;
++    }
++  | {
++      readonly status: "read";
++      readonly answer: KeysAnswer;
++      /** True while a newer answer is on its way. */
++      readonly stale?: boolean;
++    };
++
++const skeletonRows = 6;
++
++const day = new Intl.DateTimeFormat("en-US", {
++  year: "numeric",
++  month: "short",
++  day: "numeric",
++  timeZone: "UTC",
++});
++
++export function Keys({
++  read,
++  choice = defaultChoice,
++  onChoice,
++}: {
++  readonly read: KeysRead;
++  readonly choice?: Choice;
++  readonly onChoice: (choice: Choice) => void;
++}) {
++  return (
++    <NowProvider>
++      <KeysPage read={read} choice={choice} onChoice={onChoice} />
++    </NowProvider>
++  );
++}
++
++function KeysPage({
++  read,
++  choice,
++  onChoice,
++}: {
++  readonly read: KeysRead;
++  readonly choice: Choice;
++  readonly onChoice: (choice: Choice) => void;
++}) {
++  const now = useNow();
++  const answer = read.status === "read" ? read.answer : undefined;
++  const hues = useMemo(() => poolHues(answer?.pools ?? []), [answer]);
++
++  const shown = useMemo(
++    () =>
++      answer === undefined
++        ? undefined
++        : ordered(narrowed(answer.keys, choice.scope), choice.order),
++    [answer, choice],
++  );
++  const peak = Math.max(1, ...(shown ?? []).map((key) => key.requests));
++  const countOf = (scope: Scope) =>
++    answer?.keys.filter((key) => key.scope === scope).length ?? 0;
++  const largest = Math.max(1, ...scopes.map(countOf));
++
++  const chooseScope = (scope: Scope | null) => onChoice({ ...choice, scope });
++  const sortBy = (by: SortBy) =>
++    onChoice({ ...choice, order: reordered(choice.order, by) });
++
++  const description = () => {
++    if (answer === undefined) {
++      return read.status === "failed" ? (
++        "Hub keys"
++      ) : (
++        <Skeleton className="inline-block w-64 align-middle" />
++      );
++    }
++    if (answer.keys.length === 0) return "The hub has no hub keys";
++    const idle = neverUsed(answer.keys);
++    return `${plural(answer.keys.length, "hub key")}, ${idle === 0 ? "every one used" : `${counted(idle)} never used`}`;
++  };
++
++  const body = () => {
++    if (read.status === "failed") {
++      return (
++        <Problem
++          inside
++          title="The hub could not read the hub keys."
++          error={read.error}
++          onRetry={read.onRetry}
++        />
++      );
++    }
++    if (shown === undefined) {
++      return (
++        <Table aria-label="Hub keys loading">
++          <KeysHead order={choice.order} onSort={sortBy} />
++          {Array.from({ length: skeletonRows }, (_, index) => (
++            // biome-ignore lint/suspicious/noArrayIndexKey: placeholders have nothing else to tell them apart
++            <KeySkeleton key={index} />
++          ))}
++        </Table>
++      );
++    }
++    if (answer?.keys.length === 0) {
++      return (
++        <Empty>
++          <EmptyTitle>The hub has no hub keys.</EmptyTitle>
++          <EmptyDescription>
++            Hub keys are in the hub's configuration. Add one there and restart
++            the hub, then a machine can send its clients through it.
++          </EmptyDescription>
++        </Empty>
++      );
++    }
++    if (shown.length === 0) {
++      return (
++        <Empty>
++          <EmptyTitle>
++            The hub has no {choice.scope === null ? "" : `${choice.scope} `}hub
++            keys.
++          </EmptyTitle>
++          <EmptyDescription>Choose another scope.</EmptyDescription>
++        </Empty>
++      );
++    }
++    return (
++      <Table aria-label="Hub keys">
++        <KeysHead order={choice.order} onSort={sortBy} />
++        {shown.map((hubKey) => (
++          <KeyItem
++            key={hubKey.id}
++            hubKey={hubKey}
++            now={now}
++            peak={peak}
++            hues={hues}
++          />
++        ))}
++      </Table>
++    );
++  };
++
++  return (
++    <Page className="@container">
++      <PageHeader>
++        <div>
++          <PageTitle>Hub keys</PageTitle>
++          <PageDescription>{description()}</PageDescription>
++        </div>
++      </PageHeader>
++
++      <ListPanel aria-label="The hub keys">
++        <ListPanelHead>
++          <ListPanelFilters
++            end={
++              choice.scope === null ? null : (
++                <Button
++                  variant="ghost"
++                  size="sm"
++                  onClick={() => chooseScope(null)}
++                >
++                  Reset <X aria-hidden="true" />
++                </Button>
++              )
++            }
++          >
++            <FilterMenu
++              label="Scope"
++              chosen={choice.scope === null ? [] : [scopeName[choice.scope]]}
++              note="Counted in hub keys"
++            >
++              {scopes.map((scope) => (
++                <FilterMenuItem
++                  key={scope}
++                  checked={choice.scope === scope}
++                  onCheckedChange={(on) => chooseScope(on ? scope : null)}
++                  count={answer === undefined ? undefined : countOf(scope)}
++                  {...(answer === undefined
++                    ? {}
++                    : { fraction: countOf(scope) / largest })}
++                >
++                  {scopeName[scope]}
++                </FilterMenuItem>
++              ))}
++            </FilterMenu>
++          </ListPanelFilters>
++        </ListPanelHead>
++
++        <ListPanelBody stale={read.status === "read" && read.stale === true}>
++          {body()}
++        </ListPanelBody>
++
++        {answer !== undefined && shown !== undefined && shown.length > 0 ? (
++          <ListPanelFoot>
++            <span>{plural(shown.length, "hub key")}</span>
++            <Note>
++              Requests and tokens are of the last 7 days.
++              {logCoversTheWeek(answer.logBegins, now)
++                ? ""
++                : ` The request log begins on ${day.format(Date.parse(answer.logBegins))}, so they may count from later.`}
++            </Note>
++          </ListPanelFoot>
++        ) : null}
++      </ListPanel>
++    </Page>
++  );
++}
+diff --git a/apps/web/src/screens/keys/rows.tsx b/apps/web/src/screens/keys/rows.tsx
+new file mode 100644
+index 0000000..deef6c3
+--- /dev/null
++++ b/apps/web/src/screens/keys/rows.tsx
+@@ -0,0 +1,228 @@
++import { Badge } from "@cota/ui/components/badge";
++import { PoolMark } from "@cota/ui/components/pool-mark";
++import { Skeleton } from "@cota/ui/components/skeleton";
++import {
++  TableBody,
++  TableCell,
++  TableHead,
++  TableHeader,
++  TableLabel,
++  TableMagnitude,
++  TableRow,
++  TableSecondary,
++  TableSort,
++} from "@cota/ui/components/table";
++import type { ReactNode } from "react";
++import type { Hue } from "#shared/domain/hues.ts";
++import { ago, tokens } from "#shared/domain/quantities.ts";
++import { useNameOf } from "#shared/names.tsx";
++import { counted, plural, when } from "#shared/words.ts";
++import type { HubKey, Scope } from "./answer.ts";
++import type { Order, SortBy } from "./arrange.ts";
++
++export const scopeName: Record<Scope, string> = {
++  subscription: "Subscription",
++  keyed: "Keyed",
++  reader: "Reader",
++};
++
++const marksShown = 4;
++
++const sortable: ReadonlyArray<{
++  readonly by: SortBy;
++  readonly label: string;
++}> = [
++  { by: "used", label: "Last used" },
++  { by: "requests", label: "Requests" },
++];
++
++/** The table's head; the two figures the list can be ordered by are buttons that order it. */
++export function KeysHead({
++  order,
++  onSort,
++}: {
++  readonly order: Order;
++  readonly onSort: (by: SortBy) => void;
++}) {
++  const sortHead = (by: SortBy, from: "md" | "lg") => {
++    const column = sortable.find((each) => each.by === by);
++    const sorted = order.by === by ? order.direction : undefined;
++    return (
++      <TableHead scope="col" numeric from={from} sorted={sorted}>
++        <TableSort numeric sorted={sorted} onClick={() => onSort(by)}>
++          {column?.label}
++        </TableSort>
++      </TableHead>
++    );
++  };
++  return (
++    <TableHeader from="md">
++      <TableRow>
++        <TableHead scope="col">Key</TableHead>
++        <TableHead scope="col" from="lg">
++          Opens
++        </TableHead>
++        {sortHead("used", "md")}
++        <TableHead scope="col" from="lg">
++          Machine
++        </TableHead>
++        {sortHead("requests", "md")}
++        <TableHead scope="col" numeric from="lg">
++          Tokens
++        </TableHead>
++      </TableRow>
++    </TableHeader>
++  );
++}
++
++/** Tokens of the requests that reported usage: none to count with no requests, and unreported when none of them did. */
++const tokensText = (key: HubKey) => {
++  if (key.requests === 0) return "none";
++  return key.tokens === null ? "unreported" : tokens(key.tokens);
++};
++
++function Opens({
++  pools,
++  scope,
++  hues,
++}: {
++  readonly pools: ReadonlyArray<string>;
++  readonly scope: Scope;
++  readonly hues: ReadonlyMap<string, Hue>;
++}) {
++  const nameOf = useNameOf();
++  if (scope === "reader") {
++    return (
++      <>
++        <TableLabel>No pool</TableLabel>
++        <TableSecondary>Reads the request log</TableSecondary>
++      </>
++    );
++  }
++  const names = pools.map((pool) => nameOf("pool", pool)).join(", ");
++  return (
++    <>
++      <span className="flex items-center gap-1.5">
++        {pools.slice(0, marksShown).map((pool) => (
++          <PoolMark
++            key={pool}
++            hue={hues.get(pool) ?? "neutral"}
++            name={nameOf("pool", pool)}
++          />
++        ))}
++        <TableLabel title={names}>{plural(pools.length, "pool")}</TableLabel>
++      </span>
++      <TableSecondary title={names}>{names}</TableSecondary>
++    </>
++  );
++}
++
++export function KeyItem({
++  hubKey,
++  now,
++  peak,
++  hues,
++}: {
++  readonly hubKey: HubKey;
++  readonly now: number;
++  readonly peak: number;
++  readonly hues: ReadonlyMap<string, Hue>;
++}) {
++  const nameOf = useNameOf();
++  const { pools } = hubKey;
++  const used =
++    hubKey.lastUsedAt === null ? null : Date.parse(hubKey.lastUsedAt);
++  const lastUsed: ReactNode =
++    used === null ? (
++      "Never used"
++    ) : (
++      <span title={when(used, now)}>{ago(now - used)}</span>
++    );
++  const machine =
++    hubKey.lastMachine === null ? null : nameOf("machine", hubKey.lastMachine);
++  return (
++    <TableBody>
++      <TableRow>
++        <TableCell className="w-full max-w-0">
++          <span className="flex min-w-0 items-center gap-2">
++            <TableLabel title={hubKey.id}>
++              {hubKey.note ?? hubKey.id}
++            </TableLabel>
++            <Badge>{scopeName[hubKey.scope]}</Badge>
++          </span>
++          <TableSecondary>
++            {hubKey.note === null ? "No note" : hubKey.id}
++          </TableSecondary>
++          <TableSecondary className="@2xl/panel:hidden">
++            {lastUsed}
++            {machine === null ? null : ` · ${machine}`}
++            {` · ${plural(hubKey.requests, "request")} · ${tokensText(hubKey)} tokens`}
++          </TableSecondary>
++          <TableSecondary className="hidden @2xl/panel:block @4xl/panel:hidden">
++            {hubKey.scope === "reader"
++              ? "No pool"
++              : pools.map((pool) => nameOf("pool", pool)).join(", ")}
++            {machine === null ? null : ` · ${machine}`}
++            {` · ${tokensText(hubKey)} tokens`}
++          </TableSecondary>
++        </TableCell>
++        <TableCell from="lg" className="max-w-56">
++          <Opens pools={hubKey.pools} scope={hubKey.scope} hues={hues} />
++        </TableCell>
++        <TableCell numeric from="md">
++          {lastUsed}
++        </TableCell>
++        <TableCell from="lg" className="max-w-40">
++          {machine === null ? (
++            <TableSecondary className="mt-0">None</TableSecondary>
++          ) : (
++            <TableLabel title={hubKey.lastMachine ?? undefined}>
++              {machine}
++            </TableLabel>
++          )}
++        </TableCell>
++        <TableCell numeric from="md">
++          {counted(hubKey.requests)}
++          <TableMagnitude fraction={hubKey.requests / peak} />
++        </TableCell>
++        <TableCell numeric from="lg">
++          {tokensText(hubKey)}
++        </TableCell>
++      </TableRow>
++    </TableBody>
++  );
++}
++
++const placeholders: ReadonlyArray<{
++  readonly from: "md" | "lg";
++  readonly numeric: boolean;
++}> = [
++  { from: "md", numeric: true },
++  { from: "lg", numeric: false },
++  { from: "md", numeric: true },
++  { from: "lg", numeric: true },
++];
++
++/** A row held while the keys are read, shaped like one. */
++export function KeySkeleton() {
++  return (
++    <TableBody aria-hidden="true">
++      <TableRow>
++        <TableCell className="w-full max-w-0">
++          <Skeleton className="h-3.5 w-2/5" />
++          <Skeleton className="mt-2 w-1/4" />
++        </TableCell>
++        <TableCell from="lg">
++          <Skeleton className="w-24" />
++          <Skeleton className="mt-2 w-32" />
++        </TableCell>
++        {placeholders.map(({ from, numeric }, index) => (
++          // biome-ignore lint/suspicious/noArrayIndexKey: placeholders have nothing else to tell them apart
++          <TableCell key={index} numeric={numeric} from={from}>
++            <Skeleton className={numeric ? "ml-auto w-12" : "w-20"} />
++          </TableCell>
++        ))}
++      </TableRow>
++    </TableBody>
++  );
++}
+diff --git a/apps/web/src/stories/keys.ts b/apps/web/src/stories/keys.ts
+new file mode 100644
+index 0000000..04986f8
+--- /dev/null
++++ b/apps/web/src/stories/keys.ts
+@@ -0,0 +1,153 @@
++import type { HubKey, KeysAnswer } from "#screens/keys/answer.ts";
++import { now } from "./overview.ts";
++
++const minute = 60_000;
++const hour = 60 * minute;
++const day = 24 * hour;
++
++const iso = (moment: number) => new Date(moment).toISOString();
++
++const ago = (milliseconds: number) => iso(now - milliseconds);
++
++const key = (
++  id: string,
++  shape: Omit<HubKey, "id" | "lastUsedAt"> & {
++    readonly usedAgo: number | null;
++  },
++): HubKey => {
++  const { usedAgo, ...rest } = shape;
++  return {
++    id,
++    ...rest,
++    lastUsedAt: usedAgo === null ? null : ago(usedAgo),
++  };
++};
++
++/** The pools of the configuration the keys open, in its order. */
++const pools = ["personal", "work", "codex", "zai", "local"];
++
++/** A dozen hub keys of the three scopes, three of them never used. */
++export const twelveKeys: ReadonlyArray<HubKey> = [
++  key("k_7f3a9c", {
++    note: "work laptop",
++    scope: "subscription",
++    pools: ["personal", "work"],
++    usedAgo: 3 * minute,
++    lastMachine: "tower",
++    requests: 4120,
++    tokens: 182_400_000,
++  }),
++  key("k_2b81de", {
++    note: "desktop",
++    scope: "subscription",
++    pools: ["personal", "codex"],
++    usedAgo: 41 * minute,
++    lastMachine: "atlas",
++    requests: 1385,
++    tokens: 61_900_000,
++  }),
++  key("k_c04e17", {
++    note: "build server",
++    scope: "keyed",
++    pools: ["zai"],
++    usedAgo: 2 * hour + 14 * minute,
++    lastMachine: "ci-runner",
++    requests: 902,
++    tokens: 28_300_000,
++  }),
++  key("k_91d5a2", {
++    note: "old laptop",
++    scope: "subscription",
++    pools: ["personal"],
++    usedAgo: 4 * day + 3 * hour,
++    lastMachine: "pavilion",
++    requests: 12,
++    tokens: 410_000,
++  }),
++  key("k_e6a30b", {
++    note: "reading agent",
++    scope: "reader",
++    pools: [],
++    usedAgo: 26 * minute,
++    lastMachine: null,
++    requests: 233,
++    tokens: null,
++  }),
++  key("k_58bc94", {
++    note: null,
++    scope: "keyed",
++    pools: ["zai", "local"],
++    usedAgo: 1 * day + 5 * hour,
++    lastMachine: "ci-runner",
++    requests: 148,
++    tokens: 3_950_000,
++  }),
++  key("k_3d7f60", {
++    note: "spare phone",
++    scope: "subscription",
++    pools: ["work"],
++    usedAgo: null,
++    lastMachine: null,
++    requests: 0,
++    tokens: null,
++  }),
++  key("k_a1c2f8", {
++    note: "dashboard bot",
++    scope: "reader",
++    pools: [],
++    usedAgo: 6 * day + 22 * hour,
++    lastMachine: null,
++    requests: 9,
++    tokens: null,
++  }),
++  key("k_6e09b3", {
++    note: "garage mini",
++    scope: "keyed",
++    pools: ["local"],
++    usedAgo: null,
++    lastMachine: null,
++    requests: 0,
++    tokens: null,
++  }),
++  key("k_f48a15", {
++    note: "friend's visit",
++    scope: "subscription",
++    pools: ["codex"],
++    usedAgo: 12 * day,
++    lastMachine: "guest-air",
++    requests: 0,
++    tokens: null,
++  }),
++  key("k_0b72cd", {
++    note: "pairing session",
++    scope: "subscription",
++    pools: ["personal", "work", "codex", "zai", "local"],
++    usedAgo: 2 * day + 9 * hour,
++    lastMachine: "tower",
++    requests: 57,
++    tokens: null,
++  }),
++  key("k_d95e41", {
++    note: null,
++    scope: "reader",
++    pools: [],
++    usedAgo: null,
++    lastMachine: null,
++    requests: 0,
++    tokens: null,
++  }),
++];
++
++const dayOf = (moment: number) => iso(moment).slice(0, 10);
++
++const answerOf = (keys: ReadonlyArray<HubKey>, logBegins: number) =>
++  ({ keys, pools, logBegins: dayOf(logBegins) }) satisfies KeysAnswer;
++
++/** A request log that holds the whole of the last 7 days. */
++export const keysRead: KeysAnswer = answerOf(twelveKeys, now - 40 * day);
++
++/** A request log that began three days ago, so the 7 days begin before it. */
++export const youngLog: KeysAnswer = answerOf(twelveKeys, now - 3 * day);
++
++/** A hub whose configuration holds no hub keys. */
++export const noKeys: KeysAnswer = answerOf([], now - 40 * day);

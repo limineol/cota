@@ -1,0 +1,1226 @@
+diff --git a/apps/web/src/screens/machine/day.ts b/apps/web/src/screens/machine/day.ts
+new file mode 100644
+index 0000000..d43487f
+--- /dev/null
++++ b/apps/web/src/screens/machine/day.ts
+@@ -0,0 +1,37 @@
++import type { Outcome, Role } from "#shared/domain/machine-day.ts";
++
++export interface DayRequestRow {
++  readonly id: string;
++  readonly at: string;
++  readonly role: Role;
++  readonly outcome: Outcome;
++  /** Everything the request gave the model to read, in tokens, or null if its usage was not reported. */
++  readonly promptSize: number | null;
++  readonly outputTokens: number | null;
++  readonly cost: number | null;
++}
++
++export interface DaySession {
++  readonly id: string;
++  /** The title the client reported, or null. */
++  readonly title: string | null;
++  /** The first prompt, up to 200 characters, or null. */
++  readonly firstPrompt: string | null;
++  readonly client: string;
++  readonly pool: string;
++  readonly project: string;
++  readonly startedAt: string;
++  readonly endedAt: string;
++  readonly requests: ReadonlyArray<DayRequestRow>;
++}
++
++/** What `GET /api/machines/:machine/days/:day` answers. */
++export interface MachineDay {
++  /** The machine tag, such as "ada-mbp.local". */
++  readonly machine: string;
++  /** The day, as an ISO date in the hub's time zone. */
++  readonly day: string;
++  /** Every pool of the configuration, in its order. */
++  readonly pools: ReadonlyArray<string>;
++  readonly sessions: ReadonlyArray<DaySession>;
++}
+diff --git a/apps/web/src/screens/machine/figures.tsx b/apps/web/src/screens/machine/figures.tsx
+new file mode 100644
+index 0000000..d6083ce
+--- /dev/null
++++ b/apps/web/src/screens/machine/figures.tsx
+@@ -0,0 +1,76 @@
++import { Stat, StatLabel, StatNote, StatValue } from "@cota/ui/components/stat";
++import { type Figures, roles } from "#shared/domain/machine-day.ts";
++import { tokens } from "#shared/domain/quantities.ts";
++import { costText, counted, plural } from "#shared/words.ts";
++
++/** The roles a set of requests has, in words: `212 main · 14 title`. */
++export const rolesText = (figures: Figures) =>
++  roles
++    .filter((role) => figures.roles[role] > 0)
++    .map((role) => `${counted(figures.roles[role])} ${role}`)
++    .join(" · ");
++
++/** The outcomes that were not an answer, in words: `2 refused · 1 error`, or none. */
++export const unansweredText = (figures: Figures) =>
++  [
++    figures.outcomes.error > 0 ? plural(figures.outcomes.error, "error") : null,
++    figures.outcomes.refused > 0
++      ? `${counted(figures.outcomes.refused)} refused`
++      : null,
++    figures.outcomes.cancelled > 0
++      ? `${counted(figures.outcomes.cancelled)} cancelled`
++      : null,
++  ]
++    .filter((part) => part !== null)
++    .join(" · ");
++
++export function DayFigures({
++  sessions,
++  figures,
++}: {
++  readonly sessions: number;
++  readonly figures: Figures;
++}) {
++  const unanswered = unansweredText(figures);
++  return (
++    <section
++      aria-label="Figures"
++      className="grid grid-cols-2 gap-2.5 @3xl:grid-cols-5 wide:gap-3"
++    >
++      <Stat variant="tile">
++        <StatLabel>Sessions</StatLabel>
++        <StatValue>{counted(sessions)}</StatValue>
++      </Stat>
++      <Stat variant="tile">
++        <StatLabel>Requests</StatLabel>
++        <StatValue>{counted(figures.requests)}</StatValue>
++        <StatNote>{rolesText(figures) || "none"}</StatNote>
++      </Stat>
++      <Stat variant="tile">
++        <StatLabel>Not answered</StatLabel>
++        <StatValue tone={figures.outcomes.error > 0 ? "danger" : "default"}>
++          {counted(
++            figures.outcomes.error +
++              figures.outcomes.refused +
++              figures.outcomes.cancelled,
++          )}
++        </StatValue>
++        <StatNote>{unanswered || "every request was answered"}</StatNote>
++      </Stat>
++      <Stat variant="tile">
++        <StatLabel>Largest context</StatLabel>
++        <StatValue>
++          {figures.peakContext === null
++            ? "unreported"
++            : tokens(figures.peakContext)}
++        </StatValue>
++        <StatNote>largest prompt of a main request</StatNote>
++      </Stat>
++      <Stat variant="tile">
++        <StatLabel>Cost</StatLabel>
++        <StatValue>{costText(figures.cost, figures.unpriced)}</StatValue>
++        <StatNote>{tokens(figures.output)} tokens of output</StatNote>
++      </Stat>
++    </section>
++  );
++}
+diff --git a/apps/web/src/screens/machine/machine.stories.tsx b/apps/web/src/screens/machine/machine.stories.tsx
+new file mode 100644
+index 0000000..9adc2ef
+--- /dev/null
++++ b/apps/web/src/screens/machine/machine.stories.tsx
+@@ -0,0 +1,90 @@
++import type { Meta, StoryObj } from "@storybook/react-vite";
++import { expect, within } from "storybook/test";
++import { displayNames } from "#stories/fixtures.ts";
++import {
++  busyDay,
++  firstSession,
++  oneSessionDay,
++  quietDay,
++  untitledSession,
++} from "#stories/machine.ts";
++import { withRouter } from "#stories/page.tsx";
++import { Machine } from "./machine.tsx";
++
++const meta = {
++  title: "Screens/Machine",
++  component: Machine,
++  decorators: [withRouter([displayNames])],
++  args: {
++    answer: busyDay,
++    dayLink: (day: string) => <a href={`/machines/tower/days/${day}`}>{day}</a>,
++  },
++} satisfies Meta<typeof Machine>;
++
++export default meta;
++type Story = StoryObj<typeof meta>;
++
++export const ABusyDay: Story = {
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByRole("heading", { level: 1, name: "Desk" }),
++    ).toBeVisible();
++    await expect(canvas.getByText("Monday, November 16, 2026")).toBeVisible();
++    const table = canvas.getByRole("table", {
++      name: "Sessions, in the order they began",
++    });
++    await expect(within(table).getAllByRole("link")).toHaveLength(8);
++    await expect(
++      within(table).getByRole("link", {
++        name: "Fix the checkout total after a coupon is removed",
++      }),
++    ).toHaveAttribute("href", `/sessions/${firstSession}`);
++  },
++};
++
++export const ASessionWithoutATitle: Story = {
++  play: async ({ canvas }) => {
++    const link = canvas.getByRole("link", { name: /^why does bun test/ });
++    await expect(link).toHaveAttribute("href", `/sessions/${untitledSession}`);
++  },
++};
++
++export const ThePoolsOfTheDay: Story = {
++  play: async ({ canvas }) => {
++    await expect(
++      canvas.getByRole("img", { name: /^Requests by pool: / }),
++    ).toBeVisible();
++    await expect(canvas.queryByText("spare")).toBeNull();
++  },
++};
++
++export const MovingToAnotherDay: Story = {
++  play: async ({ canvas }) => {
++    await expect(
++      canvas.getByRole("link", { name: "← Day before" }),
++    ).toHaveAttribute("href", "/machines/tower/days/2026-11-15");
++    await expect(
++      canvas.getByRole("link", { name: "Day after →" }),
++    ).toHaveAttribute("href", "/machines/tower/days/2026-11-17");
++  },
++};
++
++export const ADayWithOneSession: Story = {
++  args: { answer: oneSessionDay },
++};
++
++export const ADayWithNothing: Story = {
++  args: { answer: quietDay },
++  play: async ({ canvas }) => {
++    await expect(
++      canvas.getByText("This machine sent no request this day."),
++    ).toBeVisible();
++    await expect(
++      canvas.getByRole("link", { name: "← Day before" }),
++    ).toBeVisible();
++  },
++};
++
++export const Narrow: Story = {
++  globals: { viewport: { value: "mobile2" } },
++};
+diff --git a/apps/web/src/screens/machine/machine.tsx b/apps/web/src/screens/machine/machine.tsx
+new file mode 100644
+index 0000000..56f8c95
+--- /dev/null
++++ b/apps/web/src/screens/machine/machine.tsx
+@@ -0,0 +1,183 @@
++import { BackLink } from "@cota/ui/components/back-link";
++import { BlockMix } from "@cota/ui/components/block-mix";
++import { buttonVariants } from "@cota/ui/components/button";
++import { Empty, EmptyDescription, EmptyTitle } from "@cota/ui/components/empty";
++import {
++  ListPanel,
++  ListPanelBody,
++  ListPanelFoot,
++} from "@cota/ui/components/list-panel";
++import {
++  Page,
++  PageDescription,
++  PageHeader,
++  PageTitle,
++  Section,
++  SectionDescription,
++  SectionHeader,
++  SectionTitle,
++} from "@cota/ui/components/page";
++import { PoolMark } from "@cota/ui/components/pool-mark";
++import { Link } from "@tanstack/react-router";
++import { cloneElement, type ReactElement, type ReactNode } from "react";
++import { apportion, mixBlocks } from "#shared/domain/blocks.ts";
++import { poolHues } from "#shared/domain/hues.ts";
++import { adjacentDay, figuresOf } from "#shared/domain/machine-day.ts";
++import { share } from "#shared/domain/quantities.ts";
++import { rememberedList } from "#shared/last-list.ts";
++import { Name, useNameOf } from "#shared/names.tsx";
++import { counted, plural } from "#shared/words.ts";
++import type { MachineDay } from "./day.ts";
++import { DayFigures } from "./figures.tsx";
++import { SessionsTable } from "./sessions.tsx";
++
++const dayWords = new Intl.DateTimeFormat("en-US", {
++  weekday: "long",
++  month: "long",
++  day: "numeric",
++  year: "numeric",
++  timeZone: "UTC",
++});
++
++/** An ISO date in words, `Monday, November 16, 2026`. */
++export const dayText = (day: string) =>
++  dayWords.format(Date.parse(`${day}T00:00:00Z`));
++
++function DayStep({
++  to,
++  link,
++  children,
++}: {
++  readonly to: string;
++  readonly link: (day: string) => ReactElement<{ className?: string }>;
++  readonly children: ReactNode;
++}) {
++  return cloneElement(
++    link(to),
++    { className: buttonVariants({ variant: "outline", size: "sm" }) },
++    children,
++  );
++}
++
++/** The two days beside this one, as links the renderer gives. */
++function Days({
++  day,
++  dayLink,
++}: {
++  readonly day: string;
++  readonly dayLink: (day: string) => ReactElement<{ className?: string }>;
++}) {
++  return (
++    <nav aria-label="Days" className="flex items-center gap-2">
++      <DayStep to={adjacentDay(day, -1)} link={dayLink}>
++        ← Day before
++      </DayStep>
++      <DayStep to={adjacentDay(day, 1)} link={dayLink}>
++        Day after →
++      </DayStep>
++    </nav>
++  );
++}
++
++function PoolSplit({ answer }: { readonly answer: MachineDay }) {
++  const nameOf = useNameOf();
++  const hues = poolHues(answer.pools);
++  const requestsOf = (pool: string) =>
++    answer.sessions
++      .filter((session) => session.pool === pool)
++      .reduce((sum, session) => sum + session.requests.length, 0);
++  const used = answer.pools.filter((pool) => requestsOf(pool) > 0);
++  const counts = used.map(requestsOf);
++  const total = counts.reduce((sum, count) => sum + count, 0);
++  const blocks = apportion(counts, mixBlocks);
++  return (
++    <BlockMix
++      label="Requests by pool"
++      empty="No pool took a request."
++      parts={used.map((pool, at) => ({
++        key: pool,
++        label: nameOf("pool", pool),
++        value: plural(counts[at] ?? 0, "request"),
++        share: share((counts[at] ?? 0) / total),
++        blocks: blocks[at] ?? 0,
++        tint: hues.get(pool) ?? "neutral",
++      }))}
++    />
++  );
++}
++
++export function Machine({
++  answer,
++  dayLink,
++}: {
++  readonly answer: MachineDay;
++  /** The link to another day of this machine, which whoever renders the screen routes. */
++  readonly dayLink: (day: string) => ReactElement<{ className?: string }>;
++}) {
++  const hues = poolHues(answer.pools);
++  const figures = figuresOf(
++    answer.sessions.flatMap((session) => session.requests),
++  );
++  const markOf = (pool: string) => (
++    <PoolMark hue={hues.get(pool) ?? "neutral"} name={pool} />
++  );
++  return (
++    <Page className="@container">
++      <BackLink render={<Link to="/sessions" search={rememberedList()} />}>
++        Sessions
++      </BackLink>
++      <PageHeader>
++        <div>
++          <PageTitle>
++            <Name kind="machine" value={answer.machine} />
++          </PageTitle>
++          <PageDescription>{dayText(answer.day)}</PageDescription>
++        </div>
++        <Days day={answer.day} dayLink={dayLink} />
++      </PageHeader>
++      {answer.sessions.length === 0 ? (
++        <Empty className="my-12">
++          <EmptyTitle>This machine sent no request this day.</EmptyTitle>
++          <EmptyDescription>
++            The request log has no session of this machine on{" "}
++            {dayText(answer.day)}. Move to another day to find where it worked.
++          </EmptyDescription>
++        </Empty>
++      ) : (
++        <>
++          <DayFigures sessions={answer.sessions.length} figures={figures} />
++          <Section aria-labelledby="pools-title">
++            <SectionHeader>
++              <div>
++                <SectionTitle id="pools-title">Pools</SectionTitle>
++                <SectionDescription>
++                  Each block is 2% of the day's {counted(figures.requests)}{" "}
++                  requests, by the pool they went through.
++                </SectionDescription>
++              </div>
++            </SectionHeader>
++            <PoolSplit answer={answer} />
++          </Section>
++          <Section aria-labelledby="sessions-title">
++            <SectionHeader>
++              <div>
++                <SectionTitle id="sessions-title">Sessions</SectionTitle>
++                <SectionDescription>
++                  Each leads to its own page.
++                </SectionDescription>
++              </div>
++            </SectionHeader>
++            <ListPanel aria-label="The day's sessions">
++              <ListPanelBody>
++                <SessionsTable sessions={answer.sessions} markOf={markOf} />
++              </ListPanelBody>
++              <ListPanelFoot>
++                <span>{plural(answer.sessions.length, "session")}</span>
++              </ListPanelFoot>
++            </ListPanel>
++          </Section>
++        </>
++      )}
++    </Page>
++  );
++}
+diff --git a/apps/web/src/screens/machine/sessions.tsx b/apps/web/src/screens/machine/sessions.tsx
+new file mode 100644
+index 0000000..e7d1a4c
+--- /dev/null
++++ b/apps/web/src/screens/machine/sessions.tsx
+@@ -0,0 +1,228 @@
++import { RequestEnded } from "@cota/ui/components/request-table";
++import { SessionTitle } from "@cota/ui/components/session-table";
++import {
++  Table,
++  TableBody,
++  TableCell,
++  TableFlag,
++  TableHead,
++  TableHeader,
++  TableLabel,
++  TableMagnitude,
++  TableRow,
++  TableSecondary,
++} from "@cota/ui/components/table";
++import { Link } from "@tanstack/react-router";
++import type { ReactNode } from "react";
++import {
++  type Figures,
++  figuresOf,
++  growthOf,
++} from "#shared/domain/machine-day.ts";
++import { span, tokens } from "#shared/domain/quantities.ts";
++import { Name } from "#shared/names.tsx";
++import { costText, counted, plural, timeOf } from "#shared/words.ts";
++import type { DaySession } from "./day.ts";
++import { rolesText } from "./figures.tsx";
++
++const withoutSession = "request:";
++
++function Heading({ session }: { readonly session: DaySession }) {
++  if (session.title !== null) {
++    return <SessionTitle title={session.title}>{session.title}</SessionTitle>;
++  }
++  if (session.firstPrompt !== null) {
++    return (
++      <SessionTitle kind="prompt" title={session.firstPrompt}>
++        {session.firstPrompt}
++      </SessionTitle>
++    );
++  }
++  return (
++    <SessionTitle kind="none">
++      {session.id.startsWith(withoutSession)
++        ? "A request without a session"
++        : "Untitled session"}
++    </SessionTitle>
++  );
++}
++
++/** How a session's requests that were not answered ended, in words, or nothing. */
++const endedText = (figures: Figures) =>
++  [
++    figures.outcomes.error > 0 ? plural(figures.outcomes.error, "error") : null,
++    figures.outcomes.refused > 0
++      ? `${counted(figures.outcomes.refused)} refused`
++      : null,
++    figures.outcomes.cancelled > 0
++      ? `${counted(figures.outcomes.cancelled)} cancelled`
++      : null,
++  ]
++    .filter((part) => part !== null)
++    .join(" · ");
++
++const contextText = (session: DaySession) => {
++  const growth = growthOf(session.requests);
++  if (growth === null) return "unreported";
++  return growth.first === growth.peak
++    ? tokens(growth.peak)
++    : `${tokens(growth.first)} → ${tokens(growth.peak)}`;
++};
++
++const peakOf = (session: DaySession) => growthOf(session.requests)?.peak ?? 0;
++
++/** The sessions in the order they began. */
++export const inOrder = (sessions: ReadonlyArray<DaySession>) =>
++  sessions.toSorted(
++    (a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt),
++  );
++
++export function SessionsHead() {
++  return (
++    <TableHeader from="md">
++      <TableRow>
++        <TableHead scope="col">Session</TableHead>
++        <TableHead scope="col" from="lg">
++          Pool
++        </TableHead>
++        <TableHead scope="col" from="xl">
++          Client
++        </TableHead>
++        <TableHead scope="col" numeric from="md">
++          Started
++        </TableHead>
++        <TableHead scope="col" numeric from="md">
++          Lasted
++        </TableHead>
++        <TableHead scope="col" numeric from="md">
++          Requests
++        </TableHead>
++        <TableHead scope="col" numeric from="md">
++          Context
++        </TableHead>
++        <TableHead scope="col" numeric from="md">
++          Cost
++        </TableHead>
++        <TableHead scope="col" numeric from="md">
++          Ended
++        </TableHead>
++      </TableRow>
++    </TableHeader>
++  );
++}
++
++export function SessionItem({
++  session,
++  largestContext,
++  markOf,
++}: {
++  readonly session: DaySession;
++  readonly largestContext: number;
++  readonly markOf: (pool: string) => ReactNode;
++}) {
++  const figures = figuresOf(session.requests);
++  const started = Date.parse(session.startedAt);
++  const ended = Date.parse(session.endedAt);
++  const cost = costText(figures.cost, figures.unpriced);
++  const unanswered = endedText(figures);
++  const errors = figures.outcomes.error;
++  return (
++    <TableBody linked>
++      <TableRow>
++        <TableCell className="w-full max-w-0">
++          <span className="flex min-w-0 items-center gap-1.75">
++            <TableLabel
++              render={
++                <Link
++                  to="/sessions/$session"
++                  params={{ session: session.id }}
++                />
++              }
++            >
++              <Heading session={session} />
++            </TableLabel>
++            {errors > 0 ? (
++              <TableFlag>{plural(errors, "error")}</TableFlag>
++            ) : null}
++          </span>
++          {session.title !== null && session.firstPrompt !== null ? (
++            <TableSecondary className="hidden @2xl/panel:block">
++              {session.firstPrompt}
++            </TableSecondary>
++          ) : null}
++          <TableSecondary className="@2xl/panel:hidden">
++            {timeOf(started)} · {span(ended - started)} ·{" "}
++            {plural(figures.requests, "request")} · {contextText(session)}{" "}
++            context · {cost}
++            {unanswered === "" ? "" : ` · ${unanswered}`}
++          </TableSecondary>
++        </TableCell>
++        <TableCell from="lg" className="max-w-44">
++          <span className="flex min-w-0 items-center gap-1.5">
++            {markOf(session.pool)}
++            <TableLabel>
++              <Name kind="pool" value={session.pool} />
++            </TableLabel>
++          </span>
++          <TableSecondary>
++            <Name kind="project" value={session.project} />
++          </TableSecondary>
++        </TableCell>
++        <TableCell from="xl" className="max-w-44">
++          <TableLabel className="block">
++            <Name kind="client" value={session.client} />
++          </TableLabel>
++        </TableCell>
++        <TableCell numeric from="md">
++          {timeOf(started)}
++        </TableCell>
++        <TableCell numeric from="md">
++          {span(ended - started)}
++        </TableCell>
++        <TableCell numeric from="md">
++          {counted(figures.requests)}
++          <TableSecondary>{rolesText(figures)}</TableSecondary>
++        </TableCell>
++        <TableCell numeric from="md">
++          {contextText(session)}
++          <TableMagnitude fraction={peakOf(session) / largestContext} />
++        </TableCell>
++        <TableCell numeric from="md">
++          {cost}
++        </TableCell>
++        <TableCell numeric from="md">
++          {unanswered === "" ? (
++            <RequestEnded tone="unseen">all answered</RequestEnded>
++          ) : (
++            <RequestEnded tone={errors > 0 ? "danger" : "quiet"}>
++              {unanswered}
++            </RequestEnded>
++          )}
++        </TableCell>
++      </TableRow>
++    </TableBody>
++  );
++}
++
++export function SessionsTable({
++  sessions,
++  markOf,
++}: {
++  readonly sessions: ReadonlyArray<DaySession>;
++  readonly markOf: (pool: string) => ReactNode;
++}) {
++  const largestContext = Math.max(1, ...sessions.map(peakOf));
++  return (
++    <Table aria-label="Sessions, in the order they began">
++      <SessionsHead />
++      {inOrder(sessions).map((session) => (
++        <SessionItem
++          key={session.id}
++          session={session}
++          largestContext={largestContext}
++          markOf={markOf}
++        />
++      ))}
++    </Table>
++  );
++}
+diff --git a/apps/web/src/shared/domain/machine-day.laws.test.ts b/apps/web/src/shared/domain/machine-day.laws.test.ts
+new file mode 100644
+index 0000000..15ad018
+--- /dev/null
++++ b/apps/web/src/shared/domain/machine-day.laws.test.ts
+@@ -0,0 +1,131 @@
++import { describe, expect, it } from "@effect/vitest";
++import { Arbitrary, Schema } from "effect";
++import {
++  adjacentDay,
++  type DayRequest,
++  figuresOf,
++  growthOf,
++  outcomes,
++  roles,
++} from "./machine-day.ts";
++
++const int = (minimum: number, maximum: number) =>
++  Arbitrary.schema(Schema.Int.check(Schema.isBetween({ minimum, maximum })));
++
++const request = Arbitrary.all({
++  role: int(0, roles.length - 1),
++  outcome: int(0, outcomes.length - 1),
++  reported: int(0, 3),
++  prompt: int(0, 400_000),
++  output: int(0, 9_000),
++  priced: int(0, 3),
++  cents: int(0, 5_000),
++  minute: int(0, 1_439),
++}).pipe(
++  Arbitrary.map(
++    ({
++      role,
++      outcome,
++      reported,
++      prompt,
++      output,
++      priced,
++      cents,
++      minute,
++    }): DayRequest => ({
++      at: new Date(Date.UTC(2026, 10, 16, 0, minute)).toISOString(),
++      role: roles[role] ?? "main",
++      outcome: outcomes[outcome] ?? "ok",
++      promptSize: reported === 0 ? null : prompt,
++      outputTokens: reported === 1 ? null : output,
++      cost: priced === 0 ? null : cents / 100,
++    }),
++  ),
++);
++
++const requests = Arbitrary.array(request, { maxLength: 40 });
++
++const date = Arbitrary.all({
++  year: int(1970, 2100),
++  month: int(0, 11),
++  day: int(1, 31),
++}).pipe(
++  Arbitrary.map(({ year, month, day }) =>
++    new Date(Date.UTC(year, month, Math.min(day, 28)))
++      .toISOString()
++      .slice(0, 10),
++  ),
++);
++
++describe("a machine's day", () => {
++  it.prop(
++    "V43: the day before or after a day is the calendar day beside it, and the one after the one before is the day itself",
++    { day: date },
++    ({ day }) => {
++      const before = adjacentDay(day, -1);
++      const after = adjacentDay(day, 1);
++      expect(
++        Date.parse(`${day}T00:00:00Z`) - Date.parse(`${before}T00:00:00Z`),
++      ).toBe(86_400_000);
++      expect(
++        Date.parse(`${after}T00:00:00Z`) - Date.parse(`${day}T00:00:00Z`),
++      ).toBe(86_400_000);
++      expect(adjacentDay(before, 1)).toBe(day);
++      expect(adjacentDay(after, -1)).toBe(day);
++      expect(before).toMatch(/^\d{4}-\d{2}-\d{2}$/);
++    },
++  );
++
++  it.prop(
++    "V44: a day's figures count every request once by role and by outcome, add the output and cost of the requests that have them, and take a context as the largest main prompt, never a sum",
++    { requests },
++    ({ requests }) => {
++      const figures = figuresOf(requests);
++      const total = (counts: Readonly<Record<string, number>>) =>
++        Object.values(counts).reduce((sum, count) => sum + count, 0);
++      expect(figures.requests).toBe(requests.length);
++      expect(total(figures.roles)).toBe(requests.length);
++      expect(total(figures.outcomes)).toBe(requests.length);
++      expect(figures.output).toBe(
++        requests.reduce((sum, each) => sum + (each.outputTokens ?? 0), 0),
++      );
++      expect(figures.cost).toBeCloseTo(
++        requests.reduce((sum, each) => sum + (each.cost ?? 0), 0),
++        6,
++      );
++      const main = requests.flatMap((each) =>
++        each.role === "main" && each.promptSize !== null
++          ? [each.promptSize]
++          : [],
++      );
++      expect(figures.peakContext).toBe(
++        main.length === 0 ? null : Math.max(...main),
++      );
++      expect(figures.unpriced).toBe(
++        requests.filter(
++          (each) =>
++            each.cost === null &&
++            (each.promptSize !== null || each.outputTokens !== null),
++        ).length,
++      );
++    },
++  );
++
++  it.prop(
++    "V45: a session's context grows from the prompt of its first main request that reported one to the largest of them, whatever order the requests are given in",
++    { requests },
++    ({ requests }) => {
++      const sized = requests
++        .filter((each) => each.role === "main" && each.promptSize !== null)
++        .toSorted((a, b) => Date.parse(a.at) - Date.parse(b.at));
++      const growth = growthOf(requests);
++      expect(growth?.first ?? null).toBe(sized[0]?.promptSize ?? null);
++      expect(growth?.peak ?? null).toBe(
++        sized.length === 0
++          ? null
++          : Math.max(...sized.map((each) => each.promptSize ?? 0)),
++      );
++      expect(growthOf(requests.toReversed())?.peak).toBe(growth?.peak);
++    },
++  );
++});
+diff --git a/apps/web/src/shared/domain/machine-day.ts b/apps/web/src/shared/domain/machine-day.ts
+new file mode 100644
+index 0000000..301fa30
+--- /dev/null
++++ b/apps/web/src/shared/domain/machine-day.ts
+@@ -0,0 +1,96 @@
++export const roles = ["main", "subagent", "title", "utility"] as const;
++
++export type Role = (typeof roles)[number];
++
++export const outcomes = ["ok", "error", "refused", "cancelled"] as const;
++
++export type Outcome = (typeof outcomes)[number];
++
++/** A request as a machine's day reads it. */
++export interface DayRequest {
++  readonly at: string;
++  readonly role: Role;
++  readonly outcome: Outcome;
++  readonly promptSize: number | null;
++  readonly outputTokens: number | null;
++  readonly cost: number | null;
++}
++
++const dayInMs = 86_400_000;
++
++/** The ISO date a day before (-1) or after (1) an ISO date. */
++export const adjacentDay = (day: string, step: -1 | 1): string =>
++  new Date(Date.parse(`${day}T00:00:00Z`) + step * dayInMs)
++    .toISOString()
++    .slice(0, 10);
++
++/** What a set of requests came to. */
++export interface Figures {
++  readonly requests: number;
++  readonly roles: Readonly<Record<Role, number>>;
++  readonly outcomes: Readonly<Record<Outcome, number>>;
++  /** The largest prompt of the main requests that reported one, or null: a level, never a sum. */
++  readonly peakContext: number | null;
++  readonly output: number;
++  /** The cost of the requests that have one, a lower bound while `unpriced` is above nothing. */
++  readonly cost: number;
++  /** The requests that reported tokens and have no cost. */
++  readonly unpriced: number;
++}
++
++/** How a session's context grew: the prompt of its first main request that reported one and the largest of all, both levels, never sums. */
++export interface Growth {
++  readonly first: number;
++  readonly peak: number;
++}
++
++export const growthOf = (
++  requests: ReadonlyArray<DayRequest>,
++): Growth | null => {
++  const sizes = requests
++    .filter((request) => request.role === "main")
++    .toSorted((a, b) => Date.parse(a.at) - Date.parse(b.at))
++    .flatMap((request) =>
++      request.promptSize === null ? [] : [request.promptSize],
++    );
++  const [first] = sizes;
++  return first === undefined ? null : { first, peak: Math.max(...sizes) };
++};
++
++export const figuresOf = (requests: ReadonlyArray<DayRequest>): Figures => {
++  const prompts = requests.flatMap((request) =>
++    request.role === "main" && request.promptSize !== null
++      ? [request.promptSize]
++      : [],
++  );
++  const inRole = (role: Role) =>
++    requests.filter((request) => request.role === role).length;
++  const withOutcome = (outcome: Outcome) =>
++    requests.filter((request) => request.outcome === outcome).length;
++  return {
++    requests: requests.length,
++    roles: {
++      main: inRole("main"),
++      subagent: inRole("subagent"),
++      title: inRole("title"),
++      utility: inRole("utility"),
++    },
++    outcomes: {
++      ok: withOutcome("ok"),
++      error: withOutcome("error"),
++      refused: withOutcome("refused"),
++      cancelled: withOutcome("cancelled"),
++    },
++    peakContext: prompts.length === 0 ? null : Math.max(...prompts),
++    output: requests.reduce(
++      (sum, request) => sum + (request.outputTokens ?? 0),
++      0,
++    ),
++    cost: requests.reduce((sum, request) => sum + (request.cost ?? 0), 0),
++    unpriced: requests.filter(
++      (request) =>
++        request.cost === null &&
++        (request.promptSize !== null || request.outputTokens !== null),
++    ).length,
++  };
++};
+diff --git a/apps/web/src/stories/machine.ts b/apps/web/src/stories/machine.ts
+new file mode 100644
+index 0000000..cd566d5
+--- /dev/null
++++ b/apps/web/src/stories/machine.ts
+@@ -0,0 +1,259 @@
++import type {
++  DayRequestRow,
++  DaySession,
++  MachineDay,
++} from "#screens/machine/day.ts";
++import type { Outcome, Role } from "#shared/domain/machine-day.ts";
++
++const minute = 60_000;
++
++const day = "2026-11-16";
++
++const dayStart = Date.parse(`${day}T00:00:00Z`);
++
++const iso = (hour: number, min = 0) =>
++  new Date(dayStart + hour * 60 * minute + min * minute).toISOString();
++
++const hex = (n: number, digits: number) => n.toString(16).padStart(digits, "0");
++
++const sessionId = (n: number) => `0193b7d0-${hex(n, 4)}-7000-8000-5e5510000000`;
++
++interface Plan {
++  readonly role: Role;
++  readonly outcome?: Outcome;
++  readonly prompt: number | null;
++  readonly output?: number | null;
++  readonly cost?: number | null;
++}
++
++const rowsOf = (
++  n: number,
++  start: number,
++  end: number,
++  plans: ReadonlyArray<Plan>,
++): ReadonlyArray<DayRequestRow> =>
++  plans.map((plan, at) => {
++    const answered = (plan.outcome ?? "ok") === "ok";
++    const output = plan.output ?? (answered ? 240 + ((at * 613) % 3200) : null);
++    return {
++      id: `0193b7d0-${hex(n, 4)}-7000-8000-${hex(at + 1, 12)}`,
++      at: new Date(
++        start + ((end - start) * at) / Math.max(1, plans.length - 1),
++      ).toISOString(),
++      role: plan.role,
++      outcome: plan.outcome ?? "ok",
++      promptSize: answered ? plan.prompt : null,
++      outputTokens: output,
++      cost:
++        plan.cost !== undefined
++          ? plan.cost
++          : answered
++            ? Number(
++                (((plan.prompt ?? 0) * 3 + (output ?? 0) * 15) / 1e6).toFixed(
++                  4,
++                ),
++              )
++            : null,
++    };
++  });
++
++/** A main conversation whose prompt grows from `from` to `to`, with a title request first and a subagent every fifth request. */
++const climb = (
++  count: number,
++  from: number,
++  to: number,
++  extra: ReadonlyArray<Plan> = [],
++): ReadonlyArray<Plan> => [
++  { role: "title", prompt: 900 },
++  ...Array.from({ length: count }, (_, at): Plan => {
++    const prompt = Math.round(
++      from + ((to - from) * at) / Math.max(1, count - 1),
++    );
++    return at % 5 === 4
++      ? { role: "subagent", prompt: Math.round(prompt / 3) }
++      : { role: "main", prompt };
++  }),
++  ...extra,
++];
++
++const session = (
++  n: number,
++  shape: Omit<DaySession, "id" | "requests" | "startedAt" | "endedAt">,
++  from: [number, number],
++  to: [number, number],
++  plans: ReadonlyArray<Plan>,
++): DaySession => {
++  const start = Date.parse(iso(...from));
++  const end = Date.parse(iso(...to));
++  return {
++    id: sessionId(n),
++    ...shape,
++    startedAt: new Date(start).toISOString(),
++    endedAt: new Date(end).toISOString(),
++    requests: rowsOf(n, start, end, plans),
++  };
++};
++
++export const pools = ["personal", "work", "codex", "spare"] as const;
++
++const sessions: ReadonlyArray<DaySession> = [
++  session(
++    1,
++    {
++      title: "Fix the checkout total after a coupon is removed",
++      firstPrompt:
++        "The total on the checkout page keeps the discount after I remove the coupon. Find out why and fix it.",
++      client: "claude-code",
++      pool: "work",
++      project: "acme/shop",
++    },
++    [8, 42],
++    [11, 5],
++    climb(46, 14_000, 168_000, [
++      { role: "main", outcome: "refused", prompt: null },
++      { role: "main", prompt: 52_000 },
++      { role: "utility", prompt: 1_200 },
++    ]),
++  ),
++  session(
++    2,
++    {
++      title: "Review the quota reader's retry rules",
++      firstPrompt: "Walk me through how the quota reader decides to retry.",
++      client: "claude-code",
++      pool: "personal",
++      project: "limineol/cota",
++    },
++    [9, 10],
++    [9, 52],
++    climb(14, 18_000, 71_000),
++  ),
++  session(
++    3,
++    {
++      title: null,
++      firstPrompt:
++        "why does bun test not run the vitest files here, and what should I run instead of it",
++      client: "claude-code",
++      pool: "personal",
++      project: "limineol/cota",
++    },
++    [10, 20],
++    [10, 31],
++    [
++      { role: "main", prompt: 21_000 },
++      { role: "main", prompt: 23_400 },
++      { role: "main", outcome: "cancelled", prompt: null },
++    ],
++  ),
++  session(
++    4,
++    {
++      title: "Port the session export to Codex",
++      firstPrompt: "Port the session export script to Codex's wire format.",
++      client: "codex",
++      pool: "codex",
++      project: "limineol/cota",
++    },
++    [11, 30],
++    [13, 48],
++    climb(38, 9_000, 214_000, [
++      { role: "main", outcome: "error", prompt: null },
++      { role: "main", outcome: "refused", prompt: null },
++      { role: "main", outcome: "refused", prompt: null },
++      { role: "main", prompt: 61_000 },
++    ]),
++  ),
++  session(
++    5,
++    {
++      title: null,
++      firstPrompt: null,
++      client: "opencode",
++      pool: "personal",
++      project: "acme/dotfiles",
++    },
++    [13, 5],
++    [13, 7],
++    [{ role: "utility", prompt: null, output: null, cost: null }],
++  ),
++  session(
++    6,
++    {
++      title: "Write the machine's day screen",
++      firstPrompt: "Build the screen that shows what one machine did in a day.",
++      client: "claude-code",
++      pool: "work",
++      project: "limineol/cota",
++    },
++    [14, 15],
++    [17, 40],
++    climb(64, 12_000, 188_000, [
++      { role: "main", prompt: 41_000 },
++      { role: "main", outcome: "cancelled", prompt: null },
++      { role: "main", prompt: 58_000 },
++      { role: "main", prompt: 96_000 },
++      { role: "main", prompt: 131_000 },
++    ]),
++  ),
++  session(
++    7,
++    {
++      title: "Tidy the example configuration",
++      firstPrompt: "Tidy examples/cota.dev.toml and say what changed.",
++      client: "claude-code",
++      pool: "personal",
++      project: "limineol/cota",
++    },
++    [16, 2],
++    [16, 38],
++    climb(11, 16_000, 47_000),
++  ),
++  session(
++    8,
++    {
++      title: "Which price list names this model?",
++      firstPrompt: "Which price list names claude-opus-4-5, and since when?",
++      client: "codex",
++      pool: "codex",
++      project: "limineol/cota",
++    },
++    [18, 12],
++    [18, 40],
++    [
++      { role: "main", prompt: 7_800 },
++      { role: "main", prompt: 9_100, cost: null },
++      { role: "main", prompt: 11_400 },
++      { role: "title", prompt: 700 },
++    ],
++  ),
++];
++
++export const busyDay: MachineDay = {
++  machine: "tower",
++  day,
++  pools: [...pools],
++  sessions,
++};
++
++export const quietDay: MachineDay = {
++  machine: "tower",
++  day: "2026-11-15",
++  pools: [...pools],
++  sessions: [],
++};
++
++export const oneSessionDay: MachineDay = {
++  machine: "ada-mbp.local",
++  day,
++  pools: [...pools],
++  sessions: [sessions[1] ?? busyDay.sessions[0]].flatMap((each) =>
++    each === undefined ? [] : [each],
++  ),
++};
++
++export const firstSession = sessionId(1);
++
++export const untitledSession = sessionId(3);
++
++export const withoutAnything = sessionId(5);
+diff --git a/apps/web/src/stories/page.tsx b/apps/web/src/stories/page.tsx
+index f5fc110..753f389 100644
+--- a/apps/web/src/stories/page.tsx
++++ b/apps/web/src/stories/page.tsx
+@@ -3,6 +3,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
+ import {
+   createMemoryHistory,
+   type ParsedLocation,
++  RouterContextProvider,
+   RouterProvider,
+ } from "@tanstack/react-router";
+ import { type ReactNode, useEffect, useState } from "react";
+@@ -77,6 +78,26 @@ export const page = (
+   render: () => <Page path={path} fixtures={fixtures} passkeys={passkeys} />,
+ });
+ 
++function Routed({ children }: { readonly children: ReactNode }) {
++  const [router] = useState(() =>
++    makeRouter(createMemoryHistory({ initialEntries: ["/"] })),
++  );
++  return (
++    <RouterContextProvider router={router}>{children}</RouterContextProvider>
++  );
++}
++
++/** A decorator for a story of a screen's view that is given its answer and draws links, so it needs a router but no route. */
++export const withRouter =
++  (fixtures: ReadonlyArray<Fixture>): Decorator =>
++  (Story) => (
++    <Api fixtures={fixtures}>
++      <Routed>
++        <Story />
++      </Routed>
++    </Api>
++  );
++
+ /** A decorator for a story of something that calls the API, which answers from fixtures. */
+ export const withApi =
+   (fixtures: ReadonlyArray<Fixture>, passkeys?: Passkeys): Decorator =>
+diff --git a/docs/specs/dashboard/spec.md b/docs/specs/dashboard/spec.md
+index ccc1c8a..6edd857 100644
+--- a/docs/specs/dashboard/spec.md
++++ b/docs/specs/dashboard/spec.md
+@@ -19,6 +19,7 @@ code:
+   - apps/web/src/screens/session/requests.tsx
+   - apps/web/src/screens/session/search.ts
+   - apps/web/src/screens/errors/causes.tsx
++  - apps/web/src/screens/machine
+   - packages/ui/src/components/context-columns.tsx
+   - packages/ui/src/components/session-table.tsx
+   - packages/ui/src/components/table.tsx
+@@ -123,6 +124,16 @@ A session's page draws its main requests as **context columns**: one column per
+ 
+ A click on a column, or Enter on it, opens the session's Requests tab on the column's first request. A session's page has two tabs, Conversation and Requests, the open one in the URL as `tab` (`tab=requests`; Conversation is the default and is left out). The tab's role and outcome filters are in the URL as `role` and `outcome`, each repeated for several values (`role=title&role=utility`, `outcome=error`), left out when nothing is chosen. They stay when they keep that request and are cleared when they would hide it; enough of the list is shown to hold it, and its row is marked and takes the focus. The Errors figure opens the same tab on the failed requests (`outcome=error`).
+ 
++## A machine's day
++
++The machine screen (`apps/web/src/screens/machine`) draws one machine's sessions on one day from the answer it is given, `MachineDay`, and the day it is shown at; the hub's endpoint for it is not built, so the screen takes both from whoever renders it. `machine-day.ts` decides three things:
++
++- **The days beside it.** `adjacentDay(day, step)` is the ISO date a day before or after `day`, by calendar, so the day after the day before is the day itself. The screen leads to both as links its renderer gives.
++- **A day's figures.** `figuresOf(requests)` counts the requests once by role and once by outcome, adds the output tokens and the cost of the requests that have them, and counts the requests that reported tokens but have no cost, so the cost is written as a lower bound while any (`costText`). Its context is the largest prompt size of a main request that reported one, never a sum (DESIGN.md, `a-level-is-not-summed`), and none when none did.
++- **How a session's context grew.** `growthOf(requests)` is the prompt size of the session's first main request that reported one, in time order, and the largest of all of them; none when none did. A session's row writes `first → peak`, or the one figure when they are the same.
++
++A session with no title shows its first prompt, and with neither, `Untitled session`, as the sessions list does. Sessions are listed in the order they began. A pool that took no request on the day is left out of the split of requests by pool, and the split's hues are the configuration's order (`poolHues`).
++
+ ## Pairing tool calls
+ 
+ A transcript shows a tool call with the result that answered it. `pairCalls(entries)` reads the entries in order: a `tool-result` goes with the nearest earlier `tool-call` of its `callId` that no result has taken, and is shown inside that call's row; a result with no such call, or with no `callId`, is a row of its own, and so is every other entry. A call with no `callId` takes no result.
+@@ -228,6 +239,9 @@ Which screens, pools and values are listed, and in what order, is `found(candida
+ | V40 | **The last way in stays.** Settings offers turning off the password this hub keeps, and removing a passkey, exactly when the hub would allow it, a password or a passkey being left after it; turning off is offered for no other password, and while the kept password is the last way in, it says a passkey is wanted first. | property |
+ | V41 | **A code as the hub reads it.** A setup code typed in any case, with any spaces and hyphens, and O for 0 and I or L for 1, sends its first twelve characters as the hub reads them, is written as those in groups of four joined by hyphens, which reads back the same, and is complete only with twelve. | property |
+ | V42 | **A password as the hub counts it.** A new owner password is counted as the hub counts it, by code points, and fits exactly when it has 12 to 1,024 of them. | property |
++| V43 | **The day beside a day.** The day before or after a day is the calendar day beside it, and the one after the one before is the day itself. | property |
++| V44 | **A day's figures.** A day's figures count every request once by role and by outcome, add the output and cost of the requests that have them, count those with tokens and no cost, and take a context as the largest main prompt, never a sum. | property |
++| V45 | **A session's context grew from first to largest.** A session's context grows from the prompt of its first main request that reported one to the largest of them, whatever order the requests are given in. | property |
+ 
+ V1 to V20 are floating-point arithmetic or formatting, which Bend cannot state usefully (ADR-0004); V21 to V42 are text cut into pieces, a page's arithmetic, a session's requests cut into runs, entries paired, an error's headline, SQL cut for its tones, the statement a run sends, the rows a grid draws, an answer written as TSV, the ids a list of names holds, a user agent read, what the palette finds, the ways in offered and kept, a setup code read and a password counted, small enough that a property test says all they promise. All are property-tested only, in `apps/web/src/shared/domain/*.laws.test.ts`.
+ 

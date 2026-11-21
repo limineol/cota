@@ -1,0 +1,167 @@
+# Every setting the hub reads, with one pool of each kind.
+#
+# The hub reads this file once, at start (COTA_CONFIG names it; the default is
+# cota.toml). A problem in it is printed with its path, all of them at once,
+# and the hub does not start.
+#
+# No secret is written here. A secret is a reference the hub reads at start:
+#   { env = "NAME" }    an environment variable
+#   { file = "/path" }  a file, as a container platform mounts one
+
+[hub]
+host = "0.0.0.0"
+port = 8080
+
+# The relay's limits. These are the defaults.
+[relay]
+max_body_mib = 128
+max_decoded_body_mib = 256
+max_read_answer_mib = 16
+first_byte_timeout = "10 minutes"
+copy_capacity = 256
+
+# The limits of SQL sent to the hub's API (POST /api/sql), which no query can
+# change. These are the defaults.
+[sql]
+max_query_time = "30 seconds"
+max_memory_bytes = 4_000_000_000
+max_threads = 4
+max_concurrent_queries = 4
+max_answer_rows = 5000
+max_answer_mib = 16
+
+# ClickHouse. The database must exist; the hub creates its tables.
+[clickhouse]
+url = "http://clickhouse:8123"
+database = "cota"
+user = "cota"
+password = { env = "COTA_CLICKHOUSE_PASSWORD" }
+
+# The hub store: the hub's own file of what it changes while it runs. A
+# relative path is read from this file's directory. The hub creates the file,
+# readable by its own user only, when it is missing; its directory must exist.
+# It holds the quota logins given to the hub, unencrypted, and each can spend
+# its subscription: guard it and back it up as you do the secrets this file
+# names. This is the default.
+[store]
+path = "cota.sqlite"
+
+# The archive: the hub copies each day of the request log here once it has
+# ended, as files that zstd and jq read without ClickHouse, and copies a day
+# again when it changes; `bun run archive:restore` puts the rows back. A
+# relative path is read from this file's directory. The directory must exist
+# and the hub must be able to write it, or the hub does not start. Optional:
+# without it, nothing is archived. Its files hold the conversations in the
+# clear, as ClickHouse's volume does: guard it and back it up as you do that.
+[archive]
+directory = "archive"
+
+# The dashboard: the hub serves the files `bun run web:build` writes at its own
+# address, for every path that is not the API's, the relay's or /health. A
+# relative path is read from this file's directory. Optional: by default it is
+# apps/web/dist of the repository the hub runs from. With no index.html there,
+# the hub serves no dashboard, says so once at start, and the API and the relay
+# work as before.
+[dashboard]
+directory = "/srv/cota/dashboard"
+
+# The owner password, which signs the owner in to the hub's API from a
+# browser, or from `bun run quota:connect`. Optional: without it, the hub is
+# not set up when it first starts, and prints a setup code in its log; the
+# owner gives that code and chooses a password in the browser, and the hub
+# store keeps its argon2id hash. A password here wins over the stored one
+# while it is here, and is the way back in if the stored one is forgotten.
+[sign_in]
+password = { env = "COTA_OWNER_PASSWORD" }
+
+# A hub key opens the pools of one scope. The subscription key rides in a
+# client's environment, where every command the client runs can read it, and
+# spends nothing without that client's own login. The keyed key spends the
+# keys the hub holds, so give it only to a client you trust with them. The
+# reader key opens no pool: it reads the request log through the hub's API.
+
+# Sent as x-cota-key, beside the client's own login.
+[[hub_keys]]
+name = "clients"
+scope = "subscription"
+secret = { env = "COTA_HUB_KEY_CLIENTS" }
+
+# Sent where the provider's documentation puts its key: x-cota-key, the bearer
+# token, or x-api-key.
+[[hub_keys]]
+name = "fleet"
+scope = "keyed"
+secret = { env = "COTA_HUB_KEY_FLEET" }
+
+# Sent by an agent you trust to read every conversation in the request log, as
+# x-cota-key or the bearer token, to the hub's API.
+[[hub_keys]]
+name = "agents"
+scope = "reader"
+secret = { env = "COTA_HUB_KEY_AGENTS" }
+
+# A subscription pool forwards the login each request arrives with. Its quota
+# windows come from its answers' headers; a quota login, which the owner gives
+# with `bun run quota:connect work --email <address>`, lets the hub read them
+# all from the provider, as Claude Code shows them.
+# Claude Code: ANTHROPIC_BASE_URL=http://<hub>:8080/pools/work
+[pools.work]
+protocol = "anthropic-messages"
+fallback = "personal"
+
+# When the provider refuses a login of `work`, that login's requests go out
+# with this pool's kept login until the limit resets. Any pool can also be
+# used directly.
+[pools.personal]
+protocol = "anthropic-messages"
+kept_login = { env = "COTA_PERSONAL_LOGIN" }
+
+# Codex: base URL http://<hub>:8080/pools/chatgpt/backend-api/codex
+# Its quota login: `bun run quota:connect chatgpt`.
+[pools.chatgpt]
+protocol = "chatgpt-codex"
+
+# A pool that holds a key is a keyed pool: it goes out with that key, whatever
+# the client sent, in the header the client sent its own key in.
+# Claude Code: ANTHROPIC_BASE_URL=http://<hub>:8080/pools/anthropic
+#              ANTHROPIC_API_KEY=<the keyed hub key>
+[pools.anthropic]
+protocol = "anthropic-messages"
+key = { env = "ANTHROPIC_KEY" }
+
+# Claude Code: ANTHROPIC_BASE_URL=http://<hub>:8080/pools/openrouter
+#              ANTHROPIC_AUTH_TOKEN=<the keyed hub key>
+#              ANTHROPIC_API_KEY=""
+[pools.openrouter]
+protocol = "anthropic-messages"
+provider = "openrouter"
+base_url = "https://openrouter.ai/api"
+key = { env = "OPENROUTER_API_KEY" }
+
+# A pool that speaks openai-chat is a keyed pool, with a key or without one.
+# OpenCode and Pi: an OpenAI-compatible provider at http://<hub>:8080/pools/zai
+# The hub reads Z.ai's and OpenCode Go's quota windows with the pool's key.
+[pools.zai]
+protocol = "openai-chat"
+provider = "zai"
+base_url = "https://api.z.ai/api/coding/paas/v4"
+key = { env = "ZAI_API_KEY" }
+prices = "zai"
+
+[pools.opencode-go]
+protocol = "openai-chat"
+provider = "opencode-go"
+base_url = "https://opencode.ai/zen/go/v1"
+key = { env = "OPENCODE_GO_API_KEY" }
+prices = "opencode-go"
+
+# A server that needs no key, and a price of its own for one model, in dollars
+# per million tokens. A model with no price is recorded with no cost.
+[pools.local]
+protocol = "openai-chat"
+provider = "llama-swap"
+base_url = "http://127.0.0.1:1234/v1"
+
+[pools.local.model_prices."qwen3-coder"]
+input = 0
+output = 0

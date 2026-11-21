@@ -1,0 +1,354 @@
+{
+  "source": {
+    "kind": "constructed",
+    "from": [
+      "https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create",
+      "Milestone 1 research, OpenAI-compatible adapter facts (2026-11-12), sections 1 and 3"
+    ]
+  },
+  "request": {
+    "method": "POST",
+    "path": "/chat/completions",
+    "headers": {
+      "authorization": "Bearer cota-FAKE-hub-key-for-tests",
+      "content-type": "application/json",
+      "user-agent": "opencode/1.19.5 ai-sdk/provider-utils/4.0.23 runtime/bun/1.4.2",
+      "x-opencode-session-id": "ses_FAKEopencode0001",
+      "x-session-affinity": "ses_FAKEopencode0001",
+      "x-session-id": "ses_FAKEopencode0001"
+    },
+    "body": {
+      "json": {
+        "model": "glm-5.2",
+        "max_tokens": 32000,
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are opencode, a coding agent."
+          },
+          {
+            "role": "user",
+            "content": "What is in a.txt?"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "read",
+              "description": "Read a file",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  }
+                },
+                "required": ["path"]
+              }
+            }
+          }
+        ],
+        "tool_choice": "auto",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "text/event-stream",
+      "cache-control": "no-cache",
+      "x-request-id": "req-FAKE-chat-0001"
+    },
+    "body": {
+      "events": [
+        {
+          "data": {
+            "id": "chatcmpl-FAKE1",
+            "object": "chat.completion.chunk",
+            "created": 1794441600,
+            "model": "glm-5.2",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant",
+                  "content": ""
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE1",
+            "object": "chat.completion.chunk",
+            "created": 1794441600,
+            "model": "glm-5.2",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "reasoning_content": "Let me"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE1",
+            "object": "chat.completion.chunk",
+            "created": 1794441600,
+            "model": "glm-5.2",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "reasoning_content": " read it."
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE1",
+            "object": "chat.completion.chunk",
+            "created": 1794441600,
+            "model": "glm-5.2",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "content": "Reading a.txt."
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE1",
+            "object": "chat.completion.chunk",
+            "created": 1794441600,
+            "model": "glm-5.2",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "tool_calls": [
+                    {
+                      "index": 0,
+                      "id": "call_FAKE1",
+                      "type": "function",
+                      "function": {
+                        "name": "read",
+                        "arguments": ""
+                      }
+                    }
+                  ]
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE1",
+            "object": "chat.completion.chunk",
+            "created": 1794441600,
+            "model": "glm-5.2",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "tool_calls": [
+                    {
+                      "index": 0,
+                      "function": {
+                        "arguments": "{\"path\":"
+                      }
+                    }
+                  ]
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE1",
+            "object": "chat.completion.chunk",
+            "created": 1794441600,
+            "model": "glm-5.2",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "tool_calls": [
+                    {
+                      "index": 0,
+                      "function": {
+                        "arguments": "\"a.txt\"}"
+                      }
+                    }
+                  ]
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE1",
+            "object": "chat.completion.chunk",
+            "created": 1794441600,
+            "model": "glm-5.2",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {},
+                "finish_reason": "tool_calls"
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE1",
+            "object": "chat.completion.chunk",
+            "created": 1794441600,
+            "model": "glm-5.2",
+            "choices": [],
+            "usage": {
+              "prompt_tokens": 100,
+              "completion_tokens": 20,
+              "total_tokens": 120,
+              "prompt_tokens_details": {
+                "cached_tokens": 80
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 5
+              }
+            }
+          }
+        },
+        {
+          "data": "[DONE]"
+        }
+      ]
+    }
+  },
+  "expects": {
+    "logged": {
+      "session": "ses_FAKEopencode0001",
+      "sessionSource": "x-session-affinity",
+      "machine": "",
+      "project": "",
+      "client": "opencode",
+      "clientVersion": "1.19.5",
+      "userAgent": "opencode/1.19.5 ai-sdk/provider-utils/4.0.23 runtime/bun/1.4.2",
+      "divertedFrom": null,
+      "follows": null,
+      "loginFingerprint": null,
+      "refusalReset": null,
+      "protocol": "openai-chat",
+      "operation": "chat",
+      "purpose": "",
+      "model": "glm-5.2",
+      "servedModel": "",
+      "stream": true,
+      "outcome": "ok",
+      "upstreamStatus": 200,
+      "errorType": "",
+      "errorMessage": "",
+      "stopReason": "tool_calls",
+      "usage": {
+        "tokens": {
+          "input": 20,
+          "cacheRead": 80,
+          "cacheWriteShort": 0,
+          "cacheWriteLong": 0,
+          "output": 20
+        },
+        "reasoning": 5,
+        "reported": "{\"prompt_tokens\":100,\"completion_tokens\":20,\"total_tokens\":120,\"prompt_tokens_details\":{\"cached_tokens\":80},\"completion_tokens_details\":{\"reasoning_tokens\":5}}"
+      },
+      "serviceTier": "",
+      "providerRequestId": "req-FAKE-chat-0001",
+      "rateLimits": {},
+      "clientHeaders": {},
+      "conversation": {
+        "params": {
+          "model": "glm-5.2",
+          "max_tokens": 32000,
+          "tool_choice": "auto",
+          "stream": true,
+          "stream_options": {
+            "include_usage": true
+          }
+        },
+        "layout": [
+          {
+            "part": "tools",
+            "field": "tools",
+            "layout": "list"
+          },
+          {
+            "part": "input",
+            "field": "messages",
+            "layout": "list"
+          }
+        ],
+        "overlay": [],
+        "system": [],
+        "tools": [
+          {
+            "digest": "b3d9513187e7bdca2993fecc6640641a",
+            "type": "function",
+            "role": "",
+            "text": ""
+          }
+        ],
+        "input": [
+          {
+            "digest": "2e9c82209e6ab1864c0964cacd601712",
+            "type": "",
+            "role": "system",
+            "text": "You are opencode, a coding agent."
+          },
+          {
+            "digest": "31426ea6a8bf626462839b2daadb9a6c",
+            "type": "",
+            "role": "user",
+            "text": "What is in a.txt?"
+          }
+        ],
+        "output": [
+          {
+            "digest": "4b96f2335ca858e0b8df13a1c8092999",
+            "type": "",
+            "role": "assistant",
+            "text": "Reading a.txt.\n\nLet me read it.\n\n{\"path\":\"a.txt\"}"
+          }
+        ]
+      },
+      "errorBody": "",
+      "requestBytes": 412,
+      "responseBytes": 1926,
+      "readingComplete": true
+    }
+  }
+}

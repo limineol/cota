@@ -1,0 +1,131 @@
+{
+  "source": {
+    "kind": "constructed",
+    "from": [
+      "https://docs.z.ai/api-reference/api-code",
+      "Milestone 1 research, OpenAI-compatible adapter facts (2026-11-12), section 4 (Z.ai)"
+    ],
+    "note": "Z.ai gives the reset only inside its message, in Shanghai time, which the hub does not parse."
+  },
+  "request": {
+    "method": "POST",
+    "path": "/chat/completions",
+    "headers": {
+      "authorization": "Bearer cota-FAKE-hub-key-for-tests",
+      "content-type": "application/json",
+      "user-agent": "opencode/1.19.5 ai-sdk/provider-utils/4.0.23 runtime/bun/1.4.2",
+      "x-opencode-session-id": "ses_FAKEopencode0001",
+      "x-session-affinity": "ses_FAKEopencode0001",
+      "x-session-id": "ses_FAKEopencode0001"
+    },
+    "body": {
+      "json": {
+        "model": "glm-5.2",
+        "max_tokens": 32000,
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are opencode, a coding agent."
+          },
+          {
+            "role": "user",
+            "content": "What is in a.txt?"
+          }
+        ],
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 429,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "error": {
+          "code": "1308",
+          "message": "Usage limit reached for 5 hour. Your limit will reset at 2026-11-12 13:25:56"
+        }
+      }
+    }
+  },
+  "expects": {
+    "logged": {
+      "session": "ses_FAKEopencode0001",
+      "sessionSource": "x-session-affinity",
+      "machine": "",
+      "project": "",
+      "client": "opencode",
+      "clientVersion": "1.19.5",
+      "userAgent": "opencode/1.19.5 ai-sdk/provider-utils/4.0.23 runtime/bun/1.4.2",
+      "divertedFrom": null,
+      "follows": null,
+      "loginFingerprint": null,
+      "refusalReset": null,
+      "protocol": "openai-chat",
+      "operation": "chat",
+      "purpose": "",
+      "model": "glm-5.2",
+      "servedModel": "",
+      "stream": false,
+      "outcome": "refused",
+      "upstreamStatus": 429,
+      "errorType": "1308",
+      "errorMessage": "Usage limit reached for 5 hour. Your limit will reset at 2026-11-12 13:25:56",
+      "stopReason": "",
+      "usage": null,
+      "serviceTier": "",
+      "providerRequestId": "",
+      "rateLimits": {},
+      "clientHeaders": {},
+      "conversation": {
+        "params": {
+          "model": "glm-5.2",
+          "max_tokens": 32000,
+          "stream": true,
+          "stream_options": {
+            "include_usage": true
+          }
+        },
+        "layout": [
+          {
+            "part": "tools",
+            "field": "tools",
+            "layout": "absent"
+          },
+          {
+            "part": "input",
+            "field": "messages",
+            "layout": "list"
+          }
+        ],
+        "overlay": [],
+        "system": [],
+        "tools": [],
+        "input": [
+          {
+            "digest": "2e9c82209e6ab1864c0964cacd601712",
+            "type": "",
+            "role": "system",
+            "text": "You are opencode, a coding agent."
+          },
+          {
+            "digest": "31426ea6a8bf626462839b2daadb9a6c",
+            "type": "",
+            "role": "user",
+            "text": "What is in a.txt?"
+          }
+        ],
+        "output": []
+      },
+      "errorBody": "{\"error\":{\"code\":\"1308\",\"message\":\"Usage limit reached for 5 hour. Your limit will reset at 2026-11-12 13:25:56\"}}",
+      "requestBytes": 215,
+      "responseBytes": 114,
+      "readingComplete": true
+    }
+  }
+}

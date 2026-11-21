@@ -1,0 +1,190 @@
+{
+  "source": {
+    "kind": "constructed",
+    "from": [
+      "Milestone 1 research, OpenAI-compatible adapter facts (2026-11-12), sections 4 (OpenCode Go) and 8"
+    ],
+    "note": "OpenCode Go's legacy route appends a cost chunk, without usage, after [DONE]."
+  },
+  "request": {
+    "method": "POST",
+    "path": "/chat/completions",
+    "headers": {
+      "authorization": "Bearer cota-FAKE-hub-key-for-tests",
+      "content-type": "application/json",
+      "user-agent": "opencode/1.19.5 ai-sdk/provider-utils/4.0.23 runtime/bun/1.4.2",
+      "x-opencode-session-id": "ses_FAKEopencode0002",
+      "x-session-affinity": "ses_FAKEopencode0002",
+      "x-session-id": "ses_FAKEopencode0002"
+    },
+    "body": {
+      "json": {
+        "model": "kimi-k3",
+        "max_tokens": 32000,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Name a colour."
+          }
+        ],
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "text/event-stream",
+      "cache-control": "no-cache"
+    },
+    "body": {
+      "events": [
+        {
+          "data": {
+            "id": "chatcmpl-FAKE1",
+            "object": "chat.completion.chunk",
+            "created": 1794441600,
+            "model": "kimi-k3",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant",
+                  "content": "Teal."
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE1",
+            "object": "chat.completion.chunk",
+            "created": 1794441600,
+            "model": "kimi-k3",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {},
+                "finish_reason": "stop"
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "id": "chatcmpl-FAKE1",
+            "object": "chat.completion.chunk",
+            "created": 1794441600,
+            "model": "kimi-k3",
+            "choices": [],
+            "usage": {
+              "prompt_tokens": 12,
+              "completion_tokens": 2,
+              "total_tokens": 14
+            }
+          }
+        },
+        {
+          "data": "[DONE]"
+        },
+        {
+          "data": {
+            "choices": [],
+            "cost": "0.00002"
+          }
+        }
+      ]
+    }
+  },
+  "expects": {
+    "logged": {
+      "session": "ses_FAKEopencode0002",
+      "sessionSource": "x-session-affinity",
+      "machine": "",
+      "project": "",
+      "client": "opencode",
+      "clientVersion": "1.19.5",
+      "userAgent": "opencode/1.19.5 ai-sdk/provider-utils/4.0.23 runtime/bun/1.4.2",
+      "divertedFrom": null,
+      "follows": null,
+      "loginFingerprint": null,
+      "refusalReset": null,
+      "protocol": "openai-chat",
+      "operation": "chat",
+      "purpose": "",
+      "model": "kimi-k3",
+      "servedModel": "",
+      "stream": true,
+      "outcome": "ok",
+      "upstreamStatus": 200,
+      "errorType": "",
+      "errorMessage": "",
+      "stopReason": "stop",
+      "usage": {
+        "tokens": {
+          "input": 12,
+          "cacheRead": 0,
+          "cacheWriteShort": 0,
+          "cacheWriteLong": 0,
+          "output": 2
+        },
+        "reasoning": 0,
+        "reported": "{\"prompt_tokens\":12,\"completion_tokens\":2,\"total_tokens\":14}"
+      },
+      "serviceTier": "",
+      "providerRequestId": "",
+      "rateLimits": {},
+      "clientHeaders": {},
+      "conversation": {
+        "params": {
+          "model": "kimi-k3",
+          "max_tokens": 32000,
+          "stream": true,
+          "stream_options": {
+            "include_usage": true
+          }
+        },
+        "layout": [
+          {
+            "part": "tools",
+            "field": "tools",
+            "layout": "absent"
+          },
+          {
+            "part": "input",
+            "field": "messages",
+            "layout": "list"
+          }
+        ],
+        "overlay": [],
+        "system": [],
+        "tools": [],
+        "input": [
+          {
+            "digest": "c99489eea340abd8ad149ab85b987659",
+            "type": "",
+            "role": "user",
+            "text": "Name a colour."
+          }
+        ],
+        "output": [
+          {
+            "digest": "1c91d72290585a0d9f4290509891834b",
+            "type": "",
+            "role": "assistant",
+            "text": "Teal."
+          }
+        ]
+      },
+      "errorBody": "",
+      "requestBytes": 148,
+      "responseBytes": 594,
+      "readingComplete": true
+    }
+  }
+}

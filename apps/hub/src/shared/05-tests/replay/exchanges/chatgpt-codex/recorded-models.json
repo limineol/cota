@@ -1,0 +1,1662 @@
+{
+  "source": {
+    "kind": "recorded",
+    "date": "2026-11-12",
+    "client": "codex",
+    "version": "0.167.2"
+  },
+  "request": {
+    "method": "GET",
+    "path": "/backend-api/codex/models?client_version=0.167.2",
+    "headers": {
+      "accept": "*/*",
+      "authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDEwIiwiY2hhdGdwdF9hY2NvdW50X3VzZXJfaWQiOiJmYWtlLWlkLTAwMTcifX0.RkFLRS1zaWduYXR1cmUtZm9yLXRlc3RzLW9ubHk",
+      "chatgpt-account-id": "00000000-0000-4000-8000-000000000010",
+      "originator": "codex_exec",
+      "user-agent": "codex_exec/0.167.2"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "cache-control": "private, no-store",
+      "cf-ray": "fake-id-0018",
+      "content-type": "application/json",
+      "x-oai-request-id": "req_FAKE0019"
+    },
+    "body": {
+      "json": {
+        "models": [
+          {
+            "scrubbed-key-1": "scrubbed:m",
+            "scrubbed-key-2": true,
+            "scrubbed-key-3": true,
+            "scrubbed-key-4": "scrubbed:s",
+            "scrubbed-key-5": "scrubbed:s",
+            "scrubbed-key-6": "scrubbed:m",
+            "scrubbed-key-7": ["scrubbed:s", "scrubbed:s"],
+            "scrubbed-key-8": true,
+            "scrubbed-key-9": {
+              "scrubbed-key-1": "scrubbed:s",
+              "scrubbed-key-2": 0
+            },
+            "scrubbed-key-10": true,
+            "scrubbed-key-11": "scrubbed:m",
+            "scrubbed-key-12": "scrubbed:s",
+            "scrubbed-key-13": "scrubbed:s",
+            "scrubbed-key-14": true,
+            "scrubbed-key-15": true,
+            "scrubbed-key-16": false,
+            "scrubbed-key-17": false,
+            "scrubbed-key-18": false,
+            "scrubbed-key-19": null,
+            "node_repl_auto_review_required": true,
+            "node_repl_disabled": false,
+            "scrubbed-key-20": false,
+            "scrubbed-key-21": false,
+            "scrubbed-key-22": false,
+            "scrubbed-key-23": null,
+            "scrubbed-key-24": null,
+            "scrubbed-key-25": 0,
+            "scrubbed-key-26": 0,
+            "scrubbed-key-27": null,
+            "scrubbed-key-28": "scrubbed:s",
+            "scrubbed-key-29": "scrubbed:s",
+            "scrubbed-key-30": "scrubbed:m",
+            "description": "scrubbed:m",
+            "scrubbed-key-31": "scrubbed:s",
+            "scrubbed-key-32": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-33": "scrubbed:m",
+            "scrubbed-key-34": "scrubbed:s",
+            "scrubbed-key-35": "scrubbed:s",
+            "scrubbed-key-36": true,
+            "scrubbed-key-37": {
+              "scrubbed-key-1": "scrubbed:l"
+            },
+            "scrubbed-key-38": null,
+            "scrubbed-key-39": 0,
+            "scrubbed-key-40": {
+              "scrubbed-key-1": "scrubbed:xl",
+              "scrubbed-key-2": null,
+              "scrubbed-key-3": "scrubbed:xl",
+              "scrubbed-key-4": null,
+              "scrubbed-key-5": null,
+              "scrubbed-key-6": {
+                "scrubbed-key-1": null,
+                "scrubbed-key-2": "scrubbed:l",
+                "scrubbed-key-3": null,
+                "scrubbed-key-4": null
+              },
+              "scrubbed-key-7": {
+                "scrubbed-key-1": "scrubbed:l",
+                "scrubbed-key-2": null
+              },
+              "scrubbed-key-8": {
+                "scrubbed-key-1": null,
+                "scrubbed-key-2": null,
+                "scrubbed-key-3": null,
+                "scrubbed-key-4": "scrubbed:l",
+                "scrubbed-key-5": null
+              },
+              "scrubbed-key-9": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:xl",
+                  "scrubbed-key-2": "scrubbed:xl"
+                },
+                "scrubbed-key-2": null
+              },
+              "scrubbed-key-10": null,
+              "scrubbed-key-11": {
+                "scrubbed-key-1": false,
+                "scrubbed-key-2": false,
+                "scrubbed-key-3": 0,
+                "scrubbed-key-4": "scrubbed:l",
+                "scrubbed-key-5": "scrubbed:xl",
+                "scrubbed-key-6": "scrubbed:l",
+                "scrubbed-key-7": 0
+              },
+              "scrubbed-key-12": {
+                "scrubbed-key-1": "scrubbed:xl",
+                "scrubbed-key-2": null,
+                "scrubbed-key-3": null,
+                "scrubbed-key-4": null,
+                "scrubbed-key-5": null,
+                "scrubbed-key-6": null,
+                "scrubbed-key-7": null,
+                "scrubbed-key-8": null,
+                "scrubbed-key-9": null
+              },
+              "scrubbed-key-13": {
+                "scrubbed-key-1": "scrubbed:xl",
+                "scrubbed-key-2": "scrubbed:xl"
+              }
+            },
+            "scrubbed-key-41": ["scrubbed:m", "scrubbed:s"],
+            "scrubbed-key-42": [
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s"
+            ],
+            "scrubbed-key-43": true,
+            "scrubbed-key-44": false,
+            "scrubbed-key-45": null,
+            "scrubbed-key-46": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:s",
+                "scrubbed-key-3": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-47": ["scrubbed:s"],
+            "scrubbed-key-48": true,
+            "scrubbed-key-49": true,
+            "scrubbed-key-50": "scrubbed:xl",
+            "scrubbed-key-51": {
+              "scrubbed-key-1": ["scrubbed:s"]
+            }
+          },
+          {
+            "scrubbed-key-1": "scrubbed:m",
+            "scrubbed-key-2": true,
+            "scrubbed-key-3": true,
+            "scrubbed-key-4": "scrubbed:s",
+            "scrubbed-key-5": "scrubbed:s",
+            "scrubbed-key-6": "scrubbed:m",
+            "scrubbed-key-7": ["scrubbed:s", "scrubbed:s"],
+            "scrubbed-key-8": true,
+            "scrubbed-key-9": {
+              "scrubbed-key-1": "scrubbed:s",
+              "scrubbed-key-2": 0
+            },
+            "scrubbed-key-10": true,
+            "scrubbed-key-11": "scrubbed:m",
+            "scrubbed-key-12": "scrubbed:s",
+            "scrubbed-key-13": "scrubbed:s",
+            "scrubbed-key-14": true,
+            "scrubbed-key-15": true,
+            "scrubbed-key-16": false,
+            "scrubbed-key-17": false,
+            "scrubbed-key-18": false,
+            "scrubbed-key-19": null,
+            "node_repl_auto_review_required": true,
+            "node_repl_disabled": false,
+            "scrubbed-key-20": false,
+            "scrubbed-key-21": false,
+            "scrubbed-key-22": false,
+            "scrubbed-key-23": null,
+            "scrubbed-key-24": null,
+            "scrubbed-key-25": 0,
+            "scrubbed-key-26": 0,
+            "scrubbed-key-27": null,
+            "scrubbed-key-28": "scrubbed:s",
+            "scrubbed-key-29": "scrubbed:s",
+            "scrubbed-key-30": "scrubbed:m",
+            "description": "scrubbed:m",
+            "scrubbed-key-31": "scrubbed:s",
+            "scrubbed-key-32": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-33": "scrubbed:m",
+            "scrubbed-key-34": "scrubbed:s",
+            "scrubbed-key-35": "scrubbed:s",
+            "scrubbed-key-36": true,
+            "scrubbed-key-37": null,
+            "scrubbed-key-38": null,
+            "scrubbed-key-39": 0,
+            "scrubbed-key-40": {
+              "scrubbed-key-1": "scrubbed:xl",
+              "scrubbed-key-2": null,
+              "scrubbed-key-3": "scrubbed:xl",
+              "scrubbed-key-4": null,
+              "scrubbed-key-5": null,
+              "scrubbed-key-6": {
+                "scrubbed-key-1": null,
+                "scrubbed-key-2": "scrubbed:l",
+                "scrubbed-key-3": null,
+                "scrubbed-key-4": null
+              },
+              "scrubbed-key-7": {
+                "scrubbed-key-1": "scrubbed:l",
+                "scrubbed-key-2": null
+              },
+              "scrubbed-key-8": {
+                "scrubbed-key-1": null,
+                "scrubbed-key-2": null,
+                "scrubbed-key-3": null,
+                "scrubbed-key-4": "scrubbed:l",
+                "scrubbed-key-5": null
+              },
+              "scrubbed-key-9": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:xl",
+                  "scrubbed-key-2": "scrubbed:xl"
+                },
+                "scrubbed-key-2": null
+              },
+              "scrubbed-key-10": null,
+              "scrubbed-key-11": {
+                "scrubbed-key-1": false,
+                "scrubbed-key-2": false,
+                "scrubbed-key-3": 0,
+                "scrubbed-key-4": "scrubbed:l",
+                "scrubbed-key-5": "scrubbed:xl",
+                "scrubbed-key-6": "scrubbed:l",
+                "scrubbed-key-7": 0
+              },
+              "scrubbed-key-12": {
+                "scrubbed-key-1": "scrubbed:xl",
+                "scrubbed-key-2": null,
+                "scrubbed-key-3": null,
+                "scrubbed-key-4": null,
+                "scrubbed-key-5": null,
+                "scrubbed-key-6": null,
+                "scrubbed-key-7": null,
+                "scrubbed-key-8": null,
+                "scrubbed-key-9": null
+              },
+              "scrubbed-key-13": {
+                "scrubbed-key-1": "scrubbed:xl",
+                "scrubbed-key-2": "scrubbed:xl"
+              }
+            },
+            "scrubbed-key-41": ["scrubbed:m", "scrubbed:s"],
+            "scrubbed-key-42": [
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s"
+            ],
+            "scrubbed-key-43": true,
+            "scrubbed-key-44": true,
+            "scrubbed-key-45": null,
+            "scrubbed-key-46": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:s",
+                "scrubbed-key-3": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-47": ["scrubbed:s"],
+            "scrubbed-key-48": true,
+            "scrubbed-key-49": true,
+            "scrubbed-key-50": "scrubbed:xl",
+            "scrubbed-key-51": {
+              "scrubbed-key-1": ["scrubbed:s"]
+            }
+          },
+          {
+            "scrubbed-key-1": "scrubbed:m",
+            "scrubbed-key-2": true,
+            "scrubbed-key-3": true,
+            "scrubbed-key-4": "scrubbed:s",
+            "scrubbed-key-5": "scrubbed:s",
+            "scrubbed-key-6": "scrubbed:m",
+            "scrubbed-key-7": ["scrubbed:s", "scrubbed:s"],
+            "scrubbed-key-8": true,
+            "scrubbed-key-9": {
+              "scrubbed-key-1": "scrubbed:s",
+              "scrubbed-key-2": 0
+            },
+            "scrubbed-key-10": true,
+            "scrubbed-key-11": "scrubbed:m",
+            "scrubbed-key-12": "scrubbed:s",
+            "scrubbed-key-13": "scrubbed:s",
+            "scrubbed-key-14": true,
+            "scrubbed-key-15": true,
+            "scrubbed-key-16": false,
+            "scrubbed-key-17": false,
+            "scrubbed-key-18": false,
+            "scrubbed-key-19": null,
+            "node_repl_auto_review_required": true,
+            "node_repl_disabled": false,
+            "scrubbed-key-20": false,
+            "scrubbed-key-21": false,
+            "scrubbed-key-22": false,
+            "scrubbed-key-23": null,
+            "scrubbed-key-24": null,
+            "scrubbed-key-25": 0,
+            "scrubbed-key-26": 0,
+            "scrubbed-key-27": null,
+            "scrubbed-key-28": "scrubbed:s",
+            "scrubbed-key-29": "scrubbed:s",
+            "scrubbed-key-30": "scrubbed:m",
+            "description": "scrubbed:m",
+            "scrubbed-key-31": "scrubbed:s",
+            "scrubbed-key-32": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-33": "scrubbed:m",
+            "scrubbed-key-34": "scrubbed:s",
+            "scrubbed-key-35": "scrubbed:s",
+            "scrubbed-key-36": true,
+            "scrubbed-key-37": null,
+            "scrubbed-key-38": null,
+            "scrubbed-key-39": 0,
+            "scrubbed-key-40": {
+              "scrubbed-key-1": "scrubbed:xl",
+              "scrubbed-key-2": null,
+              "scrubbed-key-3": "scrubbed:xl",
+              "scrubbed-key-4": null,
+              "scrubbed-key-5": null,
+              "scrubbed-key-6": {
+                "scrubbed-key-1": null,
+                "scrubbed-key-2": "scrubbed:l",
+                "scrubbed-key-3": null,
+                "scrubbed-key-4": null
+              },
+              "scrubbed-key-7": {
+                "scrubbed-key-1": "scrubbed:l",
+                "scrubbed-key-2": null
+              },
+              "scrubbed-key-8": {
+                "scrubbed-key-1": null,
+                "scrubbed-key-2": null,
+                "scrubbed-key-3": null,
+                "scrubbed-key-4": "scrubbed:l",
+                "scrubbed-key-5": null
+              },
+              "scrubbed-key-9": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:xl",
+                  "scrubbed-key-2": "scrubbed:xl"
+                },
+                "scrubbed-key-2": null
+              },
+              "scrubbed-key-10": null,
+              "scrubbed-key-11": {
+                "scrubbed-key-1": false,
+                "scrubbed-key-2": false,
+                "scrubbed-key-3": 0,
+                "scrubbed-key-4": "scrubbed:l",
+                "scrubbed-key-5": "scrubbed:xl",
+                "scrubbed-key-6": "scrubbed:l",
+                "scrubbed-key-7": 0
+              },
+              "scrubbed-key-12": {
+                "scrubbed-key-1": "scrubbed:xl",
+                "scrubbed-key-2": null,
+                "scrubbed-key-3": null,
+                "scrubbed-key-4": null,
+                "scrubbed-key-5": null,
+                "scrubbed-key-6": null,
+                "scrubbed-key-7": null,
+                "scrubbed-key-8": null,
+                "scrubbed-key-9": null
+              },
+              "scrubbed-key-13": {
+                "scrubbed-key-1": "scrubbed:xl",
+                "scrubbed-key-2": "scrubbed:xl"
+              }
+            },
+            "scrubbed-key-41": ["scrubbed:m", "scrubbed:s"],
+            "scrubbed-key-42": [
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s"
+            ],
+            "scrubbed-key-43": true,
+            "scrubbed-key-44": false,
+            "scrubbed-key-45": null,
+            "scrubbed-key-46": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:s",
+                "scrubbed-key-3": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-47": ["scrubbed:s"],
+            "scrubbed-key-48": true,
+            "scrubbed-key-49": true,
+            "scrubbed-key-50": "scrubbed:xl",
+            "scrubbed-key-51": {
+              "scrubbed-key-1": ["scrubbed:s"]
+            }
+          },
+          {
+            "scrubbed-key-1": "scrubbed:m",
+            "scrubbed-key-2": true,
+            "scrubbed-key-3": true,
+            "scrubbed-key-4": "scrubbed:s",
+            "scrubbed-key-5": "scrubbed:s",
+            "scrubbed-key-6": "scrubbed:m",
+            "scrubbed-key-7": ["scrubbed:s", "scrubbed:s"],
+            "scrubbed-key-8": true,
+            "scrubbed-key-9": {
+              "scrubbed-key-1": "scrubbed:s",
+              "scrubbed-key-2": 0
+            },
+            "scrubbed-key-10": true,
+            "scrubbed-key-11": "scrubbed:m",
+            "scrubbed-key-12": "scrubbed:s",
+            "scrubbed-key-13": null,
+            "scrubbed-key-14": true,
+            "scrubbed-key-15": true,
+            "scrubbed-key-16": false,
+            "scrubbed-key-17": false,
+            "scrubbed-key-18": false,
+            "scrubbed-key-19": null,
+            "node_repl_auto_review_required": true,
+            "node_repl_disabled": false,
+            "scrubbed-key-20": false,
+            "scrubbed-key-21": false,
+            "scrubbed-key-22": false,
+            "scrubbed-key-23": null,
+            "scrubbed-key-24": null,
+            "scrubbed-key-25": 0,
+            "scrubbed-key-26": 0,
+            "scrubbed-key-27": null,
+            "scrubbed-key-28": "scrubbed:s",
+            "scrubbed-key-29": "scrubbed:s",
+            "scrubbed-key-30": "scrubbed:m",
+            "description": "scrubbed:m",
+            "scrubbed-key-31": "scrubbed:s",
+            "scrubbed-key-32": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-33": "scrubbed:m",
+            "scrubbed-key-34": "scrubbed:s",
+            "scrubbed-key-35": "scrubbed:s",
+            "scrubbed-key-36": true,
+            "scrubbed-key-37": null,
+            "scrubbed-key-38": null,
+            "scrubbed-key-39": 0,
+            "scrubbed-key-40": {
+              "scrubbed-key-1": "scrubbed:xl",
+              "scrubbed-key-2": null,
+              "scrubbed-key-3": "scrubbed:xl",
+              "scrubbed-key-4": null,
+              "scrubbed-key-5": null,
+              "scrubbed-key-6": {
+                "scrubbed-key-1": null,
+                "scrubbed-key-2": "scrubbed:l",
+                "scrubbed-key-3": null,
+                "scrubbed-key-4": null
+              },
+              "scrubbed-key-7": {
+                "scrubbed-key-1": "scrubbed:l",
+                "scrubbed-key-2": null
+              },
+              "scrubbed-key-8": {
+                "scrubbed-key-1": null,
+                "scrubbed-key-2": null,
+                "scrubbed-key-3": null,
+                "scrubbed-key-4": "scrubbed:l",
+                "scrubbed-key-5": null
+              },
+              "scrubbed-key-9": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:xl",
+                  "scrubbed-key-2": "scrubbed:xl"
+                },
+                "scrubbed-key-2": null
+              },
+              "scrubbed-key-10": null,
+              "scrubbed-key-11": {
+                "scrubbed-key-1": false,
+                "scrubbed-key-2": false,
+                "scrubbed-key-3": 0,
+                "scrubbed-key-4": "scrubbed:l",
+                "scrubbed-key-5": "scrubbed:xl",
+                "scrubbed-key-6": "scrubbed:l",
+                "scrubbed-key-7": 0
+              },
+              "scrubbed-key-12": {
+                "scrubbed-key-1": "scrubbed:xl",
+                "scrubbed-key-2": null,
+                "scrubbed-key-3": null,
+                "scrubbed-key-4": null,
+                "scrubbed-key-5": null,
+                "scrubbed-key-6": null,
+                "scrubbed-key-7": null,
+                "scrubbed-key-8": null,
+                "scrubbed-key-9": null
+              },
+              "scrubbed-key-13": {
+                "scrubbed-key-1": "scrubbed:xl",
+                "scrubbed-key-2": "scrubbed:xl"
+              }
+            },
+            "scrubbed-key-41": ["scrubbed:m", "scrubbed:s"],
+            "scrubbed-key-42": [
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s"
+            ],
+            "scrubbed-key-43": true,
+            "scrubbed-key-44": true,
+            "scrubbed-key-45": null,
+            "scrubbed-key-46": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:s",
+                "scrubbed-key-3": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-47": ["scrubbed:s"],
+            "scrubbed-key-48": true,
+            "scrubbed-key-49": true,
+            "scrubbed-key-50": "scrubbed:xl",
+            "scrubbed-key-51": {
+              "scrubbed-key-1": ["scrubbed:s"]
+            }
+          },
+          {
+            "scrubbed-key-1": "scrubbed:m",
+            "scrubbed-key-2": true,
+            "scrubbed-key-3": true,
+            "scrubbed-key-4": "scrubbed:s",
+            "scrubbed-key-5": "scrubbed:s",
+            "scrubbed-key-6": "scrubbed:m",
+            "scrubbed-key-7": ["scrubbed:s", "scrubbed:s"],
+            "scrubbed-key-8": true,
+            "scrubbed-key-9": {
+              "scrubbed-key-1": "scrubbed:s",
+              "scrubbed-key-2": 0
+            },
+            "scrubbed-key-10": true,
+            "scrubbed-key-11": "scrubbed:m",
+            "scrubbed-key-12": "scrubbed:s",
+            "scrubbed-key-13": null,
+            "scrubbed-key-14": true,
+            "scrubbed-key-15": false,
+            "scrubbed-key-16": false,
+            "scrubbed-key-17": true,
+            "scrubbed-key-18": true,
+            "scrubbed-key-19": null,
+            "node_repl_auto_review_required": false,
+            "node_repl_disabled": false,
+            "scrubbed-key-20": false,
+            "scrubbed-key-21": false,
+            "scrubbed-key-22": false,
+            "scrubbed-key-23": null,
+            "scrubbed-key-24": null,
+            "scrubbed-key-25": 0,
+            "scrubbed-key-26": 0,
+            "scrubbed-key-27": null,
+            "scrubbed-key-28": "scrubbed:s",
+            "scrubbed-key-29": "scrubbed:s",
+            "scrubbed-key-30": "scrubbed:m",
+            "description": "scrubbed:m",
+            "scrubbed-key-31": "scrubbed:s",
+            "scrubbed-key-32": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-33": "scrubbed:m",
+            "scrubbed-key-34": "scrubbed:s",
+            "scrubbed-key-35": "scrubbed:s",
+            "scrubbed-key-36": true,
+            "scrubbed-key-37": null,
+            "scrubbed-key-38": null,
+            "scrubbed-key-39": 0,
+            "scrubbed-key-40": {
+              "scrubbed-key-1": "scrubbed:xl",
+              "scrubbed-key-2": null,
+              "scrubbed-key-3": null,
+              "scrubbed-key-4": null,
+              "scrubbed-key-5": null,
+              "scrubbed-key-6": null,
+              "scrubbed-key-7": null,
+              "scrubbed-key-8": null,
+              "scrubbed-key-9": null,
+              "scrubbed-key-10": null,
+              "scrubbed-key-11": {
+                "scrubbed-key-1": false,
+                "scrubbed-key-2": false,
+                "scrubbed-key-3": 0,
+                "scrubbed-key-4": "scrubbed:l",
+                "scrubbed-key-5": "scrubbed:xl",
+                "scrubbed-key-6": "scrubbed:l",
+                "scrubbed-key-7": 0
+              },
+              "scrubbed-key-12": null,
+              "scrubbed-key-13": null
+            },
+            "scrubbed-key-41": [],
+            "scrubbed-key-42": [
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s"
+            ],
+            "scrubbed-key-43": true,
+            "scrubbed-key-44": false,
+            "scrubbed-key-45": null,
+            "scrubbed-key-46": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:s",
+                "scrubbed-key-3": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-47": ["scrubbed:s"],
+            "scrubbed-key-48": true,
+            "scrubbed-key-49": true,
+            "scrubbed-key-50": "scrubbed:xl",
+            "scrubbed-key-51": {
+              "scrubbed-key-1": ["scrubbed:s"]
+            }
+          },
+          {
+            "scrubbed-key-1": "scrubbed:m",
+            "scrubbed-key-2": true,
+            "scrubbed-key-3": true,
+            "scrubbed-key-4": "scrubbed:s",
+            "scrubbed-key-5": "scrubbed:s",
+            "scrubbed-key-6": "scrubbed:m",
+            "scrubbed-key-7": ["scrubbed:s", "scrubbed:s"],
+            "scrubbed-key-8": true,
+            "scrubbed-key-9": {
+              "scrubbed-key-1": "scrubbed:s",
+              "scrubbed-key-2": 0
+            },
+            "scrubbed-key-10": true,
+            "scrubbed-key-11": "scrubbed:m",
+            "scrubbed-key-12": "scrubbed:s",
+            "scrubbed-key-13": null,
+            "scrubbed-key-14": true,
+            "scrubbed-key-15": true,
+            "scrubbed-key-16": false,
+            "scrubbed-key-17": false,
+            "scrubbed-key-18": false,
+            "scrubbed-key-19": null,
+            "node_repl_auto_review_required": false,
+            "node_repl_disabled": false,
+            "scrubbed-key-20": false,
+            "scrubbed-key-21": false,
+            "scrubbed-key-22": false,
+            "scrubbed-key-23": null,
+            "scrubbed-key-24": null,
+            "scrubbed-key-25": 0,
+            "scrubbed-key-26": 0,
+            "scrubbed-key-27": null,
+            "scrubbed-key-28": "scrubbed:s",
+            "scrubbed-key-29": "scrubbed:s",
+            "scrubbed-key-30": "scrubbed:m",
+            "description": "scrubbed:m",
+            "scrubbed-key-31": "scrubbed:s",
+            "scrubbed-key-32": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-33": "scrubbed:m",
+            "scrubbed-key-34": "scrubbed:s",
+            "scrubbed-key-35": "scrubbed:s",
+            "scrubbed-key-36": true,
+            "scrubbed-key-37": null,
+            "scrubbed-key-38": null,
+            "scrubbed-key-39": 0,
+            "scrubbed-key-40": {
+              "scrubbed-key-1": "scrubbed:xl",
+              "scrubbed-key-2": null,
+              "scrubbed-key-3": "scrubbed:xl",
+              "scrubbed-key-4": null,
+              "scrubbed-key-5": null,
+              "scrubbed-key-6": {
+                "scrubbed-key-1": null,
+                "scrubbed-key-2": "scrubbed:l",
+                "scrubbed-key-3": null,
+                "scrubbed-key-4": null
+              },
+              "scrubbed-key-7": {
+                "scrubbed-key-1": "scrubbed:l",
+                "scrubbed-key-2": null
+              },
+              "scrubbed-key-8": {
+                "scrubbed-key-1": null,
+                "scrubbed-key-2": null,
+                "scrubbed-key-3": null,
+                "scrubbed-key-4": "scrubbed:l",
+                "scrubbed-key-5": null
+              },
+              "scrubbed-key-9": {
+                "scrubbed-key-1": {
+                  "scrubbed-key-1": "scrubbed:xl",
+                  "scrubbed-key-2": "scrubbed:xl"
+                },
+                "scrubbed-key-2": null
+              },
+              "scrubbed-key-10": null,
+              "scrubbed-key-11": {
+                "scrubbed-key-1": false,
+                "scrubbed-key-2": false,
+                "scrubbed-key-3": 0,
+                "scrubbed-key-4": "scrubbed:l",
+                "scrubbed-key-5": "scrubbed:xl",
+                "scrubbed-key-6": "scrubbed:l",
+                "scrubbed-key-7": 0
+              },
+              "scrubbed-key-12": {
+                "scrubbed-key-1": "scrubbed:xl",
+                "scrubbed-key-2": null,
+                "scrubbed-key-3": null,
+                "scrubbed-key-4": null,
+                "scrubbed-key-5": null,
+                "scrubbed-key-6": null,
+                "scrubbed-key-7": null,
+                "scrubbed-key-8": null,
+                "scrubbed-key-9": null
+              },
+              "scrubbed-key-13": {
+                "scrubbed-key-1": "scrubbed:xl",
+                "scrubbed-key-2": "scrubbed:xl"
+              }
+            },
+            "scrubbed-key-41": ["scrubbed:m", "scrubbed:s"],
+            "scrubbed-key-42": [
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s"
+            ],
+            "scrubbed-key-43": true,
+            "scrubbed-key-44": true,
+            "scrubbed-key-45": null,
+            "scrubbed-key-46": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:s",
+                "scrubbed-key-3": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-47": ["scrubbed:s"],
+            "scrubbed-key-48": true,
+            "scrubbed-key-49": true,
+            "scrubbed-key-50": "scrubbed:xl",
+            "scrubbed-key-51": {
+              "scrubbed-key-1": ["scrubbed:s"]
+            }
+          },
+          {
+            "scrubbed-key-1": "scrubbed:m",
+            "scrubbed-key-2": true,
+            "scrubbed-key-3": true,
+            "scrubbed-key-4": "scrubbed:s",
+            "scrubbed-key-5": "scrubbed:s",
+            "scrubbed-key-6": "scrubbed:m",
+            "scrubbed-key-7": ["scrubbed:s", "scrubbed:s"],
+            "scrubbed-key-8": true,
+            "scrubbed-key-9": {
+              "scrubbed-key-1": "scrubbed:s",
+              "scrubbed-key-2": 0
+            },
+            "scrubbed-key-10": true,
+            "scrubbed-key-11": "scrubbed:m",
+            "scrubbed-key-12": "scrubbed:s",
+            "scrubbed-key-13": null,
+            "scrubbed-key-14": true,
+            "scrubbed-key-15": false,
+            "scrubbed-key-16": false,
+            "scrubbed-key-17": true,
+            "scrubbed-key-18": true,
+            "scrubbed-key-19": null,
+            "node_repl_auto_review_required": false,
+            "node_repl_disabled": false,
+            "scrubbed-key-20": false,
+            "scrubbed-key-21": false,
+            "scrubbed-key-22": false,
+            "scrubbed-key-23": null,
+            "scrubbed-key-24": null,
+            "scrubbed-key-25": 0,
+            "scrubbed-key-26": 0,
+            "scrubbed-key-27": null,
+            "scrubbed-key-28": "scrubbed:s",
+            "scrubbed-key-29": "scrubbed:s",
+            "scrubbed-key-30": "scrubbed:m",
+            "description": "scrubbed:m",
+            "scrubbed-key-31": "scrubbed:s",
+            "scrubbed-key-32": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-33": "scrubbed:m",
+            "scrubbed-key-34": "scrubbed:s",
+            "scrubbed-key-35": "scrubbed:s",
+            "scrubbed-key-36": true,
+            "scrubbed-key-37": null,
+            "scrubbed-key-38": null,
+            "scrubbed-key-39": 0,
+            "scrubbed-key-40": {
+              "scrubbed-key-1": "scrubbed:xl",
+              "scrubbed-key-2": null,
+              "scrubbed-key-3": null,
+              "scrubbed-key-4": null,
+              "scrubbed-key-5": null,
+              "scrubbed-key-6": null,
+              "scrubbed-key-7": null,
+              "scrubbed-key-8": null,
+              "scrubbed-key-9": null,
+              "scrubbed-key-10": null,
+              "scrubbed-key-11": {
+                "scrubbed-key-1": false,
+                "scrubbed-key-2": false,
+                "scrubbed-key-3": 0,
+                "scrubbed-key-4": "scrubbed:l",
+                "scrubbed-key-5": "scrubbed:xl",
+                "scrubbed-key-6": "scrubbed:l",
+                "scrubbed-key-7": 0
+              },
+              "scrubbed-key-12": null,
+              "scrubbed-key-13": null
+            },
+            "scrubbed-key-41": [],
+            "scrubbed-key-42": [
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s"
+            ],
+            "scrubbed-key-43": true,
+            "scrubbed-key-44": true,
+            "scrubbed-key-45": null,
+            "scrubbed-key-46": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:s",
+                "scrubbed-key-3": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-47": ["scrubbed:s"],
+            "scrubbed-key-48": true,
+            "scrubbed-key-49": true,
+            "scrubbed-key-50": "scrubbed:xl",
+            "scrubbed-key-51": {
+              "scrubbed-key-1": ["scrubbed:s"]
+            }
+          },
+          {
+            "scrubbed-key-1": "scrubbed:m",
+            "scrubbed-key-2": true,
+            "scrubbed-key-3": true,
+            "scrubbed-key-4": "scrubbed:s",
+            "scrubbed-key-5": "scrubbed:s",
+            "scrubbed-key-6": "scrubbed:m",
+            "scrubbed-key-7": ["scrubbed:s", "scrubbed:s"],
+            "scrubbed-key-8": true,
+            "scrubbed-key-9": {
+              "scrubbed-key-1": "scrubbed:s",
+              "scrubbed-key-2": 0
+            },
+            "scrubbed-key-10": true,
+            "scrubbed-key-11": "scrubbed:m",
+            "scrubbed-key-12": "scrubbed:s",
+            "scrubbed-key-13": null,
+            "scrubbed-key-14": true,
+            "scrubbed-key-15": false,
+            "scrubbed-key-16": false,
+            "scrubbed-key-17": true,
+            "scrubbed-key-18": true,
+            "scrubbed-key-19": null,
+            "node_repl_auto_review_required": false,
+            "node_repl_disabled": false,
+            "scrubbed-key-20": false,
+            "scrubbed-key-21": false,
+            "scrubbed-key-22": false,
+            "scrubbed-key-23": null,
+            "scrubbed-key-24": null,
+            "scrubbed-key-25": 0,
+            "scrubbed-key-26": 0,
+            "scrubbed-key-27": null,
+            "scrubbed-key-28": "scrubbed:s",
+            "scrubbed-key-29": "scrubbed:s",
+            "scrubbed-key-30": "scrubbed:m",
+            "description": "scrubbed:m",
+            "scrubbed-key-31": "scrubbed:s",
+            "scrubbed-key-32": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-33": "scrubbed:m",
+            "scrubbed-key-34": "scrubbed:s",
+            "scrubbed-key-35": "scrubbed:s",
+            "scrubbed-key-36": true,
+            "scrubbed-key-37": null,
+            "scrubbed-key-38": null,
+            "scrubbed-key-39": 0,
+            "scrubbed-key-40": {
+              "scrubbed-key-1": "scrubbed:xl",
+              "scrubbed-key-2": null,
+              "scrubbed-key-3": null,
+              "scrubbed-key-4": null,
+              "scrubbed-key-5": null,
+              "scrubbed-key-6": null,
+              "scrubbed-key-7": null,
+              "scrubbed-key-8": null,
+              "scrubbed-key-9": null,
+              "scrubbed-key-10": null,
+              "scrubbed-key-11": {
+                "scrubbed-key-1": false,
+                "scrubbed-key-2": false,
+                "scrubbed-key-3": 0,
+                "scrubbed-key-4": "scrubbed:l",
+                "scrubbed-key-5": "scrubbed:xl",
+                "scrubbed-key-6": "scrubbed:l",
+                "scrubbed-key-7": 0
+              },
+              "scrubbed-key-12": null,
+              "scrubbed-key-13": null
+            },
+            "scrubbed-key-41": [],
+            "scrubbed-key-42": [
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s"
+            ],
+            "scrubbed-key-43": true,
+            "scrubbed-key-44": false,
+            "scrubbed-key-45": null,
+            "scrubbed-key-46": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:s",
+                "scrubbed-key-3": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-47": ["scrubbed:s"],
+            "scrubbed-key-48": true,
+            "scrubbed-key-49": true,
+            "scrubbed-key-50": "scrubbed:xl",
+            "scrubbed-key-51": {
+              "scrubbed-key-1": ["scrubbed:s"]
+            }
+          },
+          {
+            "scrubbed-key-1": "scrubbed:m",
+            "scrubbed-key-2": true,
+            "scrubbed-key-3": true,
+            "scrubbed-key-4": "scrubbed:s",
+            "scrubbed-key-5": "scrubbed:s",
+            "scrubbed-key-6": "scrubbed:m",
+            "scrubbed-key-7": ["scrubbed:s", "scrubbed:s"],
+            "scrubbed-key-8": true,
+            "scrubbed-key-9": {
+              "scrubbed-key-1": "scrubbed:s",
+              "scrubbed-key-2": 0
+            },
+            "scrubbed-key-10": true,
+            "scrubbed-key-11": "scrubbed:m",
+            "scrubbed-key-12": "scrubbed:s",
+            "scrubbed-key-13": null,
+            "scrubbed-key-14": true,
+            "scrubbed-key-15": false,
+            "scrubbed-key-16": false,
+            "scrubbed-key-17": true,
+            "scrubbed-key-18": true,
+            "scrubbed-key-19": null,
+            "node_repl_auto_review_required": false,
+            "node_repl_disabled": false,
+            "scrubbed-key-20": false,
+            "scrubbed-key-21": false,
+            "scrubbed-key-22": false,
+            "scrubbed-key-23": null,
+            "scrubbed-key-24": null,
+            "scrubbed-key-25": 0,
+            "scrubbed-key-26": 0,
+            "scrubbed-key-27": null,
+            "scrubbed-key-28": "scrubbed:s",
+            "scrubbed-key-29": "scrubbed:s",
+            "scrubbed-key-30": "scrubbed:m",
+            "description": "scrubbed:m",
+            "scrubbed-key-31": "scrubbed:s",
+            "scrubbed-key-32": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-33": "scrubbed:m",
+            "scrubbed-key-34": "scrubbed:s",
+            "scrubbed-key-35": "scrubbed:s",
+            "scrubbed-key-36": true,
+            "scrubbed-key-37": null,
+            "scrubbed-key-38": null,
+            "scrubbed-key-39": 0,
+            "scrubbed-key-40": {
+              "scrubbed-key-1": "scrubbed:xl",
+              "scrubbed-key-2": null,
+              "scrubbed-key-3": null,
+              "scrubbed-key-4": null,
+              "scrubbed-key-5": null,
+              "scrubbed-key-6": null,
+              "scrubbed-key-7": null,
+              "scrubbed-key-8": null,
+              "scrubbed-key-9": null,
+              "scrubbed-key-10": null,
+              "scrubbed-key-11": {
+                "scrubbed-key-1": false,
+                "scrubbed-key-2": false,
+                "scrubbed-key-3": 0,
+                "scrubbed-key-4": "scrubbed:l",
+                "scrubbed-key-5": "scrubbed:xl",
+                "scrubbed-key-6": "scrubbed:l",
+                "scrubbed-key-7": 0
+              },
+              "scrubbed-key-12": null,
+              "scrubbed-key-13": null
+            },
+            "scrubbed-key-41": [],
+            "scrubbed-key-42": [
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s"
+            ],
+            "scrubbed-key-43": true,
+            "scrubbed-key-44": false,
+            "scrubbed-key-45": null,
+            "scrubbed-key-46": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:s",
+                "scrubbed-key-3": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-47": ["scrubbed:s"],
+            "scrubbed-key-48": true,
+            "scrubbed-key-49": true,
+            "scrubbed-key-50": "scrubbed:xl",
+            "scrubbed-key-51": {
+              "scrubbed-key-1": ["scrubbed:s"]
+            }
+          },
+          {
+            "scrubbed-key-1": "scrubbed:m",
+            "scrubbed-key-2": true,
+            "scrubbed-key-3": true,
+            "scrubbed-key-4": "scrubbed:s",
+            "scrubbed-key-5": "scrubbed:s",
+            "scrubbed-key-6": "scrubbed:m",
+            "scrubbed-key-7": ["scrubbed:s", "scrubbed:s"],
+            "scrubbed-key-8": true,
+            "scrubbed-key-9": {
+              "scrubbed-key-1": "scrubbed:s",
+              "scrubbed-key-2": 0
+            },
+            "scrubbed-key-10": true,
+            "scrubbed-key-11": "scrubbed:m",
+            "scrubbed-key-12": "scrubbed:s",
+            "scrubbed-key-13": null,
+            "scrubbed-key-14": true,
+            "scrubbed-key-15": false,
+            "scrubbed-key-16": false,
+            "scrubbed-key-17": false,
+            "scrubbed-key-18": false,
+            "scrubbed-key-19": null,
+            "node_repl_auto_review_required": false,
+            "node_repl_disabled": false,
+            "scrubbed-key-20": false,
+            "scrubbed-key-21": false,
+            "scrubbed-key-22": false,
+            "scrubbed-key-23": null,
+            "scrubbed-key-24": null,
+            "scrubbed-key-25": 0,
+            "scrubbed-key-26": 0,
+            "scrubbed-key-27": null,
+            "scrubbed-key-28": "scrubbed:s",
+            "scrubbed-key-29": "scrubbed:s",
+            "scrubbed-key-30": "scrubbed:m",
+            "description": "scrubbed:m",
+            "scrubbed-key-31": "scrubbed:s",
+            "scrubbed-key-32": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              },
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-33": "scrubbed:m",
+            "scrubbed-key-34": "scrubbed:s",
+            "scrubbed-key-35": "scrubbed:s",
+            "scrubbed-key-36": true,
+            "scrubbed-key-37": null,
+            "scrubbed-key-38": null,
+            "scrubbed-key-39": 0,
+            "scrubbed-key-40": {
+              "scrubbed-key-1": "scrubbed:xl",
+              "scrubbed-key-2": null,
+              "scrubbed-key-3": null,
+              "scrubbed-key-4": null,
+              "scrubbed-key-5": null,
+              "scrubbed-key-6": {
+                "scrubbed-key-1": null,
+                "scrubbed-key-2": null,
+                "scrubbed-key-3": "",
+                "scrubbed-key-4": null
+              },
+              "scrubbed-key-7": null,
+              "scrubbed-key-8": {
+                "scrubbed-key-1": "scrubbed:xl",
+                "scrubbed-key-2": "scrubbed:xl",
+                "scrubbed-key-3": "scrubbed:xl",
+                "scrubbed-key-4": null,
+                "scrubbed-key-5": null
+              },
+              "scrubbed-key-9": null,
+              "scrubbed-key-10": {
+                "scrubbed-key-1": "",
+                "scrubbed-key-2": "",
+                "scrubbed-key-3": "",
+                "scrubbed-key-4": null,
+                "scrubbed-key-5": null,
+                "scrubbed-key-6": null,
+                "scrubbed-key-7": null,
+                "scrubbed-key-8": null
+              },
+              "scrubbed-key-11": null,
+              "scrubbed-key-12": null,
+              "scrubbed-key-13": null
+            },
+            "scrubbed-key-41": [],
+            "scrubbed-key-42": [
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:s",
+              "scrubbed:m",
+              "scrubbed:m",
+              "scrubbed:s"
+            ],
+            "scrubbed-key-43": true,
+            "scrubbed-key-44": false,
+            "scrubbed-key-45": null,
+            "scrubbed-key-46": [
+              {
+                "scrubbed-key-1": "scrubbed:s",
+                "scrubbed-key-2": "scrubbed:s",
+                "scrubbed-key-3": "scrubbed:m"
+              }
+            ],
+            "scrubbed-key-47": ["scrubbed:s"],
+            "scrubbed-key-48": true,
+            "scrubbed-key-49": true,
+            "scrubbed-key-50": "scrubbed:xl",
+            "scrubbed-key-51": {
+              "scrubbed-key-1": ["scrubbed:s"]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "expects": {
+    "logged": {
+      "session": "request:<id>",
+      "sessionSource": "",
+      "machine": "",
+      "project": "",
+      "client": "codex",
+      "clientVersion": "0.167.2",
+      "userAgent": "codex_exec/0.167.2",
+      "divertedFrom": null,
+      "follows": null,
+      "loginFingerprint": "26a67268eab69f7cc51766339a19b4a5c8ef0f89c7ddb8f40378b50a7c89092b",
+      "refusalReset": null,
+      "protocol": "chatgpt-codex",
+      "operation": "models",
+      "purpose": "",
+      "model": "",
+      "servedModel": "",
+      "stream": false,
+      "outcome": "ok",
+      "upstreamStatus": 200,
+      "errorType": "",
+      "errorMessage": "",
+      "stopReason": "",
+      "usage": null,
+      "serviceTier": "",
+      "providerRequestId": "req_FAKE0019",
+      "rateLimits": {},
+      "clientHeaders": {
+        "originator": "codex_exec"
+      },
+      "conversation": null,
+      "errorBody": "",
+      "requestBytes": 0,
+      "responseBytes": 30877,
+      "readingComplete": true
+    }
+  }
+}

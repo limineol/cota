@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["bun"],
+    "resolveJsonModule": true,
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        "allowedUnstableApis": [
+          "@effect/vitest",
+          "effect/Arbitrary",
+          "effect/http",
+          "effect/http-api"
+        ]
+      }
+    ]
+  },
+  "include": ["src", "build.ts"]
+}

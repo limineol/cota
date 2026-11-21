@@ -1,0 +1,247 @@
+{
+  "source": {
+    "kind": "constructed",
+    "from": [
+      "Codex 0.167.1 source (codex-rs, tag rust-v0.167.1): codex-api/src/api_bridge.rs (UsageErrorResponse, x-codex-active-limit), core/tests/suite/client.rs (the usage_limit_reached fixture)",
+      "Milestone 1 research, Codex wire facts (2026-11-12), from the Codex 0.167.1 source, section 6"
+    ],
+    "note": "A refusal cannot be recorded on demand. The body is Codex's fixture with made-up values; the headers are the family Codex reads on a 429, and their values are made up."
+  },
+  "request": {
+    "method": "POST",
+    "path": "/backend-api/codex/responses",
+    "headers": {
+      "accept": "text/event-stream",
+      "authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC1mYWtlLTAwMDEiLCJjaGF0Z3B0X2FjY291bnRfdXNlcl9pZCI6InVzZXItZmFrZS0wMDAxX19hY2N0LWZha2UtMDAwMSJ9LCJleHAiOjE3OTQ0NDE2MDB9.RkFLRS1zaWduYXR1cmUtZm9yLXRlc3RzLW9ubHk",
+      "chatgpt-account-id": "acct-fake-0001",
+      "content-type": "application/json",
+      "originator": "codex_cli_rs",
+      "session-id": "00000000-0000-7000-8000-00000000c0de",
+      "thread-id": "00000000-0000-7000-8000-00000000c0de",
+      "user-agent": "codex_cli_rs/0.167.1 (Mac OS 26.1.0; arm64) iTerm.app/3.6.6",
+      "x-client-request-id": "00000000-0000-7000-8000-00000000c0de",
+      "x-codex-beta-features": "remote_compaction_v2",
+      "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000102\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}",
+      "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+      "x-codex-routing-hint": "model=gpt-5.5-codex;tier=priority",
+      "content-encoding": "zstd"
+    },
+    "body": {
+      "json": {
+        "model": "gpt-5.5-codex",
+        "stream": true,
+        "service_tier": "priority",
+        "input": [
+          {
+            "type": "message",
+            "id": "msg_00000000000050008000000000000001",
+            "role": "developer",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "You are Codex, a coding agent. These are made-up base instructions for a test."
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "role": "user",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "Rename the made-up function."
+              }
+            ]
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "name": "shell",
+            "description": "Runs a shell command and returns its output.",
+            "strict": false,
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "workdir": {
+                  "type": "string"
+                }
+              },
+              "required": ["command"],
+              "additionalProperties": false
+            }
+          }
+        ],
+        "tool_choice": "auto",
+        "parallel_tool_calls": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        },
+        "store": false,
+        "include": ["reasoning.encrypted_content"],
+        "prompt_cache_key": "00000000-0000-7000-8000-00000000c0de",
+        "client_metadata": {
+          "x-codex-installation-id": "00000000-0000-4000-8000-0000000000aa",
+          "session_id": "00000000-0000-7000-8000-00000000c0de",
+          "thread_id": "00000000-0000-7000-8000-00000000c0de",
+          "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+          "turn_id": "00000000-0000-7000-8000-000000000102",
+          "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000102\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}"
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 429,
+    "headers": {
+      "content-type": "application/json",
+      "x-request-id": "req_fake0005",
+      "x-codex-active-limit": "codex",
+      "x-codex-rate-limit-reached-type": "rate_limit_reached",
+      "x-codex-primary-used-percent": "100",
+      "x-codex-primary-window-minutes": "300",
+      "x-codex-primary-reset-at": "1794459600",
+      "x-codex-secondary-used-percent": "41",
+      "x-codex-secondary-window-minutes": "10080",
+      "x-codex-secondary-reset-at": "1794960000",
+      "x-codex-credits-has-credits": "false",
+      "x-codex-credits-unlimited": "false"
+    },
+    "body": {
+      "json": {
+        "error": {
+          "type": "usage_limit_reached",
+          "message": "The usage limit has been reached",
+          "plan_type": "pro",
+          "resets_at": 1794459600,
+          "limit_window_minutes": 300
+        }
+      }
+    }
+  },
+  "expects": {
+    "logged": {
+      "session": "00000000-0000-7000-8000-00000000c0de",
+      "sessionSource": "session-id",
+      "machine": "",
+      "project": "",
+      "client": "codex",
+      "clientVersion": "0.167.1",
+      "userAgent": "codex_cli_rs/0.167.1 (Mac OS 26.1.0; arm64) iTerm.app/3.6.6",
+      "divertedFrom": null,
+      "follows": null,
+      "loginFingerprint": "b078b30895acad342351ab2b63a1eb73eec9729dd460c36821700be56d640ec8",
+      "refusalReset": "2026-11-12T05:00:00.000Z",
+      "protocol": "chatgpt-codex",
+      "operation": "responses",
+      "purpose": "turn",
+      "model": "gpt-5.5-codex",
+      "servedModel": "",
+      "stream": false,
+      "outcome": "refused",
+      "upstreamStatus": 429,
+      "errorType": "usage_limit_reached",
+      "errorMessage": "The usage limit has been reached",
+      "stopReason": "",
+      "usage": null,
+      "serviceTier": "priority",
+      "providerRequestId": "req_fake0005",
+      "rateLimits": {
+        "x-codex-active-limit": "codex",
+        "x-codex-credits-has-credits": "false",
+        "x-codex-credits-unlimited": "false",
+        "x-codex-primary-reset-at": "1794459600",
+        "x-codex-primary-used-percent": "100",
+        "x-codex-primary-window-minutes": "300",
+        "x-codex-rate-limit-reached-type": "rate_limit_reached",
+        "x-codex-secondary-reset-at": "1794960000",
+        "x-codex-secondary-used-percent": "41",
+        "x-codex-secondary-window-minutes": "10080"
+      },
+      "clientHeaders": {
+        "originator": "codex_cli_rs",
+        "thread-id": "00000000-0000-7000-8000-00000000c0de",
+        "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+        "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000102\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}",
+        "x-codex-beta-features": "remote_compaction_v2"
+      },
+      "conversation": {
+        "params": {
+          "model": "gpt-5.5-codex",
+          "stream": true,
+          "service_tier": "priority",
+          "tool_choice": "auto",
+          "parallel_tool_calls": true,
+          "reasoning": {
+            "effort": "medium",
+            "summary": "auto"
+          },
+          "store": false,
+          "include": ["reasoning.encrypted_content"],
+          "prompt_cache_key": "00000000-0000-7000-8000-00000000c0de",
+          "client_metadata": {
+            "x-codex-installation-id": "00000000-0000-4000-8000-0000000000aa",
+            "session_id": "00000000-0000-7000-8000-00000000c0de",
+            "thread_id": "00000000-0000-7000-8000-00000000c0de",
+            "x-codex-window-id": "00000000-0000-7000-8000-00000000c0de:0",
+            "turn_id": "00000000-0000-7000-8000-000000000102",
+            "x-codex-turn-metadata": "{\"installation_id\":\"00000000-0000-4000-8000-0000000000aa\",\"session_id\":\"00000000-0000-7000-8000-00000000c0de\",\"thread_id\":\"00000000-0000-7000-8000-00000000c0de\",\"turn_id\":\"00000000-0000-7000-8000-000000000102\",\"window_id\":\"00000000-0000-7000-8000-00000000c0de:0\",\"request_kind\":\"turn\",\"sandbox\":\"seatbelt\",\"sandbox_mode\":\"workspace-write\",\"workspaces\":{\"/work/demo\":{\"associated_remote_urls\":{\"origin\":\"git@example.invalid:fake/demo.git\"},\"latest_git_commit_hash\":\"0000000000000000000000000000000000000000\",\"has_changes\":false}}}"
+          }
+        },
+        "layout": [
+          {
+            "part": "system",
+            "field": "instructions",
+            "layout": "absent"
+          },
+          {
+            "part": "tools",
+            "field": "tools",
+            "layout": "list"
+          },
+          {
+            "part": "input",
+            "field": "input",
+            "layout": "list"
+          }
+        ],
+        "overlay": [],
+        "system": [],
+        "tools": [
+          {
+            "digest": "d1c908c0585eb67beaebc618b44ba149",
+            "type": "function",
+            "role": "",
+            "text": ""
+          }
+        ],
+        "input": [
+          {
+            "digest": "512443ae75a019e63e5a317dd61cfe9a",
+            "type": "message",
+            "role": "developer",
+            "text": "You are Codex, a coding agent. These are made-up base instructions for a test."
+          },
+          {
+            "digest": "78293c0bcddb86ed1e837bfe77a8d0d8",
+            "type": "message",
+            "role": "user",
+            "text": "Rename the made-up function."
+          }
+        ],
+        "output": []
+      },
+      "errorBody": "{\"error\":{\"type\":\"usage_limit_reached\",\"message\":\"The usage limit has been reached\",\"plan_type\":\"pro\",\"resets_at\":1794459600,\"limit_window_minutes\":300}}",
+      "requestBytes": 772,
+      "responseBytes": 153,
+      "readingComplete": true
+    }
+  }
+}

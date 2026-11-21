@@ -1,0 +1,59 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "jsPlugins": ["@shadcn/lint"],
+  "categories": {
+    "correctness": "off"
+  },
+  "settings": {
+    "shadcn": {
+      "ui": "@cota/ui/components",
+      "note": "See DESIGN.md for the design rules."
+    }
+  },
+  "rules": {
+    "shadcn/no-restyle": [
+      "error",
+      {
+        "allow": ["layout"],
+        "contracts": [
+          {
+            "pattern": "^Button$",
+            "deny": ["h-*", "min-h-*", "max-h-*", "size-*"]
+          }
+        ]
+      }
+    ],
+    "shadcn/no-raw-colors": "error",
+    "shadcn/no-arbitrary-values": "error",
+    "shadcn/no-inline-styles": "error",
+    "shadcn/no-unknown-classes": "error",
+    "shadcn/require-static-classes": "error"
+  },
+  "overrides": [
+    {
+      "files": ["packages/ui/src/components/**"],
+      "rules": {
+        "shadcn/no-restyle": "off",
+        "shadcn/no-arbitrary-values": "off"
+      }
+    },
+    {
+      "files": ["**/*.stories.tsx"],
+      "rules": {
+        "shadcn/no-restyle": [
+          "error",
+          {
+            "allow": ["layout"],
+            "contracts": [
+              {
+                "pattern": "^Button$",
+                "deny": ["h-*", "min-h-*", "max-h-*", "size-*"]
+              }
+            ]
+          }
+        ],
+        "shadcn/no-arbitrary-values": "error"
+      }
+    }
+  ]
+}

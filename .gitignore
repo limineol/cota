@@ -1,0 +1,11 @@
+node_modules/
+.tools/
+evidence/
+.env
+.DS_Store
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+apps/web/dist/
+debug-storybook.log
+apps/cli/dist/

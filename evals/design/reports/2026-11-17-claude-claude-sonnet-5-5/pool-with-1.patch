@@ -1,0 +1,1268 @@
+diff --git a/apps/web/src/screens/overview/pools.tsx b/apps/web/src/screens/overview/pools.tsx
+index c8b6169..f31af8d 100644
+--- a/apps/web/src/screens/overview/pools.tsx
++++ b/apps/web/src/screens/overview/pools.tsx
+@@ -1,5 +1,4 @@
+ import { Badge } from "@cota/ui/components/badge";
+-import { BlockMeter } from "@cota/ui/components/block-meter";
+ import {
+   PoolCard,
+   PoolCardFigure,
+@@ -12,15 +11,6 @@ import {
+   PoolCardWindows,
+ } from "@cota/ui/components/pool-card";
+ import { PoolMark } from "@cota/ui/components/pool-mark";
+-import {
+-  Pace,
+-  QuotaWindow,
+-  QuotaWindowFoot,
+-  QuotaWindowHead,
+-  QuotaWindowLabel,
+-  QuotaWindowReset,
+-  QuotaWindowUsed,
+-} from "@cota/ui/components/quota-window";
+ import { Skeleton } from "@cota/ui/components/skeleton";
+ import {
+   Stat,
+@@ -32,11 +22,11 @@ import {
+ } from "@cota/ui/components/stat";
+ import { Link } from "@tanstack/react-router";
+ import type { Hue } from "#shared/domain/hues.ts";
+-import { meter } from "#shared/domain/meter.ts";
+ import { ago, share, span, tokens } from "#shared/domain/quantities.ts";
+-import { Name, useNameOf } from "#shared/names.tsx";
++import { Name } from "#shared/names.tsx";
+ import { useNow } from "#shared/now.tsx";
+ import { glyphOf } from "#shared/providers.tsx";
++import { WindowLine as SharedWindowLine } from "#shared/window-line.tsx";
+ import {
+   costText,
+   dollarsOf,
+@@ -44,10 +34,9 @@ import {
+   millis,
+   plural,
+   tokensIn,
+-  when,
+ } from "#shared/words.ts";
+ import type { BreakdownRow, Pool, QuotaWindow as Window } from "./queries.ts";
+-import { kindName, noWindows, paceOf, usedText, windowName } from "./words.ts";
++import { kindName, noWindows, shapeOf, windowName } from "./words.ts";
+ 
+ const cardWindows = 3;
+ 
+@@ -60,7 +49,7 @@ export interface Figures {
+   readonly loaded: boolean;
+ }
+ 
+-/** One quota window: its name, how much is used, the countdown to its reset, and its block meter. */
++/** One quota window of a pool the overview reads. */
+ export function WindowLine({
+   window,
+   pool,
+@@ -72,51 +61,13 @@ export function WindowLine({
+   readonly hue: Hue;
+   readonly detailed: boolean;
+ }) {
+-  const now = useNow();
+-  const nameOf = useNameOf();
+-  const name = windowName(window);
+-  const pace = paceOf(window, now);
+-  const {
+-    blocks,
+-    severity,
+-    pace: marker,
+-  } = meter({
+-    usedPercent: window.usedPercent,
+-    elapsed: window.standing?.elapsed ?? null,
+-  });
+-  const resetsAt = window.resetsAt === null ? null : millis(window.resetsAt);
+-  const used = usedText(window);
+   return (
+-    <QuotaWindow size={detailed ? "detail" : "card"}>
+-      <QuotaWindowHead>
+-        <QuotaWindowLabel>{name}</QuotaWindowLabel>
+-        <QuotaWindowUsed>{used}</QuotaWindowUsed>
+-        <QuotaWindowReset
+-          title={
+-            resetsAt === null ? undefined : `Resets ${when(resetsAt, now)}`
+-          }
+-        >
+-          {resetsAt === null
+-            ? "Not started"
+-            : `Resets in ${span(resetsAt - now)}`}
+-        </QuotaWindowReset>
+-      </QuotaWindowHead>
+-      <BlockMeter
+-        blocks={blocks}
+-        pace={marker}
+-        severity={severity}
+-        hue={hue}
+-        size={detailed ? "detail" : "card"}
+-        label={`${nameOf("pool", pool)}, ${name} window`}
+-        valueText={pace === null ? used : `${used}, ${pace.text}`}
+-      />
+-      {detailed && (pace !== null || resetsAt !== null) ? (
+-        <QuotaWindowFoot>
+-          {pace === null ? null : <Pace tone={pace.tone}>{pace.text}</Pace>}
+-          {resetsAt === null ? null : <span>Resets {when(resetsAt, now)}</span>}
+-        </QuotaWindowFoot>
+-      ) : null}
+-    </QuotaWindow>
++    <SharedWindowLine
++      window={shapeOf(window)}
++      pool={pool}
++      hue={hue}
++      detailed={detailed}
++    />
+   );
+ }
+ 
+diff --git a/apps/web/src/screens/overview/words.ts b/apps/web/src/screens/overview/words.ts
+index 77060b8..28c5023 100644
+--- a/apps/web/src/screens/overview/words.ts
++++ b/apps/web/src/screens/overview/words.ts
+@@ -1,69 +1,25 @@
+-import { share, span } from "#shared/domain/quantities.ts";
++import {
++  paceOf as paceOfWindow,
++  usedText as usedTextOf,
++  type WindowShape,
++  windowName as windowNameOf,
++} from "#shared/windows.ts";
+ import { millis } from "#shared/words.ts";
+ import type { Pool, QuotaWindow } from "./queries.ts";
+ 
+-const hour = 3_600_000;
+-const day = 24 * hour;
++/** A window as the shared wording reads it, its reset in milliseconds. */
++export const shapeOf = (window: QuotaWindow): WindowShape => ({
++  ...window,
++  resetsAt: window.resetsAt === null ? null : millis(window.resetsAt),
++});
+ 
+-const named: Record<number, string> = {
+-  [5 * hour]: "5-hour",
+-  [day]: "Daily",
+-  [7 * day]: "Weekly",
+-  [28 * day]: "Monthly",
+-  [30 * day]: "Monthly",
+-  [31 * day]: "Monthly",
+-};
+-
+-/** A window's name for people, from its length and scope: `5-hour`, `Weekly`, `Weekly · opus`. */
+-export const windowName = (window: QuotaWindow) => {
+-  const base =
+-    named[window.lengthMs] ??
+-    (window.lengthMs < day
+-      ? `${Math.round(window.lengthMs / hour)}-hour`
+-      : `${Math.round(window.lengthMs / day)}-day`);
+-  return window.scope === null ? base : `${base} · ${window.scope}`;
+-};
+-
+-export const usedText = (window: QuotaWindow) =>
+-  `${share(window.usedPercent / 100)} used`;
++export const windowName = (window: QuotaWindow) =>
++  windowNameOf(shapeOf(window));
+ 
+-/** When the window's standing was worked out: its reset less the time the hub said was left. */
+-const answeredAt = (window: QuotaWindow) =>
+-  window.resetsAt === null || window.standing === null
+-    ? null
+-    : millis(window.resetsAt) - window.standing.resetsInMs;
++export const usedText = (window: QuotaWindow) => usedTextOf(shapeOf(window));
+ 
+-export type Tone = "ok" | "warn" | "danger";
+-
+-/** A window's pace in words, as the hub decided it, with any emptying time counted down from `now`. */
+-export const paceOf = (
+-  window: QuotaWindow,
+-  now: number,
+-): { readonly text: string; readonly tone: Tone } | null => {
+-  const standing = window.standing;
+-  if (standing === null) return null;
+-  const points = Math.round(standing.points ?? 0);
+-  switch (standing.pace) {
+-    case "full":
+-      return { text: "Full until the reset", tone: "danger" };
+-    case "on-pace":
+-      return { text: "On pace", tone: "ok" };
+-    case "in-reserve":
+-      return { text: `${points}% in reserve`, tone: "ok" };
+-    case "ahead-of-pace": {
+-      const tone = window.usedPercent >= 80 ? "danger" : "warn";
+-      const asked = answeredAt(window);
+-      if (standing.emptiesInMs === null || asked === null) {
+-        return { text: `${points}% ahead of pace`, tone };
+-      }
+-      const left = asked + standing.emptiesInMs - now;
+-      return {
+-        text: `${points}% ahead of pace · empties in ${span(left)}`,
+-        tone,
+-      };
+-    }
+-  }
+-};
++export const paceOf = (window: QuotaWindow, now: number) =>
++  paceOfWindow(shapeOf(window), now);
+ 
+ export interface NoWindows {
+   /** A few words for the card. */
+diff --git a/apps/web/src/screens/pool/context.tsx b/apps/web/src/screens/pool/context.tsx
+new file mode 100644
+index 0000000..42bc12b
+--- /dev/null
++++ b/apps/web/src/screens/pool/context.tsx
+@@ -0,0 +1,66 @@
++import {
++  type BlockColumn,
++  BlockColumns,
++  type ColumnsLayout,
++} from "@cota/ui/components/block-columns";
++import { useMemo } from "react";
++import { stack } from "#shared/domain/columns.ts";
++import type { Hue } from "#shared/domain/hues.ts";
++import { tokens } from "#shared/domain/quantities.ts";
++import type { SummaryDay } from "./summary.ts";
++import { dayEnd, dayLabel, dayStart, largestPrompt } from "./words.ts";
++
++const noParts = [0];
++
++/** The largest prompt of each day as one column, never merged: a day's figure is a largest, which adding days would turn into a sum. */
++export function PromptColumns({
++  days,
++  hue,
++  empty,
++}: {
++  readonly days: ReadonlyArray<SummaryDay>;
++  readonly hue: Hue;
++  readonly empty: string;
++}) {
++  const peak = largestPrompt(days);
++  const fit = useMemo(() => {
++    const layout = stack(
++      days.map((day) => ({
++        start: dayStart(day.day),
++        end: dayEnd(day.day),
++        parts: day.promptSize === null ? noParts : [day.promptSize],
++      })),
++      1,
++    );
++    const result: ColumnsLayout = {
++      unit: `${tokens(layout.unit)} ${layout.unit === 1 ? "token" : "tokens"} of prompt`,
++      columns: layout.columns.map((column, index): BlockColumn => {
++        const size = days[index]?.promptSize ?? null;
++        const tick = dayLabel(days[index]?.day ?? "");
++        return {
++          key: days[index]?.day ?? String(index),
++          label:
++            size === null
++              ? `${tick} · no prompt size reported`
++              : `${tick} · largest prompt`,
++          tick,
++          total: size === null ? "—" : tokens(size),
++          parts: column.parts.map((blocks) => ({ blocks, value: null })),
++        };
++      }),
++    };
++    return () => result;
++  }, [days]);
++  return (
++    <BlockColumns
++      series={[{ key: "prompt", label: "Largest prompt", tint: hue }]}
++      fit={fit}
++      label={
++        peak === null
++          ? "Largest prompt of each day: none reported"
++          : `Largest prompt of each day, at most ${tokens(peak.size)} tokens on ${dayLabel(peak.day)}`
++      }
++      empty={empty}
++    />
++  );
++}
+diff --git a/apps/web/src/screens/pool/models.tsx b/apps/web/src/screens/pool/models.tsx
+new file mode 100644
+index 0000000..e306128
+--- /dev/null
++++ b/apps/web/src/screens/pool/models.tsx
+@@ -0,0 +1,76 @@
++import { Empty, EmptyDescription, EmptyTitle } from "@cota/ui/components/empty";
++import { MagnitudeBar } from "@cota/ui/components/magnitude-bar";
++import {
++  Table,
++  TableBody,
++  TableCell,
++  TableHead,
++  TableHeader,
++  TableLabel,
++  TableRow,
++} from "@cota/ui/components/table";
++import { cost, tokens } from "#shared/domain/quantities.ts";
++import { useNameOf } from "#shared/names.tsx";
++import { counted } from "#shared/words.ts";
++import type { PoolSummary } from "./summary.ts";
++
++/** The models the pool's requests went to, the most tokens first; a model with no price has no cost, said so. */
++export function ModelsTable({
++  models,
++  labelledBy,
++  during,
++}: {
++  readonly models: PoolSummary["models"];
++  readonly labelledBy: string;
++  readonly during: string;
++}) {
++  const nameOf = useNameOf();
++  if (models.length === 0) {
++    return (
++      <Empty>
++        <EmptyTitle>No requests</EmptyTitle>
++        <EmptyDescription>This pool carried nothing {during}.</EmptyDescription>
++      </Empty>
++    );
++  }
++  const ranked = models.toSorted((a, b) => b.tokens - a.tokens);
++  const peak = Math.max(1, ...ranked.map((row) => row.tokens));
++  return (
++    <Table aria-labelledby={labelledBy}>
++      <TableHeader>
++        <TableRow>
++          <TableHead scope="col">Model</TableHead>
++          <TableHead scope="col" numeric>
++            Requests
++          </TableHead>
++          <TableHead scope="col" numeric>
++            Tokens
++          </TableHead>
++          <TableHead scope="col" numeric>
++            Cost
++          </TableHead>
++        </TableRow>
++      </TableHeader>
++      <TableBody>
++        {ranked.map((row) => (
++          <TableRow key={row.model}>
++            <TableCell className="w-full max-w-0">
++              <TableLabel title={row.model}>
++                {nameOf("model", row.model)}
++              </TableLabel>
++              <MagnitudeBar
++                fraction={row.tokens / peak}
++                className="mt-1.25 max-w-55"
++              />
++            </TableCell>
++            <TableCell numeric>{counted(row.requests)}</TableCell>
++            <TableCell numeric>{tokens(row.tokens)}</TableCell>
++            <TableCell numeric>
++              {row.cost === null ? "no price" : cost(row.cost)}
++            </TableCell>
++          </TableRow>
++        ))}
++      </TableBody>
++    </Table>
++  );
++}
+diff --git a/apps/web/src/screens/pool/pool.stories.tsx b/apps/web/src/screens/pool/pool.stories.tsx
+new file mode 100644
+index 0000000..9649a77
+--- /dev/null
++++ b/apps/web/src/screens/pool/pool.stories.tsx
+@@ -0,0 +1,107 @@
++import type { Meta, StoryObj } from "@storybook/react-vite";
++import { useState } from "react";
++import { expect, within } from "storybook/test";
++import { displayNames } from "#stories/fixtures.ts";
++import { withApi } from "#stories/page.tsx";
++import {
++  claudeBeforeTheLog,
++  claudeSubscription,
++  quiet,
++  unpricedModel,
++  windowsNotRead,
++} from "#stories/pool.ts";
++import { PoolView } from "./pool.tsx";
++import type { PoolSummary, SummaryRange } from "./summary.ts";
++
++function Chosen({ summary }: { readonly summary: PoolSummary }) {
++  const [range, setRange] = useState<SummaryRange>(summary.range);
++  return <PoolView summary={{ ...summary, range }} onRangeChange={setRange} />;
++}
++
++const meta = {
++  title: "Screens/Pool",
++  component: Chosen,
++  decorators: [withApi([displayNames])],
++  parameters: { layout: "fullscreen" },
++} satisfies Meta<typeof Chosen>;
++
++export default meta;
++type Story = StoryObj<typeof meta>;
++
++export const ClaudeSubscription: Story = {
++  args: { summary: claudeSubscription },
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByRole("heading", { level: 1, name: "personal" }),
++    ).toBeVisible();
++    await expect(
++      await canvas.findByRole("meter", { name: "personal, 5-hour window" }),
++    ).toBeVisible();
++    await expect(
++      canvas.getByRole("meter", { name: "personal, Weekly · Opus window" }),
++    ).toBeVisible();
++    const models = await canvas.findByRole("table", { name: "Models" });
++    await expect(within(models).getAllByRole("row")).toHaveLength(6);
++    await expect(within(models).getByText("Claude Opus 4.5")).toBeVisible();
++    await expect(
++      canvas.getByTitle("The requests of the 7 days before"),
++    ).toHaveTextContent("↑37%");
++    await expect(canvas.getByText(/the most was 188K tokens/)).toBeVisible();
++  },
++};
++
++export const WindowsNotRead: Story = {
++  args: { summary: windowsNotRead },
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByText(/has not read this pool's quota windows/),
++    ).toBeVisible();
++    await expect(canvas.queryAllByRole("meter")).toHaveLength(0);
++  },
++};
++
++export const ModelWithNoPrice: Story = {
++  args: { summary: unpricedModel },
++  play: async ({ canvas }) => {
++    const models = await canvas.findByRole("table", { name: "Models" });
++    await expect(within(models).getByText("no price")).toBeVisible();
++    await expect(
++      canvas.getByText(/64 requests went to a model with no price/),
++    ).toBeVisible();
++    await expect(canvas.getByText("≥$21")).toBeVisible();
++  },
++};
++
++export const BeforeTheLogBegins: Story = {
++  args: { summary: claudeBeforeTheLog },
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByText(/nothing before it to compare with/),
++    ).toBeVisible();
++    await expect(canvas.queryAllByTitle(/before$/)).toHaveLength(0);
++  },
++};
++
++export const NothingCarried: Story = {
++  args: { summary: quiet },
++  play: async ({ canvas }) => {
++    await expect(await canvas.findByText("No requests")).toBeVisible();
++    await expect(
++      (await canvas.findAllByText("No requests in the last 7 days.")).length,
++    ).toBeGreaterThan(0);
++  },
++};
++
++export const ChangingTheRange: Story = {
++  args: { summary: claudeSubscription },
++  play: async ({ canvas, userEvent }) => {
++    await userEvent.click(await canvas.findByRole("radio", { name: "30d" }));
++    await expect(canvas.getByRole("radio", { name: "30d" })).toBeChecked();
++    await expect(canvas.getByText("Last 30 days")).toBeVisible();
++  },
++};
++
++export const Narrow: Story = {
++  args: { summary: claudeSubscription },
++  globals: { viewport: { value: "mobile2" } },
++};
+diff --git a/apps/web/src/screens/pool/pool.tsx b/apps/web/src/screens/pool/pool.tsx
+new file mode 100644
+index 0000000..8f5d273
+--- /dev/null
++++ b/apps/web/src/screens/pool/pool.tsx
+@@ -0,0 +1,266 @@
++import { Badge } from "@cota/ui/components/badge";
++import { Card } from "@cota/ui/components/card";
++import {
++  Page,
++  PageDescription,
++  PageHeader,
++  PageTitle,
++  Section,
++  SectionDescription,
++  SectionHeader,
++  SectionTitle,
++  Subheading,
++} from "@cota/ui/components/page";
++import { PoolMark } from "@cota/ui/components/pool-mark";
++import { Segmented } from "@cota/ui/components/segmented";
++import {
++  Stat,
++  StatDelta,
++  StatLabel,
++  StatNote,
++  StatValue,
++} from "@cota/ui/components/stat";
++import { poolHues } from "#shared/domain/hues.ts";
++import { delta, tokens } from "#shared/domain/quantities.ts";
++import { useNameOf } from "#shared/names.tsx";
++import { NowProvider } from "#shared/now.tsx";
++import { glyphOf } from "#shared/providers.tsx";
++import { WindowLine } from "#shared/window-line.tsx";
++import { costText, counted, plural } from "#shared/words.ts";
++import { PromptColumns } from "./context.tsx";
++import { ModelsTable } from "./models.tsx";
++import type { PoolSummary, SummaryRange } from "./summary.ts";
++import {
++  before,
++  dayLabel,
++  kindName,
++  largestPrompt,
++  rangeOptions,
++  rangeTitle,
++  shapeOf,
++} from "./words.ts";
++
++const during: Record<SummaryRange, string> = {
++  "1d": "in the last day",
++  "7d": "in the last 7 days",
++  "30d": "in the last 30 days",
++};
++
++interface Figure {
++  readonly label: string;
++  readonly value: string;
++  readonly current: number;
++  readonly previous: number | null;
++  readonly note?: string | undefined;
++}
++
++const figuresOf = (summary: PoolSummary): ReadonlyArray<Figure> => {
++  const { totals } = summary;
++  const previous = totals.previous;
++  return [
++    {
++      label: "Requests",
++      value: counted(totals.requests),
++      current: totals.requests,
++      previous: previous?.requests ?? null,
++    },
++    {
++      label: "Tokens",
++      value: tokens(totals.tokens),
++      current: totals.tokens,
++      previous: previous?.tokens ?? null,
++    },
++    {
++      label: "Cost",
++      value: costText(totals.cost, totals.unpricedRequests),
++      current: totals.cost,
++      previous: previous?.cost ?? null,
++      note:
++        totals.unpricedRequests > 0
++          ? `${plural(totals.unpricedRequests, "request")} with no price`
++          : "at API list prices",
++    },
++  ];
++};
++
++function Totals({ summary }: { readonly summary: PoolSummary }) {
++  return (
++    <div className="grid grid-cols-1 gap-2.5 @xl:grid-cols-3 wide:gap-3">
++      {figuresOf(summary).map((figure) => {
++        const change =
++          figure.previous === null
++            ? null
++            : delta(figure.current, figure.previous);
++        return (
++          <Stat key={figure.label} variant="tile">
++            <StatLabel>{figure.label}</StatLabel>
++            <StatValue>
++              {figure.value}
++              {change === null ? null : (
++                <StatDelta
++                  direction={change.direction}
++                  title={`The ${figure.label.toLowerCase()} of the ${before[summary.range]} before`}
++                >
++                  {change.text}
++                </StatDelta>
++              )}
++            </StatValue>
++            {figure.note === undefined ? null : (
++              <StatNote>{figure.note}</StatNote>
++            )}
++          </Stat>
++        );
++      })}
++    </div>
++  );
++}
++
++/** What the range covers, and why it has nothing to compare with when the log is too young. */
++const coverage = (summary: PoolSummary) => {
++  const first = summary.days[0]?.day;
++  const last = summary.days.at(-1)?.day;
++  const span =
++    first === undefined || last === undefined
++      ? rangeTitle[summary.range]
++      : `${dayLabel(first)} – ${dayLabel(last)}`;
++  if (summary.totals.previous !== null) {
++    return `${span}, compared with the ${before[summary.range]} before`;
++  }
++  return `${span} · the request log begins ${dayLabel(summary.logBegins)}, so there is nothing before it to compare with`;
++};
++
++/** One pool's page: its quota windows, what it carried over a range against the range before, its models and its largest prompts. */
++export function PoolView({
++  summary,
++  onRangeChange,
++}: {
++  readonly summary: PoolSummary;
++  readonly onRangeChange: (range: SummaryRange) => void;
++}) {
++  return (
++    <NowProvider>
++      <PoolPage summary={summary} onRangeChange={onRangeChange} />
++    </NowProvider>
++  );
++}
++
++function PoolPage({
++  summary,
++  onRangeChange,
++}: {
++  readonly summary: PoolSummary;
++  readonly onRangeChange: (range: SummaryRange) => void;
++}) {
++  const nameOf = useNameOf();
++  const { pool } = summary;
++  const hue = poolHues(summary.pools).get(pool.id) ?? "neutral";
++  const peak = largestPrompt(summary.days);
++  const empty = summary.totals.requests === 0;
++  const emptyText = `No requests ${during[summary.range]}.`;
++  return (
++    <Page className="@container">
++      <section aria-labelledby="pool-title">
++        <PageHeader>
++          <div className="flex min-w-0 flex-wrap items-center gap-2.5">
++            <PoolMark
++              hue={hue}
++              name={pool.id}
++              glyph={glyphOf(pool.provider)}
++              size="lg"
++            />
++            <PageTitle id="pool-title" title={pool.id}>
++              {nameOf("pool", pool.id)}
++            </PageTitle>
++            {pool.plan === null ? null : <Badge>{pool.plan}</Badge>}
++            <PageDescription>
++              {kindName[pool.kind]} · {pool.provider}
++            </PageDescription>
++          </div>
++        </PageHeader>
++        <section aria-labelledby="windows-title">
++          <h2 id="windows-title" className="sr-only">
++            Quota windows
++          </h2>
++          {summary.windows.length > 0 ? (
++            <div className="grid gap-6 @3xl:grid-cols-2">
++              {summary.windows.map((window) => (
++                <WindowLine
++                  key={`${window.lengthMs}-${window.scope ?? ""}`}
++                  window={shapeOf(window)}
++                  pool={pool.id}
++                  hue={hue}
++                  detailed
++                />
++              ))}
++            </div>
++          ) : (
++            <p className="text-base text-pretty text-text-2">
++              The hub has not read this pool's quota windows, so there is no
++              meter to show. A window appears here once the hub reads one or a
++              request reports it.
++            </p>
++          )}
++        </section>
++      </section>
++
++      <Section aria-labelledby="traffic-title">
++        <SectionHeader>
++          <div>
++            <SectionTitle id="traffic-title">What it carried</SectionTitle>
++            <SectionDescription>{coverage(summary)}</SectionDescription>
++          </div>
++          <Segmented
++            label="Time range"
++            value={summary.range}
++            options={rangeOptions}
++            onValueChange={onRangeChange}
++          />
++        </SectionHeader>
++        <Totals summary={summary} />
++      </Section>
++
++      <Section aria-labelledby="models-title">
++        <SectionHeader>
++          <div>
++            <SectionTitle id="models-title">Models</SectionTitle>
++            <SectionDescription>{rangeTitle[summary.range]}</SectionDescription>
++          </div>
++        </SectionHeader>
++        <Card size="compact">
++          <ModelsTable
++            models={summary.models}
++            labelledBy="models-title"
++            during={during[summary.range]}
++          />
++          {summary.totals.unpricedRequests > 0 ? (
++            <SectionDescription>
++              {plural(summary.totals.unpricedRequests, "request")} went to a
++              model with no price, so the cost above leaves them out.
++            </SectionDescription>
++          ) : null}
++        </Card>
++      </Section>
++
++      <Section aria-labelledby="context-title">
++        <SectionHeader>
++          <div>
++            <SectionTitle id="context-title">Largest context</SectionTitle>
++            <SectionDescription>
++              {peak === null
++                ? "No request reported its prompt size."
++                : `The largest prompt of each day; the most was ${tokens(peak.size)} tokens, on ${dayLabel(peak.day)}.`}
++            </SectionDescription>
++          </div>
++        </SectionHeader>
++        <Card size="compact">
++          <Subheading>Largest prompt, by day</Subheading>
++          <PromptColumns
++            days={summary.days}
++            hue={hue}
++            empty={empty ? emptyText : "No request reported its prompt size."}
++          />
++        </Card>
++      </Section>
++    </Page>
++  );
++}
+diff --git a/apps/web/src/screens/pool/summary.ts b/apps/web/src/screens/pool/summary.ts
+new file mode 100644
+index 0000000..87c1943
+--- /dev/null
++++ b/apps/web/src/screens/pool/summary.ts
+@@ -0,0 +1,66 @@
++export const summaryRanges = ["1d", "7d", "30d"] as const;
++
++export type SummaryRange = (typeof summaryRanges)[number];
++
++/** What `GET /api/pools/:pool/summary?range=` answers, as the pool's page reads it. */
++export interface PoolSummary {
++  readonly pool: {
++    readonly id: string;
++    readonly kind: "subscription" | "keyed";
++    /** The provider's id, such as "anthropic", "chatgpt", "zai", "opencode-go". */
++    readonly provider: string;
++    readonly plan: string | null;
++  };
++  /** Every pool of the configuration, in its order. */
++  readonly pools: ReadonlyArray<string>;
++  /** As `GET /api/pools` gives them. */
++  readonly windows: ReadonlyArray<{
++    readonly lengthMs: number;
++    /** null for the whole plan, else what the window covers, such as "Opus". */
++    readonly scope: string | null;
++    readonly usedPercent: number;
++    readonly startsAt: string | null;
++    readonly resetsAt: string | null;
++    readonly standing: {
++      /** The share of the window gone, 0 to 1. */
++      readonly elapsed: number;
++      readonly resetsInMs: number;
++      readonly pace: "full" | "on-pace" | "in-reserve" | "ahead-of-pace";
++      /** How far under or over pace, in percentage points. */
++      readonly points: number | null;
++      readonly emptiesInMs: number | null;
++    } | null;
++  }>;
++  readonly range: SummaryRange;
++  /** The first day the request log holds, as an ISO date: the range may begin before it. */
++  readonly logBegins: string;
++  readonly totals: {
++    readonly requests: number;
++    readonly tokens: number;
++    /** In dollars, of the requests whose model has a price. */
++    readonly cost: number;
++    readonly unpricedRequests: number;
++    /** The same figures over the range before, or null where the log does not cover it. */
++    readonly previous: {
++      readonly requests: number;
++      readonly tokens: number;
++      readonly cost: number;
++    } | null;
++  };
++  readonly models: ReadonlyArray<{
++    readonly model: string;
++    readonly requests: number;
++    readonly tokens: number;
++    readonly cost: number | null;
++  }>;
++  /** One per day of the range. promptSize is the largest prompt size of the day's requests, or null if none reported it. */
++  readonly days: ReadonlyArray<{
++    readonly day: string;
++    readonly requests: number;
++    readonly tokens: number;
++    readonly promptSize: number | null;
++  }>;
++}
++
++export type SummaryWindow = PoolSummary["windows"][number];
++export type SummaryDay = PoolSummary["days"][number];
+diff --git a/apps/web/src/screens/pool/words.ts b/apps/web/src/screens/pool/words.ts
+new file mode 100644
+index 0000000..1e0f2c0
+--- /dev/null
++++ b/apps/web/src/screens/pool/words.ts
+@@ -0,0 +1,67 @@
++import type { WindowShape } from "#shared/windows.ts";
++import type { SummaryDay, SummaryRange, SummaryWindow } from "./summary.ts";
++
++export const rangeOptions: ReadonlyArray<{
++  readonly value: SummaryRange;
++  readonly label: string;
++}> = [
++  { value: "1d", label: "1d" },
++  { value: "7d", label: "7d" },
++  { value: "30d", label: "30d" },
++];
++
++export const rangeTitle: Record<SummaryRange, string> = {
++  "1d": "Last day",
++  "7d": "Last 7 days",
++  "30d": "Last 30 days",
++};
++
++/** The range before, as it ends "compared with the … before". */
++export const before: Record<SummaryRange, string> = {
++  "1d": "day",
++  "7d": "7 days",
++  "30d": "30 days",
++};
++
++const dayLength = 86_400_000;
++
++const dayName = new Intl.DateTimeFormat("en-US", {
++  month: "short",
++  day: "numeric",
++  timeZone: "UTC",
++});
++
++export const dayStart = (day: string) => Date.parse(day);
++
++/** A day of the summary as `Nov 3`: the hub's days are dates, so they are written in UTC, never moved by the viewer's zone. */
++export const dayLabel = (day: string) => dayName.format(dayStart(day));
++
++export const dayEnd = (day: string) => dayStart(day) + dayLength;
++
++/** A window of the answer with its reset in milliseconds, as the quota window line reads it. */
++export const shapeOf = (window: SummaryWindow): WindowShape => ({
++  lengthMs: window.lengthMs,
++  scope: window.scope,
++  usedPercent: window.usedPercent,
++  resetsAt: window.resetsAt === null ? null : Date.parse(window.resetsAt),
++  standing: window.standing,
++});
++
++/** The day with the largest prompt, the earliest of equals; none when no day reported a prompt size. */
++export const largestPrompt = (
++  days: ReadonlyArray<SummaryDay>,
++): { readonly day: string; readonly size: number } | null => {
++  let best: { readonly day: string; readonly size: number } | null = null;
++  for (const { day, promptSize } of days) {
++    if (promptSize === null) continue;
++    if (best === null || promptSize > best.size) {
++      best = { day, size: promptSize };
++    }
++  }
++  return best;
++};
++
++export const kindName = {
++  subscription: "Subscription",
++  keyed: "Keyed",
++} as const;
+diff --git a/apps/web/src/shared/window-line.tsx b/apps/web/src/shared/window-line.tsx
+new file mode 100644
+index 0000000..dd000b3
+--- /dev/null
++++ b/apps/web/src/shared/window-line.tsx
+@@ -0,0 +1,77 @@
++import { BlockMeter } from "@cota/ui/components/block-meter";
++import {
++  Pace,
++  QuotaWindow,
++  QuotaWindowFoot,
++  QuotaWindowHead,
++  QuotaWindowLabel,
++  QuotaWindowReset,
++  QuotaWindowUsed,
++} from "@cota/ui/components/quota-window";
++import type { Hue } from "#shared/domain/hues.ts";
++import { meter } from "#shared/domain/meter.ts";
++import { span } from "#shared/domain/quantities.ts";
++import { useNameOf } from "#shared/names.tsx";
++import { useNow } from "#shared/now.tsx";
++import { when } from "#shared/words.ts";
++import { paceOf, usedText, type WindowShape, windowName } from "./windows.ts";
++
++/** One quota window: its name, how much is used, the countdown to its reset, and its block meter. */
++export function WindowLine({
++  window,
++  pool,
++  hue,
++  detailed,
++}: {
++  readonly window: WindowShape;
++  readonly pool: string;
++  readonly hue: Hue;
++  readonly detailed: boolean;
++}) {
++  const now = useNow();
++  const nameOf = useNameOf();
++  const name = windowName(window);
++  const pace = paceOf(window, now);
++  const {
++    blocks,
++    severity,
++    pace: marker,
++  } = meter({
++    usedPercent: window.usedPercent,
++    elapsed: window.standing?.elapsed ?? null,
++  });
++  const resetsAt = window.resetsAt;
++  const used = usedText(window);
++  return (
++    <QuotaWindow size={detailed ? "detail" : "card"}>
++      <QuotaWindowHead>
++        <QuotaWindowLabel>{name}</QuotaWindowLabel>
++        <QuotaWindowUsed>{used}</QuotaWindowUsed>
++        <QuotaWindowReset
++          title={
++            resetsAt === null ? undefined : `Resets ${when(resetsAt, now)}`
++          }
++        >
++          {resetsAt === null
++            ? "Not started"
++            : `Resets in ${span(resetsAt - now)}`}
++        </QuotaWindowReset>
++      </QuotaWindowHead>
++      <BlockMeter
++        blocks={blocks}
++        pace={marker}
++        severity={severity}
++        hue={hue}
++        size={detailed ? "detail" : "card"}
++        label={`${nameOf("pool", pool)}, ${name} window`}
++        valueText={pace === null ? used : `${used}, ${pace.text}`}
++      />
++      {detailed && (pace !== null || resetsAt !== null) ? (
++        <QuotaWindowFoot>
++          {pace === null ? null : <Pace tone={pace.tone}>{pace.text}</Pace>}
++          {resetsAt === null ? null : <span>Resets {when(resetsAt, now)}</span>}
++        </QuotaWindowFoot>
++      ) : null}
++    </QuotaWindow>
++  );
++}
+diff --git a/apps/web/src/shared/windows.ts b/apps/web/src/shared/windows.ts
+new file mode 100644
+index 0000000..9880d4a
+--- /dev/null
++++ b/apps/web/src/shared/windows.ts
+@@ -0,0 +1,79 @@
++import { share, span } from "#shared/domain/quantities.ts";
++
++const hour = 3_600_000;
++const day = 24 * hour;
++
++/** A quota window as the screens write it, its times in milliseconds since the epoch. */
++export interface WindowShape {
++  readonly lengthMs: number;
++  readonly scope: string | null;
++  readonly usedPercent: number;
++  readonly resetsAt: number | null;
++  readonly standing: {
++    readonly elapsed: number;
++    readonly resetsInMs: number;
++    readonly pace: "full" | "on-pace" | "in-reserve" | "ahead-of-pace";
++    readonly points: number | null;
++    readonly emptiesInMs: number | null;
++  } | null;
++}
++
++const named: Record<number, string> = {
++  [5 * hour]: "5-hour",
++  [day]: "Daily",
++  [7 * day]: "Weekly",
++  [28 * day]: "Monthly",
++  [30 * day]: "Monthly",
++  [31 * day]: "Monthly",
++};
++
++/** A window's name for people, from its length and scope: `5-hour`, `Weekly`, `Weekly · opus`. */
++export const windowName = (window: WindowShape) => {
++  const base =
++    named[window.lengthMs] ??
++    (window.lengthMs < day
++      ? `${Math.round(window.lengthMs / hour)}-hour`
++      : `${Math.round(window.lengthMs / day)}-day`);
++  return window.scope === null ? base : `${base} · ${window.scope}`;
++};
++
++export const usedText = (window: WindowShape) =>
++  `${share(window.usedPercent / 100)} used`;
++
++/** When the window's standing was worked out: its reset less the time the hub said was left. */
++const answeredAt = (window: WindowShape) =>
++  window.resetsAt === null || window.standing === null
++    ? null
++    : window.resetsAt - window.standing.resetsInMs;
++
++export type Tone = "ok" | "warn" | "danger";
++
++/** A window's pace in words, as the hub decided it, with any emptying time counted down from `now`. */
++export const paceOf = (
++  window: WindowShape,
++  now: number,
++): { readonly text: string; readonly tone: Tone } | null => {
++  const standing = window.standing;
++  if (standing === null) return null;
++  const points = Math.round(standing.points ?? 0);
++  switch (standing.pace) {
++    case "full":
++      return { text: "Full until the reset", tone: "danger" };
++    case "on-pace":
++      return { text: "On pace", tone: "ok" };
++    case "in-reserve":
++      return { text: `${points}% in reserve`, tone: "ok" };
++    case "ahead-of-pace": {
++      const tone = window.usedPercent >= 80 ? "danger" : "warn";
++      const asked = answeredAt(window);
++      if (standing.emptiesInMs === null || asked === null) {
++        return { text: `${points}% ahead of pace`, tone };
++      }
++      const left = asked + standing.emptiesInMs - now;
++      return {
++        text: `${points}% ahead of pace · empties in ${span(left)}`,
++        tone,
++      };
++    }
++  }
++};
+diff --git a/apps/web/src/stories/pool.ts b/apps/web/src/stories/pool.ts
+new file mode 100644
+index 0000000..9e2dfea
+--- /dev/null
++++ b/apps/web/src/stories/pool.ts
+@@ -0,0 +1,201 @@
++import type { PoolSummary } from "#screens/pool/summary.ts";
++
++const minute = 60_000;
++const hour = 60 * minute;
++const day = 24 * hour;
++
++const now = Math.floor(Date.now() / minute) * minute;
++
++const iso = (at: number) => new Date(at).toISOString();
++
++const dateOf = (at: number) => iso(at).slice(0, 10);
++
++const standingOf = (
++  length: number,
++  used: number,
++  elapsed: number,
++): NonNullable<PoolSummary["windows"][number]["standing"]> => {
++  const lead = used - elapsed * 100;
++  const pace =
++    used >= 100
++      ? "full"
++      : Math.abs(lead) < 2
++        ? "on-pace"
++        : lead < 0
++          ? "in-reserve"
++          : "ahead-of-pace";
++  return {
++    elapsed,
++    resetsInMs: Math.round((1 - elapsed) * length),
++    pace,
++    points:
++      pace === "in-reserve" || pace === "ahead-of-pace" ? Math.abs(lead) : null,
++    emptiesInMs:
++      pace === "ahead-of-pace"
++        ? Math.round(((100 - used) / used) * elapsed * length)
++        : null,
++  };
++};
++
++const windowOf = (
++  length: number,
++  used: number,
++  elapsed: number,
++  scope: string | null = null,
++): PoolSummary["windows"][number] => ({
++  lengthMs: length,
++  scope,
++  usedPercent: used,
++  startsAt: iso(now - Math.round(elapsed * length)),
++  resetsAt: iso(now + Math.round((1 - elapsed) * length)),
++  standing: standingOf(length, used, elapsed),
++});
++
++const daysOf = (
++  count: number,
++  figures: ReadonlyArray<readonly [number, number, number | null]>,
++): PoolSummary["days"] =>
++  Array.from({ length: count }, (_, index) => {
++    const [requests, tokens, promptSize] = figures[index % figures.length] ?? [
++      0,
++      0,
++      null,
++    ];
++    return {
++      day: dateOf(now - (count - 1 - index) * day),
++      requests,
++      tokens,
++      promptSize,
++    };
++  });
++
++const sevenDays = daysOf(7, [
++  [212, 9_400_000, 142_000],
++  [388, 18_200_000, 171_000],
++  [96, 3_100_000, 64_000],
++  [0, 0, null],
++  [454, 21_900_000, 188_000],
++  [301, 14_800_000, 96_000],
++  [177, 8_300_000, 153_000],
++]);
++
++const fiveModels: PoolSummary["models"] = [
++  { model: "claude-opus-4-5", requests: 402, tokens: 41_300_000, cost: 118.42 },
++  {
++    model: "claude-sonnet-4-5",
++    requests: 951,
++    tokens: 29_700_000,
++    cost: 31.07,
++  },
++  { model: "claude-haiku-4-5", requests: 214, tokens: 3_900_000, cost: 1.38 },
++  { model: "claude-opus-4-1", requests: 38, tokens: 1_150_000, cost: 6.9 },
++  { model: "claude-3-7-sonnet", requests: 22, tokens: 410_000, cost: 0.94 },
++];
++
++const claude: PoolSummary["pool"] = {
++  id: "personal",
++  kind: "subscription",
++  provider: "anthropic",
++  plan: "Max 20x",
++};
++
++const configured = ["personal", "work", "codex", "zai"];
++
++/** A Claude subscription with two windows and five models, over seven days the log covers twice. */
++export const claudeSubscription: PoolSummary = {
++  pool: claude,
++  pools: configured,
++  windows: [windowOf(5 * hour, 41, 0.42), windowOf(7 * day, 12, 0.49, "Opus")],
++  range: "7d",
++  logBegins: dateOf(now - 40 * day),
++  totals: {
++    requests: 1627,
++    tokens: 76_460_000,
++    cost: 158.71,
++    unpricedRequests: 0,
++    previous: { requests: 1188, tokens: 91_200_000, cost: 120.4 },
++  },
++  models: fiveModels,
++  days: sevenDays,
++};
++
++/** The same pool over a range that begins before the request log does. */
++export const claudeBeforeTheLog: PoolSummary = {
++  ...claudeSubscription,
++  range: "30d",
++  logBegins: dateOf(now - 9 * day),
++  totals: { ...claudeSubscription.totals, previous: null },
++  days: daysOf(30, [
++    [0, 0, null],
++    ...sevenDays.map((each): readonly [number, number, number | null] => [
++      each.requests,
++      each.tokens,
++      each.promptSize,
++    ]),
++  ]),
++};
++
++/** A pool whose quota windows the hub has not read. */
++export const windowsNotRead: PoolSummary = {
++  ...claudeSubscription,
++  pool: {
++    id: "zai",
++    kind: "keyed",
++    provider: "zai",
++    plan: null,
++  },
++  windows: [],
++  totals: {
++    requests: 640,
++    tokens: 12_800_000,
++    cost: 9.6,
++    unpricedRequests: 0,
++    previous: { requests: 610, tokens: 12_900_000, cost: 9.7 },
++  },
++  models: [
++    { model: "glm-4.6", requests: 520, tokens: 10_900_000, cost: 7.9 },
++    { model: "glm-4.5-air", requests: 120, tokens: 1_900_000, cost: 1.7 },
++  ],
++};
++
++/** A pool with requests whose model has no price. */
++export const unpricedModel: PoolSummary = {
++  ...claudeSubscription,
++  pool: {
++    id: "codex",
++    kind: "subscription",
++    provider: "chatgpt",
++    plan: "Plus",
++  },
++  windows: [windowOf(5 * hour, 100, 0.82), windowOf(7 * day, 71, 0.55)],
++  totals: {
++    requests: 330,
++    tokens: 15_300_000,
++    cost: 21.4,
++    unpricedRequests: 64,
++    previous: { requests: 280, tokens: 11_000_000, cost: 17.9 },
++  },
++  models: [
++    { model: "gpt-5.1-codex", requests: 266, tokens: 11_200_000, cost: 21.4 },
++    {
++      model: "gpt-5.1-codex-max-preview",
++      requests: 64,
++      tokens: 4_100_000,
++      cost: null,
++    },
++  ],
++};
++
++/** A pool that carried nothing in the range. */
++export const quiet: PoolSummary = {
++  ...claudeSubscription,
++  totals: {
++    requests: 0,
++    tokens: 0,
++    cost: 0,
++    unpricedRequests: 0,
++    previous: { requests: 12, tokens: 300_000, cost: 0.4 },
++  },
++  models: [],
++  days: daysOf(7, [[0, 0, null]]),
++};

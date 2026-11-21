@@ -1,0 +1,104 @@
+diff --git a/apps/web/src/screens/keys/keys.stories.tsx b/apps/web/src/screens/keys/keys.stories.tsx
+new file mode 100644
+index 0000000..e9148e5
+--- /dev/null
++++ b/apps/web/src/screens/keys/keys.stories.tsx
+@@ -0,0 +1,32 @@
++import type { Meta, StoryObj } from "@storybook/react-vite";
++import { Keys } from "./keys.tsx";
++
++const meta = {
++  title: "Screens/Keys",
++  component: Keys,
++} satisfies Meta<typeof Keys>;
++
++export default meta;
++type Story = StoryObj<typeof meta>;
++
++export const ThreeKeys: Story = {
++  args: {
++    keys: [
++      {
++        id: "k_7f3a9c",
++        note: "work laptop",
++        requests: 1204,
++        tokens: 3_400_000,
++      },
++      { id: "k_19be02", note: null, requests: 12, tokens: null },
++      {
++        id: "k_c0ffee",
++        note: "reader for the agents",
++        requests: 0,
++        tokens: null,
++      },
++    ],
++  },
++};
++
++export const NoKeys: Story = { args: { keys: [] } };
+diff --git a/apps/web/src/screens/keys/keys.tsx b/apps/web/src/screens/keys/keys.tsx
+new file mode 100644
+index 0000000..950f956
+--- /dev/null
++++ b/apps/web/src/screens/keys/keys.tsx
+@@ -0,0 +1,60 @@
++import { Empty, EmptyDescription, EmptyTitle } from "@cota/ui/components/empty";
++import { ListPanel, ListPanelBody } from "@cota/ui/components/list-panel";
++import {
++  Table,
++  TableBody,
++  TableCell,
++  TableHead,
++  TableHeader,
++  TableLabel,
++  TableRow,
++} from "@cota/ui/components/table";
++import { tokens } from "#shared/domain/quantities.ts";
++
++export interface Key {
++  readonly id: string;
++  readonly note: string | null;
++  readonly requests: number;
++  readonly tokens: number | null;
++}
++
++export function Keys({ keys }: { readonly keys: ReadonlyArray<Key> }) {
++  return (
++    <ListPanel aria-label="Hub keys">
++      <ListPanelBody>
++        {keys.length === 0 ? (
++          <Empty>
++            <EmptyTitle>The hub has no hub keys.</EmptyTitle>
++            <EmptyDescription>
++              Hub keys are in the hub's configuration. Add one there and restart
++              the hub.
++            </EmptyDescription>
++          </Empty>
++        ) : (
++          <Table aria-label="Hub keys">
++            <TableHeader>
++              <TableRow>
++                <TableHead>Key</TableHead>
++                <TableHead numeric>Requests</TableHead>
++                <TableHead numeric>Tokens</TableHead>
++              </TableRow>
++            </TableHeader>
++            <TableBody>
++              {keys.map((key) => (
++                <TableRow key={key.id}>
++                  <TableCell>
++                    <TableLabel>{key.note ?? key.id}</TableLabel>
++                  </TableCell>
++                  <TableCell numeric>{key.requests}</TableCell>
++                  <TableCell numeric>
++                    {key.tokens === null ? "Not reported" : tokens(key.tokens)}
++                  </TableCell>
++                </TableRow>
++              ))}
++            </TableBody>
++          </Table>
++        )}
++      </ListPanelBody>
++    </ListPanel>
++  );
++}

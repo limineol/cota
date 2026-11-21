@@ -1,0 +1,305 @@
+{
+  "commit": "f4f90713f60faafe654c2cf335a53ce08f453d6b",
+  "date": "2026-11-17",
+  "runner": "claude",
+  "client": {
+    "name": "claude",
+    "version": "2.1.325 (Claude Code)",
+    "model": "claude-sonnet-5-5"
+  },
+  "judge": {
+    "name": "claude",
+    "version": "2.1.325 (Claude Code)",
+    "model": "claude-sonnet-5-5"
+  },
+  "tasks": ["pool"],
+  "arms": ["with", "without"],
+  "repetitions": 1,
+  "seed": 17,
+  "minutes": 20,
+  "runs": [
+    {
+      "id": "pool-with-1",
+      "task": "pool",
+      "arm": "with",
+      "repetition": 1,
+      "status": "done",
+      "error": null,
+      "seconds": 453,
+      "costUsd": 1.5143760000000004,
+      "turns": 80,
+      "model": "claude-sonnet-5-5",
+      "patch": "pool-with-1.patch",
+      "changedFiles": 11,
+      "check": true,
+      "checkFailure": null,
+      "lintFindings": 0,
+      "story": "failed",
+      "storyFailure": {
+        "firstLine": "❯ |stories-dark (chromium)| src/screens/pool/pool.stories.tsx (7 tests | 2 failed) 1671ms",
+        "tail": "                  data-slot=\"quota-window-used\"\n                >\n                  100% used\n                </span>\n                <span\n                  class=\"ml-auto text-text-3 group-data-[size=detail]/window:font-medium group-data-[size=detail]/window:text-text-2\"\n                  data-slot=\"quota-window-reset\"\n                  title=\"Resets 05:12\"\n                >\n                  Resets in 53m\n                </span>\n              </div>\n              <div\n                aria-label=\"codex, 5-hour window\"\n                aria-valuemax=\"100\"\n                aria-valuemin=\"0\"\n                aria-valuenow=\"100\"\n                aria-valuetext=\"100% used, Full until the reset\"\n                class=\"relative hue-3\"\n                data-slot=\"block-meter\"\n                role=\"meter\"\n              >\n                <div\n                  class=\"grid grid-cols-20 gap-[3px]\"\n                >\n                  <span\n                    class=\"relative overflow-hidden rounded-block h-3.5 bg-danger\"\n                  />\n                  <span\n                    class=\"relative overflow-hidden rounded-block h-3.5 bg-danger\"\n                  />\n                  <span\n                    class=\"relative overflow-hidden rounded-block h-3.5 bg-danger\"\n                  />\n                  <span\n                    class=\"relative overflow-hidden rounded-block h-3.5 bg-danger\"\n                  />\n                  <span\n                    class=\"relative overflow-hidden rounded-block h-3.5 bg-danger\"\n                  />\n                  <span\n                    class=\"relative overflow-hidden rounded-block h-3.5 bg-danger\"\n                  />\n                  <span\n                    class=\"relative overflow-hidden ro...\n ❯ Object.getElementError ../../node_modules/.bun/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/@testing-library/dom.esm.js:338:19\n ❯ ../../node_modules/.bun/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/@testing-library/dom.esm.js:1197:25\n ❯ ../../node_modules/.bun/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/@testing-library/dom.esm.js:1176:17\n ❯ ../../node_modules/.bun/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/@testing-library/dom.esm.js:1219:19\n ❯ getByText src/screens/pool/pool.stories.tsx:71:25\n     69|       canvas.getByText(/64 requests went to a model with no price/),\n     70|     ).toBeVisible();\n     71|     await expect(canvas.getByText(\"≥$21\")).toBeVisible();\n       |                         ^\n     72|   },\n     73| };\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯\n\nerror: script \"stories\" exited with code 1"
+      },
+      "rendered": true,
+      "leaks": [],
+      "judgement": {
+        "status": "judged",
+        "error": null,
+        "onDiffAlone": false,
+        "verdicts": [
+          {
+            "rule": "colour-is-data",
+            "verdict": "followed",
+            "evidence": "Screenshots of Claude Subscription (1440 light and dark) show hue only on the pool's meters, columns and mark. The pace text is green or amber, and the Windows Not Read and Model With No Price screenshots show the same pattern. Stat deltas stay neutral grey. The range control is ink."
+          },
+          {
+            "rule": "hue-follows-the-pool",
+            "verdict": "followed",
+            "evidence": "pool.tsx: `poolHues(summary.pools).get(pool.id) ?? \"neutral\"` is passed to PoolMark, WindowLine (the meter) and PromptColumns. The screenshots show orange for personal, purple for zai and green for codex."
+          },
+          {
+            "rule": "red-is-an-error",
+            "verdict": "followed",
+            "evidence": "Model With No Price screenshots: the 100%-used 5-hour window is red ('Full until the reset'), and the 16%-ahead weekly window is amber. StatDelta is given only a direction, and the Tokens fall (↓16%) and the Cost rise (↑32%) render neutral."
+          },
+          {
+            "rule": "quantities-are-blocks",
+            "verdict": "followed",
+            "evidence": "Windows are drawn with BlockMeter (20 blocks plus a pace marker) in shared/window-line.tsx. Largest prompt by day uses BlockColumns (context.tsx). Model rows use MagnitudeBar hairlines (models.tsx)."
+          },
+          {
+            "rule": "the-hub-decides",
+            "verdict": "followed",
+            "evidence": "shared/windows.ts paceOf switches on `standing.pace`. The meter takes `standing.elapsed`. The screen does not recompute pace from usedPercent and elapsed."
+          },
+          {
+            "rule": "never-invent-a-number",
+            "verdict": "followed",
+            "evidence": "Windows Not Read: no meters, and a sentence says why. Model With No Price: the cost reads '≥$21.40', with the note '64 requests with no price' and 'no price' in the row. Before The Log Begins: previous is null, so there is no delta, and the sentence says the log begins Nov 8 and has nothing before it to compare with. Null promptSize shows '—'."
+          },
+          {
+            "rule": "figures-are-written-once",
+            "verdict": "followed",
+            "evidence": "The patch uses tokens, cost, delta, span and share from quantities.ts, plus costText, counted and plural from words.ts. There is no inline toFixed or Math.round formatting of figures."
+          },
+          {
+            "rule": "names-not-ids",
+            "verdict": "followed",
+            "evidence": "pool.tsx: `nameOf(\"pool\", pool.id)` as the title, with the id as the tooltip. models.tsx: `nameOf(\"model\", row.model)` with `title={row.model}`. The screenshot shows 'Personal plan' and 'Claude Opus 4.5'."
+          },
+          {
+            "rule": "screens-compose",
+            "verdict": "broken",
+            "evidence": "pool.tsx styles a raw paragraph in the screen: `<p className=\"text-base text-pretty text-text-2\">` for the no-windows note. That changes how text looks where it is used, instead of using a component variant."
+          },
+          {
+            "rule": "tokens-by-role",
+            "verdict": "not-applicable",
+            "evidence": "The patch touches nothing in packages/ui, so no tokens or dark: classes are involved."
+          },
+          {
+            "rule": "one-panel-deep",
+            "verdict": "followed",
+            "evidence": "Models and Largest context are each one Card holding a table or chart, with no card inside a card and no shadows. The stat tiles sit in a Section, not inside a Card. The screenshots show a single bordered panel each."
+          },
+          {
+            "rule": "a-list-is-a-table",
+            "verdict": "followed",
+            "evidence": "models.tsx renders the models as a Table with right-aligned numeric columns (Requests, Tokens, Cost) under heads. It is not a list of cards."
+          },
+          {
+            "rule": "a-filter-is-a-button",
+            "verdict": "not-applicable",
+            "evidence": "No list is filtered. The 1d/7d/30d Segmented control picks a range, not a filter over a list."
+          },
+          {
+            "rule": "same-slots",
+            "verdict": "followed",
+            "evidence": "Windows Not Read keeps the windows section and puts the reason in the slot, with the rest of the page laid out the same. The three stat tiles are the same shape."
+          },
+          {
+            "rule": "every-state-is-designed",
+            "verdict": "not-applicable",
+            "evidence": "The change makes no API read. PoolView takes the summary as a prop and the task asks for no endpoint or route. The empty face is designed (the NothingCarried story), but loading and failure belong to whoever renders the view."
+          },
+          {
+            "rule": "the-url-is-the-screen",
+            "verdict": "broken",
+            "evidence": "pool.tsx: `<Segmented ... onValueChange={onRangeChange} />`. The range is chosen by a click handler, not a link. The story holds it in `useState` (pool.stories.tsx `Chosen`), so a link cannot show the same range."
+          },
+          {
+            "rule": "words-are-the-products",
+            "verdict": "followed",
+            "evidence": "The copy uses 'pool', 'quota windows' and 'request', in sentence case. For example: \"The hub has not read this pool's quota windows, so there is no meter to show.\" There are no apologies or exclamations."
+          },
+          {
+            "rule": "type-has-one-scale",
+            "verdict": "followed",
+            "evidence": "The patch adds no arbitrary pixel sizes or mono classes. It uses theme components (PageTitle, StatValue, SectionTitle) and `text-base`."
+          },
+          {
+            "rule": "motion-is-state",
+            "verdict": "not-applicable",
+            "evidence": "The patch adds no transitions, animations or hover effects."
+          },
+          {
+            "rule": "a-level-is-not-summed",
+            "verdict": "followed",
+            "evidence": "context.tsx: each day is one column with `parts: [day.promptSize]`, never merged across days. `largestPrompt` in words.ts takes the maximum, and the 188K peak is reported as the largest."
+          },
+          {
+            "rule": "roles-are-words",
+            "verdict": "not-applicable",
+            "evidence": "The change shows no request role or outcome."
+          },
+          {
+            "rule": "readable-without-colour",
+            "verdict": "not-applicable",
+            "evidence": "The scope is packages/ui, and the patch changes nothing there. The pace text and meter valueText added in apps/web are outside this rule's scope."
+          }
+        ],
+        "seconds": 43,
+        "costUsd": 0.27019529999999997
+      }
+    },
+    {
+      "id": "pool-without-1",
+      "task": "pool",
+      "arm": "without",
+      "repetition": 1,
+      "status": "done",
+      "error": null,
+      "seconds": 272,
+      "costUsd": 1.004035,
+      "turns": 62,
+      "model": "claude-sonnet-5-5",
+      "patch": "pool-without-1.patch",
+      "changedFiles": 9,
+      "check": true,
+      "checkFailure": null,
+      "lintFindings": 0,
+      "story": "passed",
+      "storyFailure": null,
+      "rendered": true,
+      "leaks": [],
+      "judgement": {
+        "status": "judged",
+        "error": null,
+        "onDiffAlone": false,
+        "verdicts": [
+          {
+            "rule": "colour-is-data",
+            "verdict": "followed",
+            "evidence": "The screen adds no accent of its own. Colour comes from the pool hue on PoolMark, BlockMeter and BlockColumns (context.tsx tint: hue). The only other colour is the pace tone and the no-price flag. Screenshots 1-4 show monochrome text on surface."
+          },
+          {
+            "rule": "hue-follows-the-pool",
+            "verdict": "followed",
+            "evidence": "pool.tsx: `poolHues(summary.pools).get(pool.id) ?? \"neutral\"` is passed to PoolMark, Windows (BlockMeter) and Context (BlockColumns tint). The screen picks no hue itself."
+          },
+          {
+            "rule": "red-is-an-error",
+            "verdict": "broken",
+            "evidence": "models.tsx renders `<TableFlag>no price</TableFlag>`, and the 'Model Without A Price' screenshots (9-12) show it in red although nothing failed. words.ts paceOf maps ahead-of-pace to `danger` whenever usedPercent >= 80, but ahead of pace is amber."
+          },
+          {
+            "rule": "quantities-are-blocks",
+            "verdict": "followed",
+            "evidence": "Quota windows use BlockMeter with blocks from meter(). Context uses BlockColumns with blocks from stack(). Models rows use MagnitudeBar. No hand-built width bars."
+          },
+          {
+            "rule": "the-hub-decides",
+            "verdict": "broken",
+            "evidence": "words.ts paceOf takes the pace word from standing.pace but then invents the tone itself: `const tone = window.usedPercent >= 80 ? \"danger\" : \"warn\"`. The screen re-derives severity from usedPercent with a threshold the hub did not give."
+          },
+          {
+            "rule": "never-invent-a-number",
+            "verdict": "followed",
+            "evidence": "Cost is written with costText(totals.cost, unpricedRequests), which gives '≥$18.40' in the 'Model Without A Price' story. A missing previous range shows 'the range before is not in the request log' instead of a delta. Unread windows get an Empty with the reason. A null promptSize shows 'unreported' / 'no prompt size'."
+          },
+          {
+            "rule": "figures-are-written-once",
+            "verdict": "followed",
+            "evidence": "Tokens, spans, shares and deltas come from tokens(), span(), share() and delta() in #shared/domain/quantities.ts. Cost and counts come from costText, counted and plural in #shared/words.ts. No inline toFixed or Math.round formatting of figures."
+          },
+          {
+            "rule": "names-not-ids",
+            "verdict": "followed",
+            "evidence": "The page title uses `<Name kind=\"pool\" value={pool.id} />`, the mark uses nameOf(\"pool\"), and model rows use nameOf(\"model\", row.model) with the id as the title tooltip. Screenshot 1 shows 'Personal plan' and 'Claude Opus 4.5'."
+          },
+          {
+            "rule": "screens-compose",
+            "verdict": "followed",
+            "evidence": "Screens import ui components and add only layout classes (grid, gap, max-w-sm, mt-*, @container). Variants are chosen with Stat variant=\"tile\" and QuotaWindow size=\"detail\"."
+          },
+          {
+            "rule": "tokens-by-role",
+            "verdict": "not-applicable",
+            "evidence": "The patch touches only apps/web files. Nothing in packages/ui changes."
+          },
+          {
+            "rule": "one-panel-deep",
+            "verdict": "followed",
+            "evidence": "The Stat tiles are single bordered panels in a grid, never nested, with no shadows. Sections are separated by rules (screenshots 1-16)."
+          },
+          {
+            "rule": "a-list-is-a-table",
+            "verdict": "followed",
+            "evidence": "The models list is a Table with right-aligned numeric columns (Requests, Tokens, Cost) under heads, not cards. It has no filters and no pager."
+          },
+          {
+            "rule": "a-filter-is-a-button",
+            "verdict": "not-applicable",
+            "evidence": "No list is filtered. The range Segmented is a range choice, not a facet of a list."
+          },
+          {
+            "rule": "same-slots",
+            "verdict": "followed",
+            "evidence": "Each Totals tile always renders label, value and StatNote. Windows keeps its slot as an Empty with a reason when there are none. A model row without a price keeps its cost cell and writes 'no price' in it."
+          },
+          {
+            "rule": "every-state-is-designed",
+            "verdict": "broken",
+            "evidence": "PoolSkeleton is three generic Skeleton bars, and there are empty states. But the change has no failure state with the problem's sentence and a retry, and no dimmed last answer while a new range loads."
+          },
+          {
+            "rule": "the-url-is-the-screen",
+            "verdict": "broken",
+            "evidence": "The range is held in state: stories' Shown uses `useState<Range>`, and pool.tsx passes `onRangeChange` to Segmented's `onValueChange`. Choosing a range is a click handler, not a link with the range in the URL."
+          },
+          {
+            "rule": "words-are-the-products",
+            "verdict": "followed",
+            "evidence": "Copy is plain sentence case and uses the product words, for example 'The hub has not read this pool's windows', 'A keyed pool has no quota windows' and '610 requests with no price'. It has no apologies or exclamations."
+          },
+          {
+            "rule": "type-has-one-scale",
+            "verdict": "followed",
+            "evidence": "No arbitrary font sizes or font-mono are added in the patch. Figures use StatValue and StatUnit-style components, and the screenshots show Geist throughout."
+          },
+          {
+            "rule": "motion-is-state",
+            "verdict": "not-applicable",
+            "evidence": "The change adds no transitions, animations or hover effects. Only the shared Skeleton component is used."
+          },
+          {
+            "rule": "a-level-is-not-summed",
+            "verdict": "followed",
+            "evidence": "context.tsx peakDay takes the largest day.promptSize, and each column holds the day's promptSize as a single part, never a sum. 'Largest context' shows 201K, the maximum, in screenshot 1."
+          },
+          {
+            "rule": "roles-are-words",
+            "verdict": "not-applicable",
+            "evidence": "No request role or outcome is shown anywhere in the change."
+          },
+          {
+            "rule": "readable-without-colour",
+            "verdict": "not-applicable",
+            "evidence": "The patch changes nothing in packages/ui."
+          }
+        ],
+        "seconds": 35,
+        "costUsd": 0.24149939999999998
+      }
+    }
+  ]
+}

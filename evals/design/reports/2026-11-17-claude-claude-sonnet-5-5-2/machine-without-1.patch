@@ -1,0 +1,768 @@
+diff --git a/apps/web/src/screens/machine/figures.ts b/apps/web/src/screens/machine/figures.ts
+new file mode 100644
+index 0000000..eae4bfc
+--- /dev/null
++++ b/apps/web/src/screens/machine/figures.ts
+@@ -0,0 +1,78 @@
++import type {
++  MachineDaySession,
++  Outcome,
++  Role,
++} from "./machine-day.ts";
++
++export const roles: ReadonlyArray<Role> = [
++  "main",
++  "subagent",
++  "title",
++  "utility",
++];
++
++export const roleWords: Record<Role, string> = {
++  main: "main",
++  subagent: "subagent",
++  title: "title",
++  utility: "utility",
++};
++
++export const outcomeWords: Record<Exclude<Outcome, "ok">, string> = {
++  error: "error",
++  refused: "refused",
++  cancelled: "cancelled",
++};
++
++const dayInMilliseconds = 86_400_000;
++
++/** The ISO date `step` days from `day`, counted on the calendar alone. */
++export const dayBeside = (day: string, step: number) =>
++  new Date(Date.parse(`${day}T00:00:00Z`) + step * dayInMilliseconds)
++    .toISOString()
++    .slice(0, 10);
++
++const dayWords = new Intl.DateTimeFormat("en-GB", {
++  weekday: "long",
++  day: "numeric",
++  month: "long",
++  year: "numeric",
++  timeZone: "UTC",
++});
++
++export const dayText = (day: string) =>
++  dayWords.format(Date.parse(`${day}T00:00:00Z`));
++
++export const inOrder = (sessions: ReadonlyArray<MachineDaySession>) =>
++  sessions.toSorted((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt));
++
++/** What a session's requests came to: how they split by role and how they ended. */
++export const tallyOf = (session: MachineDaySession) => {
++  const requests = session.requests;
++  const ended = (outcome: Outcome) =>
++    requests.filter((each) => each.outcome === outcome).length;
++  const mains = requests
++    .filter((each) => each.role === "main")
++    .toSorted((a, b) => Date.parse(a.at) - Date.parse(b.at));
++  const sizes = mains.flatMap((each) =>
++    each.promptSize === null ? [] : [each.promptSize],
++  );
++  return {
++    requests: requests.length,
++    byRole: roles.flatMap((role) => {
++      const count = requests.filter((each) => each.role === role).length;
++      return count === 0 ? [] : [{ role, count }];
++    }),
++    errors: ended("error"),
++    refused: ended("refused"),
++    cancelled: ended("cancelled"),
++    firstPrompt: sizes[0] ?? null,
++    peakPrompt: sizes.length === 0 ? null : Math.max(...sizes),
++    dollars: requests.reduce((sum, each) => sum + (each.cost ?? 0), 0),
++    unpriced: requests.filter(
++      (each) => each.outcome === "ok" && each.cost === null,
++    ).length,
++  };
++};
++
++export type Tally = ReturnType<typeof tallyOf>;
+diff --git a/apps/web/src/screens/machine/machine-day.ts b/apps/web/src/screens/machine/machine-day.ts
+new file mode 100644
+index 0000000..001fc82
+--- /dev/null
++++ b/apps/web/src/screens/machine/machine-day.ts
+@@ -0,0 +1,33 @@
++export type Role = "main" | "subagent" | "title" | "utility";
++
++export type Outcome = "ok" | "error" | "refused" | "cancelled";
++
++export interface MachineDayRequest {
++  readonly id: string;
++  readonly at: string;
++  readonly role: Role;
++  readonly outcome: Outcome;
++  readonly promptSize: number | null;
++  readonly outputTokens: number | null;
++  readonly cost: number | null;
++}
++
++export interface MachineDaySession {
++  readonly id: string;
++  readonly title: string | null;
++  readonly firstPrompt: string | null;
++  readonly client: string;
++  readonly pool: string;
++  readonly project: string;
++  readonly startedAt: string;
++  readonly endedAt: string;
++  readonly requests: ReadonlyArray<MachineDayRequest>;
++}
++
++/** What `GET /api/machines/:machine/days/:day` answers: one machine's sessions on one day of the hub's time zone. */
++export interface MachineDay {
++  readonly machine: string;
++  readonly day: string;
++  readonly pools: ReadonlyArray<string>;
++  readonly sessions: ReadonlyArray<MachineDaySession>;
++}
+diff --git a/apps/web/src/screens/machine/machine.stories.tsx b/apps/web/src/screens/machine/machine.stories.tsx
+new file mode 100644
+index 0000000..9cca4f5
+--- /dev/null
++++ b/apps/web/src/screens/machine/machine.stories.tsx
+@@ -0,0 +1,114 @@
++import type { Meta, StoryObj } from "@storybook/react-vite";
++import {
++  createMemoryHistory,
++  createRootRoute,
++  createRoute,
++  createRouter,
++  RouterProvider,
++} from "@tanstack/react-router";
++import { useState } from "react";
++import { expect, within } from "storybook/test";
++import { displayNames } from "#stories/fixtures.ts";
++import { busyDay, quietDay } from "#stories/machine.ts";
++import { withApi } from "#stories/page.tsx";
++import { Machine } from "./machine.tsx";
++import type { MachineDay } from "./machine-day.ts";
++
++function Drawn({ answer }: { readonly answer: MachineDay }) {
++  const [router] = useState(() => {
++    const root = createRootRoute();
++    const here = createRoute({
++      getParentRoute: () => root,
++      path: "/",
++      component: () => (
++        <Machine
++          answer={answer}
++          dayLink={(day) => <a href={`/machines/${answer.machine}/days/${day}`} />}
++        />
++      ),
++    });
++    const session = createRoute({
++      getParentRoute: () => root,
++      path: "/sessions/$session",
++      component: () => <p>The session's own page</p>,
++    });
++    return createRouter({
++      routeTree: root.addChildren([here, session]),
++      history: createMemoryHistory({ initialEntries: ["/"] }),
++    });
++  });
++  return <RouterProvider router={router} />;
++}
++
++const meta = {
++  title: "Screens/Machine",
++  decorators: [withApi([displayNames])],
++  render: (args) => <Drawn answer={args.answer} />,
++  args: { answer: busyDay },
++} satisfies Meta<{ answer: MachineDay }>;
++
++export default meta;
++type Story = StoryObj<typeof meta>;
++
++export const ABusyDay: Story = {
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByRole("heading", { level: 1, name: "ada-mbp.local" }),
++    ).toBeVisible();
++    const table = await canvas.findByRole("table", {
++      name: "Sessions, oldest first",
++    });
++    await expect(within(table).getAllByRole("link")).toHaveLength(8);
++    await expect(canvas.getByText(/8 sessions · \d+ requests/)).toBeVisible();
++  },
++};
++
++export const ASessionWithoutATitle: Story = {
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByText(
++        "why does the scrubber keep the word 'organization' in a header value",
++      ),
++    ).toBeVisible();
++    await expect(canvas.getByText("Untitled session")).toBeVisible();
++  },
++};
++
++export const ASessionOpens: Story = {
++  play: async ({ canvas }) => {
++    const link = await canvas.findByRole("link", {
++      name: "Fix the checkout total after a coupon is removed",
++    });
++    await expect(link).toHaveAttribute(
++      "href",
++      "/sessions/0193b7d0-0001-7000-8000-5e5510000000",
++    );
++  },
++};
++
++export const MovingFromDayToDay: Story = {
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByRole("link", { name: "The day before, 2026-11-13" }),
++    ).toHaveAttribute("href", "/machines/ada-mbp.local/days/2026-11-13");
++    await expect(
++      canvas.getByRole("link", { name: "The day after, 2026-11-15" }),
++    ).toHaveAttribute("href", "/machines/ada-mbp.local/days/2026-11-15");
++  },
++};
++
++export const ADayWithNothing: Story = {
++  args: { answer: quietDay },
++  play: async ({ canvas }) => {
++    await expect(
++      await canvas.findByText("This machine ran nothing on this day."),
++    ).toBeVisible();
++    await expect(
++      canvas.getByRole("link", { name: "The day before, 2026-11-14" }),
++    ).toBeVisible();
++  },
++};
++
++export const Narrow: Story = {
++  globals: { viewport: { value: "mobile2" } },
++};
+diff --git a/apps/web/src/screens/machine/machine.tsx b/apps/web/src/screens/machine/machine.tsx
+new file mode 100644
+index 0000000..0233296
+--- /dev/null
++++ b/apps/web/src/screens/machine/machine.tsx
+@@ -0,0 +1,283 @@
++import { Empty, EmptyDescription, EmptyTitle } from "@cota/ui/components/empty";
++import {
++  ListPanel,
++  ListPanelBody,
++  ListPanelFoot,
++} from "@cota/ui/components/list-panel";
++import {
++  Page,
++  PageDescription,
++  PageHeader,
++  PageTitle,
++} from "@cota/ui/components/page";
++import {
++  Pager,
++  PagerControls,
++  PagerPage,
++  PagerStep,
++} from "@cota/ui/components/pager";
++import { PoolMark } from "@cota/ui/components/pool-mark";
++import { RequestEnded } from "@cota/ui/components/request-table";
++import {
++  SessionTitle,
++} from "@cota/ui/components/session-table";
++import {
++  Table,
++  TableBody,
++  TableCell,
++  TableFlag,
++  TableHead,
++  TableHeader,
++  TableLabel,
++  TableMagnitude,
++  TableRow,
++  TableSecondary,
++} from "@cota/ui/components/table";
++import { Link } from "@tanstack/react-router";
++import type { ReactElement } from "react";
++import { poolHues } from "#shared/domain/hues.ts";
++import { span, tokens } from "#shared/domain/quantities.ts";
++import { Name } from "#shared/names.tsx";
++import { costText, counted, plural, timeOf } from "#shared/words.ts";
++import {
++  dayBeside,
++  dayText,
++  inOrder,
++  type Tally,
++  tallyOf,
++} from "./figures.ts";
++import type { MachineDay, MachineDaySession } from "./machine-day.ts";
++
++const withoutTitle = "Untitled session";
++
++function Heading({ session }: { readonly session: MachineDaySession }) {
++  if (session.title !== null) {
++    return (
++      <SessionTitle title={session.title}>{session.title}</SessionTitle>
++    );
++  }
++  const line = session.firstPrompt
++    ?.split("\n")
++    .find((each) => each.trim() !== "");
++  if (line !== undefined) {
++    return (
++      <SessionTitle kind="prompt" title={session.firstPrompt ?? line}>
++        {line.trim()}
++      </SessionTitle>
++    );
++  }
++  return <SessionTitle kind="none">{withoutTitle}</SessionTitle>;
++}
++
++function Ended({ tally }: { readonly tally: Tally }) {
++  const parts = [
++    tally.errors > 0 ? { text: plural(tally.errors, "error"), error: true } : null,
++    tally.refused > 0 ? { text: `${counted(tally.refused)} refused`, error: false } : null,
++    tally.cancelled > 0
++      ? { text: `${counted(tally.cancelled)} cancelled`, error: false }
++      : null,
++  ].filter((part) => part !== null);
++  if (parts.length === 0) return <RequestEnded tone="quiet">all answered</RequestEnded>;
++  return (
++    <span className="flex flex-col items-end">
++      {parts.map((part) => (
++        <RequestEnded key={part.text} {...(part.error ? { tone: "danger" } : {})}>
++          {part.text}
++        </RequestEnded>
++      ))}
++    </span>
++  );
++}
++
++const sizeText = (tally: Tally) => {
++  if (tally.peakPrompt === null) return "unreported";
++  const first = tally.firstPrompt;
++  return first === null || first === tally.peakPrompt
++    ? tokens(tally.peakPrompt)
++    : `${tokens(first)} → ${tokens(tally.peakPrompt)}`;
++};
++
++function SessionItem({
++  session,
++  tally,
++  peak,
++  markOf,
++}: {
++  readonly session: MachineDaySession;
++  readonly tally: Tally;
++  readonly peak: number;
++  readonly markOf: (pool: string) => ReactElement;
++}) {
++  const started = Date.parse(session.startedAt);
++  const ended = Date.parse(session.endedAt);
++  return (
++    <TableBody linked>
++      <TableRow>
++        <TableCell className="w-full max-w-0">
++          <span className="flex min-w-0 items-center gap-1.75">
++            <TableLabel
++              render={
++                <Link
++                  to="/sessions/$session"
++                  params={{ session: session.id }}
++                />
++              }
++            >
++              <Heading session={session} />
++            </TableLabel>
++            {tally.errors > 0 ? (
++              <TableFlag>{plural(tally.errors, "error")}</TableFlag>
++            ) : null}
++          </span>
++          <TableSecondary>
++            <Name kind="project" value={session.project} /> ·{" "}
++            <Name kind="client" value={session.client} />
++          </TableSecondary>
++        </TableCell>
++        <TableCell from="md" className="max-w-44">
++          <span className="flex min-w-0 items-center gap-1.5">
++            {markOf(session.pool)}
++            <TableLabel>
++              <Name kind="pool" value={session.pool} />
++            </TableLabel>
++          </span>
++        </TableCell>
++        <TableCell numeric>
++          <span title={`${timeOf(started)} – ${timeOf(ended)}`}>
++            {timeOf(started)}
++          </span>
++          <TableSecondary>{span(ended - started)}</TableSecondary>
++        </TableCell>
++        <TableCell numeric>
++          {counted(tally.requests)}
++          <TableSecondary className="hidden @2xl/panel:block">
++            {tally.byRole
++              .map(({ role, count }) => `${counted(count)} ${role}`)
++              .join(" · ")}
++          </TableSecondary>
++        </TableCell>
++        <TableCell numeric from="lg">
++          <Ended tally={tally} />
++        </TableCell>
++        <TableCell numeric from="md">
++          {sizeText(tally)}
++          <TableMagnitude fraction={(tally.peakPrompt ?? 0) / peak} />
++        </TableCell>
++        <TableCell numeric from="lg">
++          {costText(tally.dollars, tally.unpriced)}
++        </TableCell>
++      </TableRow>
++    </TableBody>
++  );
++}
++
++function SessionsTable({ answer }: { readonly answer: MachineDay }) {
++  const hues = poolHues(answer.pools);
++  const sessions = inOrder(answer.sessions).map((session) => ({
++    session,
++    tally: tallyOf(session),
++  }));
++  const peak = Math.max(1, ...sessions.map(({ tally }) => tally.peakPrompt ?? 0));
++  const markOf = (pool: string) => (
++    <PoolMark hue={hues.get(pool) ?? "neutral"} name={pool} />
++  );
++  return (
++    <Table aria-label="Sessions, oldest first">
++      <TableHeader>
++        <TableRow>
++          <TableHead scope="col">Session</TableHead>
++          <TableHead scope="col" from="md">
++            Pool
++          </TableHead>
++          <TableHead scope="col" numeric>
++            Started
++          </TableHead>
++          <TableHead scope="col" numeric>
++            Requests
++          </TableHead>
++          <TableHead scope="col" numeric from="lg">
++            Ended
++          </TableHead>
++          <TableHead scope="col" numeric from="md">
++            Context
++          </TableHead>
++          <TableHead scope="col" numeric from="lg">
++            Cost
++          </TableHead>
++        </TableRow>
++      </TableHeader>
++      {sessions.map(({ session, tally }) => (
++        <SessionItem
++          key={session.id}
++          session={session}
++          tally={tally}
++          peak={peak}
++          markOf={markOf}
++        />
++      ))}
++    </Table>
++  );
++}
++
++export function Machine({
++  answer,
++  dayLink,
++}: {
++  readonly answer: MachineDay;
++  readonly dayLink: (day: string) => ReactElement;
++}) {
++  const tallies = answer.sessions.map(tallyOf);
++  const requests = tallies.reduce((sum, each) => sum + each.requests, 0);
++  const dollars = tallies.reduce((sum, each) => sum + each.dollars, 0);
++  const unpriced = tallies.reduce((sum, each) => sum + each.unpriced, 0);
++  const before = dayBeside(answer.day, -1);
++  const after = dayBeside(answer.day, 1);
++  return (
++    <Page className="@container">
++      <PageHeader>
++        <div>
++          <PageTitle>
++            <Name kind="machine" value={answer.machine} />
++          </PageTitle>
++          <PageDescription>
++            {dayText(answer.day)}
++            {answer.sessions.length === 0
++              ? null
++              : ` · ${plural(answer.sessions.length, "session")} · ${plural(requests, "request")} · ${costText(dollars, unpriced)}`}
++          </PageDescription>
++        </div>
++        <Pager aria-label="Days" className="w-auto">
++          <PagerControls>
++            <PagerStep render={dayLink(before)} aria-label={`The day before, ${before}`}>
++              ← {before}
++            </PagerStep>
++            <PagerPage>{answer.day}</PagerPage>
++            <PagerStep render={dayLink(after)} aria-label={`The day after, ${after}`}>
++              {after} →
++            </PagerStep>
++          </PagerControls>
++        </Pager>
++      </PageHeader>
++      <ListPanel aria-label="Sessions">
++        <ListPanelBody>
++          {answer.sessions.length === 0 ? (
++            <Empty>
++              <EmptyTitle>This machine ran nothing on this day.</EmptyTitle>
++              <EmptyDescription>
++                No request of {answer.machine} is in the request log for{" "}
++                {answer.day}.
++              </EmptyDescription>
++            </Empty>
++          ) : (
++            <SessionsTable answer={answer} />
++          )}
++        </ListPanelBody>
++        {answer.sessions.length === 0 ? null : (
++          <ListPanelFoot>
++            <span>{plural(answer.sessions.length, "session")}</span>
++          </ListPanelFoot>
++        )}
++      </ListPanel>
++    </Page>
++  );
++}
+diff --git a/apps/web/src/stories/machine.ts b/apps/web/src/stories/machine.ts
+new file mode 100644
+index 0000000..f6e278e
+--- /dev/null
++++ b/apps/web/src/stories/machine.ts
+@@ -0,0 +1,230 @@
++import type {
++  MachineDay,
++  MachineDayRequest,
++  Outcome,
++  Role,
++} from "#screens/machine/machine-day.ts";
++
++const minute = 60_000;
++
++const day = "2026-11-14";
++const midnight = Date.parse(`${day}T00:00:00Z`);
++
++const hex = (n: number, digits: number) => n.toString(16).padStart(digits, "0");
++
++interface Plan {
++  readonly role: Role;
++  readonly outcome?: Outcome;
++  readonly promptSize: number | null;
++}
++
++const answered = (role: Role, promptSize: number): Plan => ({
++  role,
++  promptSize,
++});
++
++const failed = (role: Role, outcome: Outcome): Plan => ({
++  role,
++  outcome,
++  promptSize: null,
++});
++
++/** A session's requests, one every `every` minutes from `start`, priced by their tokens. */
++const requestsOf = (
++  session: number,
++  start: number,
++  every: number,
++  plans: ReadonlyArray<Plan>,
++): ReadonlyArray<MachineDayRequest> =>
++  plans.map((plan, n) => {
++    const outcome = plan.outcome ?? "ok";
++    const output = outcome === "ok" ? 150 + ((n * 977) % 3200) : null;
++    const prompt = outcome === "ok" ? plan.promptSize : null;
++    return {
++      id: `0193b7d0-${hex(session, 4)}-7000-8000-${hex(n + 1, 12)}`,
++      at: new Date(midnight + start * minute + n * every * minute).toISOString(),
++      role: plan.role,
++      outcome,
++      promptSize: prompt,
++      outputTokens: output,
++      cost:
++        prompt === null || output === null
++          ? null
++          : Math.round((prompt * 0.0000006 + output * 0.000025) * 1e6) / 1e6,
++    };
++  });
++
++const climbing = (
++  from: number,
++  to: number,
++  count: number,
++): ReadonlyArray<Plan> =>
++  Array.from({ length: count }, (_, n) =>
++    answered("main", Math.round(from + ((to - from) * n) / Math.max(1, count - 1))),
++  );
++
++const sessionOf = (
++  n: number,
++  fields: {
++    readonly title: string | null;
++    readonly firstPrompt: string | null;
++    readonly client: string;
++    readonly pool: string;
++    readonly project: string;
++    readonly start: number;
++    readonly every: number;
++    readonly plans: ReadonlyArray<Plan>;
++  },
++) => {
++  const requests = requestsOf(n, fields.start, fields.every, fields.plans);
++  return {
++    id: `0193b7d0-${hex(n, 4)}-7000-8000-5e5510000000`,
++    title: fields.title,
++    firstPrompt: fields.firstPrompt,
++    client: fields.client,
++    pool: fields.pool,
++    project: fields.project,
++    startedAt: requests[0]?.at ?? new Date(midnight).toISOString(),
++    endedAt: requests.at(-1)?.at ?? new Date(midnight).toISOString(),
++    requests,
++  };
++};
++
++/** `GET /api/machines/ada-mbp.local/days/2026-11-14`: eight sessions on three pools, one of them untitled, and an error among the refusals and cancellations. */
++export const busyDay: MachineDay = {
++  machine: "ada-mbp.local",
++  day,
++  pools: ["personal", "work", "spare"],
++  sessions: [
++    sessionOf(1, {
++      title: "Fix the checkout total after a coupon is removed",
++      firstPrompt:
++        "The cart total keeps the coupon's discount after the coupon is removed. Find out why.",
++      client: "claude-code",
++      pool: "work",
++      project: "acme/shop",
++      start: 8 * 60 + 12,
++      every: 3,
++      plans: [
++        answered("title", 900),
++        ...climbing(14_000, 96_000, 24),
++        answered("subagent", 21_000),
++        answered("subagent", 33_000),
++        ...climbing(40_000, 120_000, 10),
++      ],
++    }),
++    sessionOf(2, {
++      title: "Rename the relay's fallback port",
++      firstPrompt: "Rename Fallback to DivertedPool across the relay.",
++      client: "claude-code",
++      pool: "personal",
++      project: "limineol/cota",
++      start: 9 * 60 + 40,
++      every: 2,
++      plans: [
++        answered("title", 700),
++        ...climbing(18_000, 64_000, 12),
++        answered("utility", 4_000),
++        failed("main", "refused"),
++        failed("main", "refused"),
++        answered("main", 66_000),
++      ],
++    }),
++    sessionOf(3, {
++      title: null,
++      firstPrompt:
++        "why does the scrubber keep the word 'organization' in a header value",
++      client: "codex",
++      pool: "spare",
++      project: "limineol/cota",
++      start: 10 * 60 + 5,
++      every: 1,
++      plans: [
++        ...climbing(9_000, 22_000, 6),
++        failed("main", "cancelled"),
++        answered("main", 23_000),
++      ],
++    }),
++    sessionOf(4, {
++      title: "Price the new Haiku in curated.json",
++      firstPrompt: "Add the new Haiku to curated.json with its sources.",
++      client: "claude-code",
++      pool: "personal",
++      project: "limineol/cota",
++      start: 11 * 60 + 30,
++      every: 4,
++      plans: [
++        answered("title", 800),
++        ...climbing(12_000, 48_000, 8),
++        answered("subagent", 15_000),
++      ],
++    }),
++    sessionOf(5, {
++      title: "Dashboard: the machine's day",
++      firstPrompt: "Build the screen for one machine's day.",
++      client: "opencode",
++      pool: "work",
++      project: "limineol/cota",
++      start: 13 * 60 + 2,
++      every: 2,
++      plans: [
++        answered("title", 850),
++        ...climbing(20_000, 150_000, 30),
++        failed("main", "error"),
++        answered("main", 151_000),
++        ...climbing(30_000, 80_000, 6),
++      ],
++    }),
++    sessionOf(6, {
++      title: "A quick look at the quota windows",
++      firstPrompt: null,
++      client: "codex",
++      pool: "spare",
++      project: "acme/dotfiles",
++      start: 14 * 60 + 50,
++      every: 5,
++      plans: [
++        answered("main", 6_000),
++        answered("main", 7_500),
++        failed("main", "cancelled"),
++      ],
++    }),
++    sessionOf(7, {
++      title: "Write the archive's restore tests",
++      firstPrompt: "Write tests for restoring a day of the archive.",
++      client: "claude-code",
++      pool: "work",
++      project: "acme/shop",
++      start: 16 * 60 + 15,
++      every: 3,
++      plans: [
++        answered("title", 900),
++        ...climbing(25_000, 110_000, 16),
++        failed("subagent", "refused"),
++        answered("utility", 3_000),
++        ...climbing(60_000, 70_000, 3),
++      ],
++    }),
++    sessionOf(8, {
++      title: "Bump the pinned Effect version",
++      firstPrompt: "Bump every effect package to the new beta together.",
++      client: "claude-code",
++      pool: "personal",
++      project: "limineol/cota",
++      start: 21 * 60 + 20,
++      every: 2,
++      plans: [
++        answered("title", 700),
++        ...climbing(10_000, 38_000, 7),
++        failed("main", "refused"),
++      ],
++    }),
++  ],
++};
++
++export const quietDay: MachineDay = {
++  machine: "ada-mbp.local",
++  day: "2026-11-15",
++  pools: busyDay.pools,
++  sessions: [],
++};
