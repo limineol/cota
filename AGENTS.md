@@ -118,7 +118,7 @@ Gate every commit on the gate for what it touches, and judge by exit code.
 | `bun run prove:models` | Recompiles the proven models to JavaScript and fails when the committed copy differs |
 | `bun run mutants` | Breaks the shipped code in each named way and fails when a break goes unnoticed. A mutant whose test is of the ClickHouse tier needs its ClickHouse too |
 | `bun run web` | The dashboard in Vite's dev server, proxying `/api` to the hub at `COTA_HUB_URL` (default `http://127.0.0.1:18080`, `examples/cota.dev.toml`'s) |
-| `bun run cli:build [--all]` | Compiles `cota` for this system into `apps/cli/dist/cota`, or with `--all` for the five systems of ADR-0022 into `apps/cli/dist/<target>/` |
+| `bun run cli:build [--all]` | Compiles `cota` for this system into `apps/cli/dist/cota`, or with `--all` for the five systems of ADR-0022 into `apps/cli/dist/` under a release's names (`cota-darwin-arm64`, `cota-windows-x64.exe`, ADR-0027) |
 | `bun run web:build` | Builds the dashboard into `apps/web/dist`, which the hub serves at its own address (`[dashboard] directory` names another folder) |
 | `bun run storybook` | Storybook, the design surface of `packages/ui` and the dashboard's screens, on port 6006 |
 | `bun run hub` | Starts the hub with the configuration `COTA_CONFIG` names (default `cota.toml`); `examples/cota.dev.toml` runs against `compose.dev.yaml` |
