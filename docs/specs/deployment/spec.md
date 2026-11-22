@@ -138,5 +138,5 @@ Y1, Y2, Y6 to Y8 and Y3's second half are one slow test, `deploy/deployment.slow
 - **Backups by Cota.** The archive keeps the request log; the hub directory is the owner's to copy.
 - **ClickHouse reachable from the host.** The SQL console, or `docker compose exec clickhouse clickhouse-client`.
 - **Several hubs on one hub directory**, as two hubs on one store are not.
-- **Published images, until a release.** The release workflow publishes the image for each version's tag, which the owner pushes (ADR-0027); until a release is published and the install moves onto it, the image is built from a checkout.
+- **Published images.** The release workflow publishes the image for each version's tag, which the owner pushes (ADR-0027), and 0.1.0's is published; until the install moves onto a release, the image is built from a checkout.
 - **Upgrading ClickHouse with the hub.** Its own step, said by the release that needs it.
