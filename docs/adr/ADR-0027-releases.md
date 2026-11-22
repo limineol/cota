@@ -113,9 +113,9 @@ The image is pushed without buildx's own provenance attestation inside it: the i
 
 - `ci.yml` gains the `binaries` job, so every pull request runs a runner of each of the five systems; its `image` job is unchanged.
 - ADR-0022's "Left to milestone 5" and ADR-0024's "In CI" are amended by this record.
-- `apps/hub/package.json`, `apps/cli/package.json` and the Dockerfile move to `0.1.0`, and `docs/releases/0.1.0.md` is written. Nothing is published until the owner pushes `v0.1.0`.
+- `apps/hub/package.json`, `apps/cli/package.json` and the Dockerfile move to `0.1.0`, and `docs/releases/0.1.0.md` is written. Nothing was published until `v0.1.0` was pushed.
 - `bun run cli:build -- --all` writes `apps/cli/dist/cota-<system>-<arch>` (with `.exe` for Windows) in place of `apps/cli/dist/<target>/cota`.
-- Until a release is published and the guides move onto it, `docs/install.md` and `docs/upgrading.md` build from a checkout, as they say.
+- Until the guides move onto a release, `docs/install.md` and `docs/upgrading.md` build from a checkout, as they say.
 
 ### Facts to confirm when built
 
@@ -123,4 +123,12 @@ What was found on 2026-11-21, before any tag:
 
 - **Confirmed on a Mac (Apple silicon)**: `bun run cli:build -- --all` builds the five; `cota-darwin-arm64` starts and prints its version, and `codesign -dv` shows it `adhoc,linker-signed`. That Mac compiles for its own system, so it does not show a Linux runner's cross-compiled binary starting: the `macos-15` job does.
 - **Found on that Mac: `cota-darwin-x64` carries the signature of Bun's own runtime** (a Developer ID, with the hardened runtime), which no longer matches the file once the program is in it (`codesign --verify`: "invalid signature"); Bun 1.4.2 re-signs arm64 programs only. It started under Rosetta all the same. Whether macOS on an Intel Mac starts it is what the `macos-15-intel` job shows; if it does not, the answer is the same as for arm64: an ad-hoc signature (`codesign --force --sign -`) on a macOS runner.
-- **Not yet run**: the `binaries` workflow on GitHub's runners, and every job of the release workflow, which only a tag starts. How the registry links the first image to the repository (GitHub's documentation says an image a workflow pushes with its `GITHUB_TOKEN` is linked to that workflow's repository) and the package's visibility (private when first published, by the same documentation) are read, not run.
+- **Not yet run, then**: the `binaries` workflow on GitHub's runners, and every job of the release workflow, which only a tag starts. How the registry links the first image to the repository and the package's visibility were read in GitHub's documentation, not run.
+
+What the first release showed, on 2026-11-21:
+
+- **The binaries start on their systems.** On GitHub's runners, in CI and in the release, each of the five built on Linux printed its version on its own system: `macos-15` and `macos-15-intel` among them, so the x64 Mach-O that keeps Bun's own signature starts on an Intel Mac, and `windows-2025`.
+- **`v0.1.0` published [Cota 0.1.0](https://github.com/limineol/cota/releases/tag/v0.1.0)**, every job passing at its first run: the eight downloads, and the image as `ghcr.io/limineol/cota-hub:0.1.0@sha256:bc6b181c6e570123351b951bd4115b04f09086c699ffb99938864d4d2f58722a`.
+- **Checked afterwards, from a Mac that was not signed in to the registry**: `shasum -a 256 -c SHA256SUMS` passed on the seven files; the downloaded `cota-darwin-arm64` printed `0.1.0`, and `codesign -dv` showed it `adhoc,linker-signed`; the registry gave the image's index to an anonymous token, its digest the one the release's page gives, with `linux/amd64` and `linux/arm64` and the description as its annotation; `gh attestation verify` passed for a binary, for `compose.yaml` and for the image.
+- **The package was public from its first push**, without the owner changing its settings: an image a workflow of a public repository pushes with its `GITHUB_TOKEN` took the repository's visibility. The check of step 5 stays, since GitHub's documentation says otherwise.
+- **Not run**: a re-run after a failure part-way, since none failed; `docker pull` itself, on either platform (the manifest was read from the registry's API); and `sha256sum -c` on Linux.
