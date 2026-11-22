@@ -9,10 +9,6 @@ code:
   - docs/install.md
   - docs/upgrading.md
   - docs/recipes/a-build-of-your-own.md
-  - evals/install/world.ts
-  - evals/install/world/machine.Dockerfile
-  - evals/install/world/release.ts
-  - evals/install/rehearsal.ts
 ---
 
 # ADR-0028: The install and the upgrade take the latest release, found once, checked and pinned; a build of your own is a recipe
