@@ -2,7 +2,7 @@
 status: active
 scope: repository
 owner: limineol
-last_verified: 2026-11-21
+last_verified: 2026-11-22
 review_by: 2027-02-19
 supersedes: []
 code:
@@ -92,7 +92,7 @@ The design eval asks a coding agent to build a screen of the dashboard twice, in
 bun run evals:install
 ```
 
-The install eval follows [`install.md`](install.md) in a world of its own: two clean Ubuntu containers, `studio` and `laptop`, and a fake provider, in a Compose project named `cota-install-<run>` that it removes whole when it ends. The rehearsal does what the prompt says, taking each command from the prompt's own blocks; a scripted owner answers its questions and does the owner's steps (the keys, the Setup screen, the machine login, the routes, the crontab), with fakes. `studio`, the hub's machine, has a Docker engine of its own inside it, where the prompt's `docker build` and `docker compose` run the deployment. It then reads whether the install is done: doctor on each machine, a request from each launched client in the request log with its project and the pool its route names, each title reported, the routes, no secret in a command or anything printed, and nothing of the owner's changed but Cota's part. The report is written to `evals/install/reports`. It needs Docker and a few minutes, runs no real client, contacts no provider, and runs in the slow tier.
+The install eval follows [`install.md`](install.md) in a world of its own: two clean Ubuntu containers, `studio` and `laptop`, and a fake provider, in a Compose project named `cota-install-<run>` that it removes whole when it ends. The rehearsal does what the prompt says, taking each command from the prompt's own blocks; a scripted owner answers its questions and does the owner's steps (the keys, the Setup screen, the machine login, the routes, the crontab), with fakes. `studio`, the hub's machine, has a Docker engine of its own inside it, where the prompt's `docker pull` and `docker compose` run the deployment. The world stands in for Cota's latest release: its own registry, as `ghcr.io`, holds the working tree's hub image, and its own `github.com` serves the tree's `cota`, Compose file and configuration as that version's release, both over `https` with a CA of the run, so the prompt's commands run as written and install the working tree. The machines hold no checkout, and no Bun on the owner's `PATH`. It then reads whether the install is done: doctor on each machine, a request from each launched client in the request log with its project and the pool its route names, each title reported, the routes, no secret in a command or anything printed, and nothing of the owner's changed but Cota's part. The report is written to `evals/install/reports`. It needs Docker and a few minutes, runs no real client, contacts no provider, and runs in the slow tier.
 
 ```sh
 bun run evals:install -- --installer claude

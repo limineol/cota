@@ -2,7 +2,7 @@
 status: active
 scope: repository
 owner: limineol
-last_verified: 2026-11-19
+last_verified: 2026-11-22
 review_by: 2027-02-19
 supersedes: []
 code:
@@ -157,7 +157,7 @@ With the hub above running, join this machine. The hub keys go on standard input
 printf '%s\n' "$COTA_DEV_CLIENT_KEY" "$COTA_DEV_HUB_KEY" | apps/cli/dist/cota join http://127.0.0.1:18080
 ```
 
-Joined this way, the shims, the title reporter's schedule and Pi's key command run the checkout's `cota`, which a rebuild, a switch of branch or a `git clean` changes or removes, and doctor warns of it. On a machine you use, install it outside the checkout first, as [`install.md`](install.md) does (`install -m 0755 apps/cli/dist/cota ~/.local/bin/cota`), and join with that.
+Joined this way, the shims, the title reporter's schedule and Pi's key command run the checkout's `cota`, which a rebuild, a switch of branch or a `git clean` changes or removes, and doctor warns of it. On a machine you use, install it outside the checkout first, as the recipe of a build of your own does (`install -m 0755 apps/cli/dist/cota ~/.local/bin/cota`, [`recipes/a-build-of-your-own.md`](recipes/a-build-of-your-own.md)), and join with that.
 
 What a join changes, and how a launch works, is [`operating.md`](operating.md#the-machines). Check the machine, and undo the join:
 
