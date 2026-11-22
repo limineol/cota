@@ -49,7 +49,7 @@ Install Cota for me: follow docs/install.md in this checkout.
 ## What it needs
 
 - **The hub's machine**: one that stays on and that every other machine can reach, with Docker and its Compose plugin, Git and [Bun](https://bun.sh). The hub image is built for Linux on arm64 and amd64; it has been built and run on arm64 only, under OrbStack on macOS and in a Docker engine inside a Linux container. Docker Desktop, and Linux running Docker itself, have not run it.
-- **Each machine**: macOS or Linux, with Bun to build `cota`, and whichever of Claude Code, Codex, OpenCode and Pi you use. `cota` has run on macOS and on Ubuntu; its Windows parts are built and their pure parts tested, but it has never run on Windows.
+- **Each machine**: macOS or Linux, with Bun to build `cota`, and whichever of Claude Code, Codex, OpenCode and Pi you use. `cota` has run on macOS and on Ubuntu; its Windows parts are built and their pure parts tested, but on Windows it has only been started (`cota --version`, in CI).
 - **A quota login for Claude** is given from a Mac, since it is read from the macOS keychain.
 - **HTTPS** is your own reverse proxy's: the hub speaks plain HTTP. Passkeys need it. [`docs/recipes/https.md`](docs/recipes/https.md) has a Caddy and an nginx configuration.
 
