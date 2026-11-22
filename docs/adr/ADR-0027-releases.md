@@ -2,7 +2,7 @@
 status: accepted
 scope: repository
 owner: limineol
-last_verified: 2026-11-21
+last_verified: 2026-11-22
 review_by: 2027-02-19
 supersedes: []
 code:
@@ -98,6 +98,8 @@ The image is pushed without buildx's own provenance attestation inside it: the i
 - **`cota update`.** Updating `cota` stays building it again, or, once the install moves onto releases, downloading the next release's binary.
 - **An npm package**, or any other package manager's.
 - **Moving the install and upgrade guides onto the published artifacts.** They must stay true at every commit, and nothing is published until a tag, so the next slice moves them against a real release.
+
+> Amended by ADR-0028: the install and upgrade guides take the latest release, whose version a line of theirs finds by GitHub's `releases/latest`, so they name no version; updating `cota` is installing another release's binary the same way. A release's notes, under how to install it, say that the prompt installs that release rather than the latest with `VERSION` set to it.
 
 ## Alternatives weighed
 

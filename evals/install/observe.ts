@@ -11,7 +11,7 @@ import type {
 import { sharedFiles } from "./criteria.ts";
 import type { Ending, Entry } from "./runs.ts";
 import type { RoutedClient, RouteList, Task } from "./tasks.ts";
-import { checkout, type World } from "./world.ts";
+import { type World, worldBun } from "./world.ts";
 
 const DoctorReportSchema = Schema.Struct({
   ok: Schema.Boolean,
@@ -93,9 +93,9 @@ const attempt = async <A>(read: () => Promise<A>): Promise<A | Unread> => {
   }
 };
 
-/** Runs a script with the machine's Bun, the script read from standard input so that no quoting can break it. */
+/** Runs a script with the world's Bun on the machine, the script read from standard input so that no quoting can break it. */
 const bunScript = async (world: World, machine: string, script: string) => {
-  const ran = await world.shell(machine, 'bun -e "$(cat)"', {
+  const ran = await world.shell(machine, `${worldBun} -e "$(cat)"`, {
     stdin: script,
     limitMs: 120_000,
   });
@@ -124,7 +124,7 @@ const shellOut = async (
   return ran.stdout;
 };
 
-/** A home's files (but the checkout's and Bun's cache) with their modes and digests, and the text of the files `cota` writes a part of. */
+/** A home's files (but Bun's cache) with their modes and digests, and the text of the files `cota` writes a part of. */
 export const homeOf = async (world: World, machine: string): Promise<Home> => {
   const script = `
 const { readdirSync, lstatSync, readFileSync } = require("node:fs");
@@ -134,7 +134,7 @@ const texts = {};
 const walk = (dir, rel) => {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const path = rel === "" ? entry.name : rel + "/" + entry.name;
-    if (path === "cota" || path === ".bun") continue;
+    if (path === ".bun") continue;
     const full = dir + "/" + entry.name;
     if (entry.isDirectory()) walk(full, path);
     else files[path] = lstatSync(full).mode.toString(8) + ":" + (entry.isSymbolicLink() ? "link" : new Bun.CryptoHasher("sha256").update(readFileSync(full)).digest("hex"));
@@ -321,7 +321,7 @@ export const observe = async (options: {
               const ran = await world.shell(
                 name,
                 "~/.local/bin/cota doctor --json",
-                { cwd: checkout, limitMs: 120_000 },
+                { limitMs: 120_000 },
               );
               return doctorOf(ran.stdout);
             }),

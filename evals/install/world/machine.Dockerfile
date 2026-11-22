@@ -1,7 +1,8 @@
 # The clean machine: what a developer's Linux machine has (a shell, git, curl,
-# openssl, cron and Bun, which docs/install.md asks for), a user `owner`
-# without root, and nothing of Cota. The world adds the owner's files, the
-# checkout and the stand-in clients when it starts.
+# openssl and cron), a user `owner` without root, and nothing of Cota. The
+# world adds the owner's files, the run's CA and the stand-in clients when it
+# starts. Bun is the world's own, off the owner's PATH, for the stand-ins and
+# the eval's reads of the machine: the install prompt needs no Bun.
 #
 # The hub's machine (`--target hub`) also has Docker: its own engine, started
 # with the machine, and the owner in its group, as a developer's machine with
@@ -15,10 +16,9 @@ RUN apt-get update \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     ca-certificates cron curl git openssl procps \
   && rm -rf /var/lib/apt/lists/*
-COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
+COPY --from=bun /usr/local/bin/bun /usr/local/lib/cota-install/bun
 # cron's PAM session wants a login uid, which a container does not give.
-RUN ln -s bun /usr/local/bin/bunx \
-  && sed -i '/pam_loginuid/s/^/#/' /etc/pam.d/cron \
+RUN sed -i '/pam_loginuid/s/^/#/' /etc/pam.d/cron \
   && userdel --remove ubuntu \
   && useradd --create-home --shell /bin/bash owner
 CMD ["cron", "-f"]

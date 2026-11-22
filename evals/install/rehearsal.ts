@@ -9,21 +9,20 @@ import {
 import type { Installer, Machine, Owner, Ran } from "./installer.ts";
 import { doctorOf } from "./observe.ts";
 import type { Pool, PoolKind, Task } from "./tasks.ts";
-import { checkout } from "./world.ts";
 
 /** Every block of the install prompt the rehearsal knows, by what it does with it. */
 export const known = {
-  image: "The hub › 1. Build the hub image #1",
-  hubDirectory: "The hub › 2. Make the hub directory #1",
+  findVersion: "The release #1",
+  hubDirectory: "The hub › 1. Make the hub directory #1",
+  release: "The hub › 2. Get the release #1",
   keys: "The hub › 3. Make the secrets #1",
   secretFile: "The hub › 3. Make the secrets #2",
   environment: "The hub › 4. Write `.env` and the configuration #1",
-  configuration: "The hub › 4. Write `.env` and the configuration #2",
-  pools: "The hub › 4. Write `.env` and the configuration #3",
+  pools: "The hub › 4. Write `.env` and the configuration #2",
   start: "The hub › 5. Start the hub #1",
   health: "The hub › 5. Start the hub #2",
   handOver: "The hub › 6. Hand the hub to the owner, and stop #1",
-  build: "Each machine › 1. Build `cota`, and install it #1",
+  install: "Each machine › 1. Install `cota` #1",
   join: "Each machine › 2. Join the hub #1",
   joinBySsh: "Each machine › 2. Join the hub #2",
   joined: "Each machine › 2. Join the hub #3",
@@ -168,9 +167,8 @@ export const rehearsal = (task: Task): Installer => ({
       on: Machine,
       name: Known,
       command: string,
-      cwd = checkout,
     ): Promise<Ran> => {
-      const ran = await on.run(command, { cwd });
+      const ran = await on.run(command);
       if (ran.exitCode !== 0) {
         throw new Error(
           `${known[name]} on ${on.name} exited ${ran.exitCode ?? "at its time limit"}: ${lastLines(ran)}`,
@@ -197,8 +195,22 @@ export const rehearsal = (task: Task): Installer => ({
       `Before I run anything, please answer these:\n\n${sectionOf(prompt, "Ask the owner first")}`,
     );
 
-    await run(hub, "image", text("image"));
     await run(hub, "hubDirectory", text("hubDirectory"));
+    const released = outputOf(await run(hub, "release", text("release")));
+    const version = released.match(/^Cota (\S+)\s*$/m)?.[1];
+    if (
+      version === undefined ||
+      !/^compose\.yaml: OK$/m.test(released) ||
+      !/^cota\.toml: OK$/m.test(released)
+    ) {
+      throw new Error(
+        `${known.release} on ${hub.name} did not check both files and print Cota <version>: ${released.trim().split("\n").slice(-6).join(" ")}`,
+      );
+    }
+    const asFound: Change = {
+      from: block("findVersion").text,
+      to: `VERSION=${version}`,
+    };
     await run(hub, "keys", text("keys"));
     for (const { name, what } of secretFilesOf(task)) {
       await ask(
@@ -210,11 +222,11 @@ export const rehearsal = (task: Task): Installer => ({
       hub,
       "environment",
       text("environment", [
+        asFound,
         { from: "COTA_BIND=127.0.0.1", to: `COTA_BIND=${task.hub.bind}` },
         { from: "COTA_PORT=8080", to: `COTA_PORT=${portOf(task.hub.address)}` },
       ]),
     );
-    await run(hub, "configuration", text("configuration"));
     const tables = task.pools
       .map((pool) => tableOf(block("pools"), pool))
       .join("\n\n");
@@ -227,7 +239,7 @@ export const rehearsal = (task: Task): Installer => ({
     const health = text("health", [hubChange]);
     let healthy: Ran | undefined;
     for (let attempt = 0; attempt < 30 && healthy === undefined; attempt++) {
-      const ran = await hub.run(health, { cwd: checkout });
+      const ran = await hub.run(health);
       if (/\{"status":"ok"\}\s*1\s*$/.test(ran.stdout)) healthy = ran;
       else await Bun.sleep(2_000);
     }
@@ -254,10 +266,15 @@ export const rehearsal = (task: Task): Installer => ({
     const plainHttp =
       task.hub.address.startsWith("http:") && task.hub.plainHttpAccepted;
     for (const each of ordered) {
-      const built = await run(each, "build", text("build"));
-      if (!built.stdout.includes("cli:build: bun-linux-")) {
+      const installedCota = outputOf(
+        await run(each, "install", text("install", [asFound])),
+      );
+      if (
+        !/^cota-linux-(?:x64|arm64): OK$/m.test(installedCota) ||
+        installedCota.trim().split("\n").at(-1) !== version
+      ) {
         throw new Error(
-          `${known.build} on ${each.name} did not print cli:build: bun-linux-…`,
+          `${known.install} on ${each.name} did not check cota-linux-… and print ${version}: ${installedCota.trim().split("\n").slice(-4).join(" ")}`,
         );
       }
       const joinOutput =
@@ -280,7 +297,7 @@ export const rehearsal = (task: Task): Installer => ({
               ),
             )
           : await ask(
-              `On ${each.name}: it does not reach ${hub.name} by ssh, so please run \`${installed} join "${task.hub.address}"${plainHttp ? " --allow-plain-http" : ""}\` in your own terminal there, in its checkout, and paste the keys from ${hub.name}'s ~/cota-hub/secrets/clients and ~/cota-hub/secrets/fleet, then an empty line.`,
+              `On ${each.name}: it does not reach ${hub.name} by ssh, so please run \`${installed} join "${task.hub.address}"${plainHttp ? " --allow-plain-http" : ""}\` in your own terminal there, and paste the keys from ${hub.name}'s ~/cota-hub/secrets/clients and ~/cota-hub/secrets/fleet, then an empty line.`,
               (answer) => answer.startsWith("Done"),
             );
       if (
@@ -305,7 +322,7 @@ export const rehearsal = (task: Task): Installer => ({
       for (const pool of task.machines.find(({ name }) => name === each.name)
         ?.machineLogins ?? []) {
         await ask(
-          `On ${each.name}: a route sends acme's projects to ${pool}, a subscription Claude Code there is not signed in to. Please run \`${text("login", [{ from: "personal", to: pool }])}\` in your own terminal there, in its checkout, signed in to ${pool} with claude setup-token, and give it what that prints.`,
+          `On ${each.name}: a route sends acme's projects to ${pool}, a subscription Claude Code there is not signed in to. Please run \`${text("login", [{ from: "personal", to: pool }])}\` in your own terminal there, signed in to ${pool} with claude setup-token, and give it what that prints.`,
           (answer) => answer.startsWith("Done"),
         );
       }
@@ -356,11 +373,9 @@ const doctorUntilItPasses = async (
   run: (on: Machine, name: Known, command: string) => Promise<Ran>,
 ) => {
   for (let round = 1; round <= 4; round++) {
-    const ran = await machine.run(doctor, { cwd: checkout });
+    const ran = await machine.run(doctor);
     if (ran.exitCode === 0 && !/^failed/m.test(ran.stdout)) return;
-    const report = doctorOf(
-      (await machine.run(`${doctor} --json`, { cwd: checkout })).stdout,
-    );
+    const report = doctorOf((await machine.run(`${doctor} --json`)).stdout);
     for (const check of report.checks.filter(
       ({ outcome }) => outcome === "failed",
     )) {

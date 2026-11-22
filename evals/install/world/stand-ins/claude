@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/local/lib/cota-install/bun
 // A stand-in for Claude Code, never the real one. It records its arguments,
 // and with `-p <message>` sends one message as Claude Code does, with its own
 // login (a fake) or CLAUDE_CODE_OAUTH_TOKEN, and writes a transcript with a

@@ -77,9 +77,7 @@ export const answerSchema = {
 const secretFile =
   /^["']?(?:\$HOME|~|\/home\/owner)\/cota-hub\/secrets\/([\w-][\w.-]*)["']?$/;
 const joinCommand =
-  /^(?:(?:~|\$HOME|\/home\/owner)\/\.local\/bin\/cota|(?:(?:~|\$HOME|\/home\/owner)\/cota\/)?apps\/cli\/dist\/cota) join(?: --allow-plain-http)? (?:"[\w:/.%-]+"|'[\w:/.%-]+'|[\w:/.%-]+)(?: --allow-plain-http)?$/;
-/** A `cd` into the checkout before a command, which the hands do anyway. */
-const intoCheckout = /^cd (?:~|\$HOME|\/home\/owner)\/cota\/? *&& */;
+  /^(?:~|\$HOME|\/home\/owner)\/\.local\/bin\/cota join(?: --allow-plain-http)? (?:"[\w:/.%-]+"|'[\w:/.%-]+'|[\w:/.%-]+)(?: --allow-plain-http)?$/;
 const cronLine = /^\* \* \* \* \* '[\w./-]+' titles report$/;
 
 /**
@@ -127,7 +125,7 @@ export const intentOfStep = (
       return { kind: "sessions" };
     case "join":
       return onMachine((on) => {
-        const command = (step.command?.trim() ?? "").replace(intoCheckout, "");
+        const command = step.command?.trim() ?? "";
         return joinCommand.test(command)
           ? { kind: "join", machine: on, command }
           : {

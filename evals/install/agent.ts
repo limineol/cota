@@ -76,7 +76,7 @@ You reach my machines (${task.machines.map(({ name }) => name).join(", ")}) only
 
 When you end, the first line of your last message is the word ${doneWord} alone if everything the document's "Done" asks holds; otherwise it says what is left.
 
-The install document, docs/install.md of the checkout in ~/cota on each machine:
+The install document, Cota's docs/install.md:
 
 ${prompt}`;
 

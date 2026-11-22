@@ -2,7 +2,7 @@
 status: active
 scope: repository
 owner: limineol
-last_verified: 2026-11-21
+last_verified: 2026-11-22
 review_by: 2027-02-19
 supersedes: []
 code:
@@ -10,13 +10,15 @@ code:
   - .dockerignore
   - deploy/compose.yaml
   - deploy/cota.toml
+  - docs/install.md
+  - docs/upgrading.md
 ---
 
 # Deployment
 
 A deployment is the hub and its ClickHouse as the owner runs them on one machine with Docker Compose: the hub image, the Compose file, the hub directory beside it, and ClickHouse's volume. This spec covers what each holds, how a deployment is made, started, checked, upgraded and rolled back, and how a hub's machines are moved onto it. ADR-0024 gives the reasons.
 
-**Status.** Active. `Dockerfile`, `.dockerignore`, `deploy/compose.yaml` and `deploy/cota.toml` are built; the tests that read the two files (`deploy/deployment.test.ts`, Y3 to Y5) pass, and the slow test (`deploy/deployment.slow.test.ts`) passes on macOS with OrbStack in about two minutes, and on Linux with Docker Engine in CI, where the job that builds the image for both platforms runs too. Docker Desktop has not run it.
+**Status.** Active. `Dockerfile`, `.dockerignore`, `deploy/compose.yaml` and `deploy/cota.toml` are built; the tests that read the two files (`deploy/deployment.test.ts`, Y3 to Y5) pass, and the slow test (`deploy/deployment.slow.test.ts`) passes on macOS with OrbStack in about two minutes, and on Linux with Docker Engine in CI, where the job that builds the image for both platforms runs too. Docker Desktop has not run it. A deployment made from a release, Cota 0.1.0's image pulled and named by tag and digest, its upgrade and its rollback, was run by hand on macOS with OrbStack (ADR-0028).
 
 ## The hub image
 
@@ -30,15 +32,15 @@ A deployment is the hub and its ClickHouse as the owner runs them on one machine
 | Platforms | `linux/amd64`, `linux/arm64` |
 | Labels | `org.opencontainers.image.title` (`cota-hub`), `.description`, `.url`, `.licenses` (MIT), `.source`, `.revision` (the commit, from the build argument `COTA_REVISION`) and `.version` (`COTA_VERSION`) |
 
-`bun run archive:restore` and `bun run import` run from it as `docker compose run --rm hub bun run <script> …`. Until images are published it is built from a checkout, `docker build --build-arg COTA_REVISION="$(git rev-parse HEAD)" -t "cota-hub:$(git rev-parse --short=12 HEAD)" .`. Two stages run on the builder's platform, one installing the workspace for `bun run web:build` and one the hub's production dependencies alone (`bun install --frozen-lockfile --production --filter @cota/hub`); the final stage only copies. `.dockerignore` sends the builder only the workspace's manifests, the hub's source and what the dashboard is built from, and never a test.
+`bun run archive:restore` and `bun run import` run from it as `docker compose run --rm hub bun run <script> …`. A release publishes it as `ghcr.io/limineol/cota-hub:<version>` (ADR-0027), which a deployment pulls by that tag (ADR-0028); a build of your own is made from a checkout, `docker build --build-arg COTA_REVISION="$(git rev-parse HEAD)" -t "cota-hub:$(git rev-parse --short=12 HEAD)" .` (`docs/recipes/a-build-of-your-own.md`). Two stages run on the builder's platform, one installing the workspace for `bun run web:build` and one the hub's production dependencies alone (`bun install --frozen-lockfile --production --filter @cota/hub`); the final stage only copies. `.dockerignore` sends the builder only the workspace's manifests, the hub's source and what the dashboard is built from, and never a test.
 
 ## The hub directory
 
 ```text
 <hub directory>/            0700
-  compose.yaml              from deploy/compose.yaml
+  compose.yaml              the release's, deploy/compose.yaml at its tag
   .env                      0600; no secret
-  cota.toml                 0600; from deploy/cota.toml, with the owner's pools
+  cota.toml                 0600; the release's, deploy/cota.toml at its tag, with the owner's pools
   secrets/                  0700; one file per secret, each 0600
     clickhouse              ClickHouse's password, made at install
     clients, fleet, agents  the hub keys
@@ -52,7 +54,7 @@ A deployment is the hub and its ClickHouse as the owner runs them on one machine
 
 | Name | Holds | Default |
 | --- | --- | --- |
-| `COTA_HUB_IMAGE` | The hub image: `cota-hub:<commit>`, or a published image's tag and digest | none: required |
+| `COTA_HUB_IMAGE` | The hub image: a release's by its tag and the digest of what was pulled, `ghcr.io/limineol/cota-hub:<version>@sha256:<digest>`, or a build of your own by its local tag, `cota-hub:<commit>` | none: required |
 | `COTA_UID`, `COTA_GID` | The owner's user and group, from `id -u` and `id -g` | none: required, and never 0 |
 | `COTA_BIND` | The host address the hub is published on | `127.0.0.1` |
 | `COTA_PORT` | The host port | `8080` |
@@ -69,12 +71,12 @@ The project is `cota`; ClickHouse's volume is `cota_clickhouse`. Its services, a
 
 ## Making one
 
-In order, each step's success what the install prompt prints for it (`docs/install.md`):
+In order, each step's success what the install prompt prints for it (`docs/install.md`), from the latest release, whose version the prompt finds once (ADR-0028):
 
 1. Make the hub directory and its folders with the modes above.
-2. Build the hub image, or pull it once published, and name it in `.env` with the owner's uid and gid and the address and port the owner chose.
+2. Download the release's `compose.yaml` and `cota.toml`, check them against its `SHA256SUMS`, and copy them into the hub directory; pull the hub image by its tag.
 3. Make the secrets: `clickhouse` and the three hub keys with `openssl rand -hex 24` under `umask 077`, printing nothing; the owner writes held keys and kept logins.
-4. Copy `deploy/compose.yaml`, and write `cota.toml` from `deploy/cota.toml` with the owner's pools.
+4. Name the image in `.env` by its tag and the digest of what was pulled, with the owner's uid and gid and the address and port the owner chose; append the owner's pools to `cota.toml`.
 5. `docker compose up -d --wait`: both services healthy.
 6. `curl -s "$HUB/health"` answers `{"status":"ok"}`, and `docker compose logs hub` holds `cota hub listening`.
 7. The owner reads the setup code with `docker compose logs hub` and sets the hub up in the browser.
@@ -83,12 +85,12 @@ The hub's store and archive are created by the hub at its first start. ClickHous
 
 ## Upgrading and rolling back
 
-**An upgrade**, in the hub directory:
+**An upgrade** starts once the new image is on the machine: a release's, pulled by its tag while the hub still runs (`docker pull ghcr.io/limineol/cota-hub:<version>`), with its `compose.yaml` compared with the hub directory's, or a build of your own. Getting the image comes before this block and is not part of it. Then, in the hub directory:
 
 ```sh
 docker compose stop hub
 (umask 077 && mkdir -p previous && cp .env previous/.env && rm -rf previous/store && cp -Rp store previous/store)
-# name the new image in .env (and, if its release says so, put its compose.yaml in place, the old one in previous/)
+# name the new image in .env, a release's by its tag and the digest of what was pulled (and, if its release says so, put its compose.yaml in place, the old one in previous/)
 docker compose up -d --wait
 ```
 
@@ -130,7 +132,7 @@ The steps for the owner's own machine, which name it, are not in the repository.
 
 Y3 to Y5 are tests that read `deploy/compose.yaml` and `deploy/cota.toml` as YAML and TOML (the property tier: the tier of a test that is neither replay, contract nor ClickHouse): no environment value of either service, nor any argument, holds a secret's text or the throwaway password; every `{ file = … }` names a path under `/etc/cota/secrets`, and that folder and `cota.toml` are mounted read-only; ClickHouse publishes no port, and the hub's port starts `${COTA_BIND:-127.0.0.1}`. A mutant for each: a password in the environment, a port published for ClickHouse, the default bind `0.0.0.0`.
 
-Y1, Y2, Y6 to Y8 and Y3's second half are one slow test, `deploy/deployment.slow.test.ts`, which needs Docker: it builds the image from the working tree as `cota-hub:deploy-<run>`, and checks its labels; makes a hub directory in a temporary folder as the install does, with a fake provider as a third service (a Bun script run by the hub image, in a Compose file of its own beside the deployment's, both named by `COMPOSE_FILE`) and an `openai-chat` pool pointed at it, under a Compose project of its own, `cota-deploy-<run>` (`COMPOSE_PROJECT_NAME`), so it never meets the owner's; brings it up, sets the hub up with the setup code from its log, sends a request with the keyed hub key and finds it with the SQL console, and sets a display name; reads the hub's uid from `docker compose top` and the store's mode and owner from the folder; fetches `/` and compares it with the image's `index.html`; `down`, and finds the store's write-ahead log folded in, and `up`, and finds the request, the sign-in, the name and the archive as they were; tags the same image a second time as "the newer one", runs this spec's upgrade block (the line that names the new image done by the test), logs a request and renames the pool on the newer image, runs the rollback block, and finds the first image running, the name from before the upgrade, and both requests; finds that ClickHouse refuses `cota` without the password; empties the password file and finds `up` fails with the guard's line and no hub, then removes it and finds `up` refused, by Compose naming it or, where the engine still shows the file just removed (macOS's `/var/folders` under OrbStack), by the guard, and neither service running; and removes the project, its volume, both tags and the folder at the end, whatever happened, an interrupt included. The `slow` tier is in `tooling/laws.ts` for it, and `verify` reads its results from the slow tier's run (ADR-0024's Consequences). A test that lasts minutes archives no day, since a day is archived an hour after it ends, so Y2's archive is held only as the folder's listing, empty before and after.
+Y1, Y2, Y6 to Y8 and Y3's second half are one slow test, `deploy/deployment.slow.test.ts`, which needs Docker: it builds the image from the working tree as `cota-hub:deploy-<run>`, and checks its labels; makes a hub directory in a temporary folder as the install does, with a fake provider as a third service (a Bun script run by the hub image, in a Compose file of its own beside the deployment's, both named by `COMPOSE_FILE`) and an `openai-chat` pool pointed at it, under a Compose project of its own, `cota-deploy-<run>` (`COMPOSE_PROJECT_NAME`), so it never meets the owner's; brings it up, sets the hub up with the setup code from its log, sends a request with the keyed hub key and finds it with the SQL console, and sets a display name; reads the hub's uid from `docker compose top` and the store's mode and owner from the folder; fetches `/` and compares it with the image's `index.html`; `down`, and finds the store's write-ahead log folded in, and `up`, and finds the request, the sign-in, the name and the archive as they were; tags the same image a second time as "the newer one" (its own build and tag, in place of getting a newer image, which comes before the block), runs this spec's upgrade block (the line that names the new image done by the test), logs a request and renames the pool on the newer image, runs the rollback block, and finds the first image running, the name from before the upgrade, and both requests; finds that ClickHouse refuses `cota` without the password; empties the password file and finds `up` fails with the guard's line and no hub, then removes it and finds `up` refused, by Compose naming it or, where the engine still shows the file just removed (macOS's `/var/folders` under OrbStack), by the guard, and neither service running; and removes the project, its volume, both tags and the folder at the end, whatever happened, an interrupt included. The `slow` tier is in `tooling/laws.ts` for it, and `verify` reads its results from the slow tier's run (ADR-0024's Consequences). A test that lasts minutes archives no day, since a day is archived an hour after it ends, so Y2's archive is held only as the folder's listing, empty before and after.
 
 ## Not built, on purpose
 
@@ -138,5 +140,5 @@ Y1, Y2, Y6 to Y8 and Y3's second half are one slow test, `deploy/deployment.slow
 - **Backups by Cota.** The archive keeps the request log; the hub directory is the owner's to copy.
 - **ClickHouse reachable from the host.** The SQL console, or `docker compose exec clickhouse clickhouse-client`.
 - **Several hubs on one hub directory**, as two hubs on one store are not.
-- **Published images.** The release workflow publishes the image for each version's tag, which the owner pushes (ADR-0027), and 0.1.0's is published; until the install moves onto a release, the image is built from a checkout.
+- **An image built by the install.** The install pulls a release's (ADR-0028); building one from a checkout is the recipe of a build of your own, for a commit no release holds.
 - **Upgrading ClickHouse with the hub.** Its own step, said by the release that needs it.

@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/local/lib/cota-install/bun
 // A stand-in for Codex, never the real one: it records its arguments and ends.
 const { appendFileSync, mkdirSync } = require("node:fs");
 const { join } = require("node:path");
