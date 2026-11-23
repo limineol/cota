@@ -737,9 +737,23 @@ describe("the restore over ClickHouse", () => {
           );
           expect(yield* talliesOf(target.archive, days)).toEqual(whole);
 
-          const [partDay] = days;
+          // The day with the most requests: deleting two of a day's only two
+          // would leave no held request for a restore to add again.
+          const [fullest] = yield* target.clickHouse
+            .select(
+              "SELECT toString(toDate(started_at)) AS day FROM requests GROUP BY day ORDER BY count() DESC, day LIMIT 1",
+              Schema.Struct({ day: Schema.String }),
+            )
+            .pipe(Effect.orDie);
+          const partDay = days.find((archived) => archived === fullest?.day);
           expect(partDay).toBeDefined();
           if (partDay === undefined) return;
+          const [stored] = yield* target.clickHouse
+            .select(
+              `SELECT toString(count()) AS rows FROM requests WHERE toDate(started_at) = '${partDay}'`,
+              Schema.Struct({ rows: Schema.NumberFromString }),
+            )
+            .pipe(Effect.orDie);
           const [deleted] = yield* target.clickHouse
             .select(
               `SELECT toString(count()) AS rows FROM requests WHERE toDate(started_at) = '${partDay}' AND id IN (SELECT id FROM requests WHERE toDate(started_at) = '${partDay}' ORDER BY id LIMIT 2)`,
@@ -764,6 +778,7 @@ describe("the restore over ClickHouse", () => {
               },
             },
           ]);
+          expect(deleted?.rows).toBeLessThan(stored?.rows ?? 0);
           expect(yield* talliesOf(target.archive, days)).toEqual(whole);
         }),
       ),
