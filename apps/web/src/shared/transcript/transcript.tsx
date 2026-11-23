@@ -369,13 +369,25 @@ function EntryRow({
   }
 
   if (entry.kind === "tool-result") {
+    const callAbove = entries
+      .slice(0, at)
+      .some(
+        (earlier) =>
+          earlier.kind === "tool-call" &&
+          earlier.callId !== null &&
+          earlier.callId === entry.callId,
+      );
     return (
       <TranscriptRow
         open={open}
         onOpenChange={onOpenChange}
         icon={<CornerDownRight aria-hidden="true" />}
         label={entry.name ?? "Tool result"}
-        preview="a result whose call is not in this transcript"
+        preview={
+          callAbove
+            ? "a later result of a call above"
+            : "a result whose call is not in this transcript"
+        }
         meta={
           entry.error
             ? `failed, ${plural(linesOf(entry.output), "line")}`

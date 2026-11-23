@@ -249,6 +249,12 @@ const templates: Readonly<Record<StoredProtocol, ReadonlyArray<Template>>> = {
         at(t, 0),
       ),
     (t) => Steps.compaction(5, at(t, 0)),
+    (t) =>
+      Steps.taskNotification(
+        11,
+        { id: "call_1", name: "run_command", arguments: at(t, 1) },
+        at(t, 0),
+      ),
     (t) => Steps.step(6, 99, [{ number: 50, text: at(t, 0) }]),
     () => Steps.step(7, 14, []),
     (t) =>

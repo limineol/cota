@@ -206,6 +206,47 @@ export const toolResult = (idx: number, call: Call, result: string) =>
     [{ number: table.toolResult.call, message: callFields(call) }],
   );
 
+/** A task's notification, of the kind `kind`, that the command `call` started has ended. */
+export const taskNotification = (
+  idx: number,
+  call: Call,
+  text: string,
+  kind: string = table.taskNotification.kindWord,
+) =>
+  step(idx, table.taskNotification.stepType, [
+    {
+      number: table.taskNotification.payload,
+      message: [
+        { number: table.taskNotification.text, text },
+        { number: 2, message: [{ number: 1, text: "Counting finished" }] },
+        { number: table.taskNotification.kind, text: kind },
+        {
+          number: table.taskNotification.task,
+          message: [
+            { number: 1, text: "task-1" },
+            { number: 5, varint: 3n },
+            {
+              number: table.taskNotification.origin,
+              message: [
+                {
+                  number: table.taskNotification.started,
+                  message: [
+                    { number: 2, varint: BigInt(idx) },
+                    {
+                      number: table.taskNotification.call,
+                      message: callFields(call),
+                    },
+                  ],
+                },
+              ],
+            },
+            { number: 4, text: "Task finished." },
+          ],
+        },
+      ],
+    },
+  ]);
+
 export const compaction = (idx: number, summary: string) =>
   step(idx, table.compaction.stepType, [
     {

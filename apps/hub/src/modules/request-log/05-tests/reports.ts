@@ -110,6 +110,7 @@ const generatedCall = Arbitrary.all({
     maxLength: 3,
   }),
   said: pick(["hello", "read the notes", "again", "more please"]),
+  compacts: pick([false, false, false, true]),
   thinks: boolean,
   calls: int(0, 2),
   model: pick([
@@ -161,7 +162,8 @@ const inputStep = (
 /**
  * Each conversation's calls as a report gives them, in its order: call keys
  * unique across sessions, starts ten minutes apart, steps in increasing idx,
- * each call's `after` the one before it.
+ * each call's `after` the one before it, and some of them compactions, whose
+ * output is the compaction's step.
  */
 export const callsOf = (
   generated: Generated,
@@ -175,15 +177,17 @@ export const callsOf = (
         nowMs - 3 * 24 * 3_600_000 + at * 60_000 + place * 600_000,
       );
       const input = each.input.map((kind) => inputStep(kind, idx++, each.said));
-      const output = Steps.modelOutput(idx++, {
-        text: `${each.said}, answered`,
-        ...(each.thinks ? { thoughts: "thinking it over" } : {}),
-        calls: Array.from({ length: each.calls }, (_, call) => ({
-          id: `call-${place}-${call}`,
-          name: "read_file",
-          arguments: `{"path":"notes-${call}.txt"}`,
-        })),
-      });
+      const output = each.compacts
+        ? Steps.compaction(idx++, `${each.said}, summarised`)
+        : Steps.modelOutput(idx++, {
+            text: `${each.said}, answered`,
+            ...(each.thinks ? { thoughts: "thinking it over" } : {}),
+            calls: Array.from({ length: each.calls }, (_, call) => ({
+              id: `call-${place}-${call}`,
+              name: "read_file",
+              arguments: `{"path":"notes-${call}.txt"}`,
+            })),
+          });
       const call: Report.Call = {
         call: `${session}/call-${place}`,
         after: before,
@@ -208,6 +212,57 @@ export const callsOf = (
       return call;
     });
   });
+
+/** The calls of a conversation whose prompts are `sizes`, the one at `compaction` a compaction its record names, a minute apart. */
+export const compacted = (
+  session: string,
+  sizes: ReadonlyArray<number>,
+  compaction: number,
+): ReadonlyArray<Report.Call> => {
+  let before = Option.none<Report.After>();
+  return sizes.map((size, at): Report.Call => {
+    const startedAt = DateTime.makeUnsafe(nowMs - 3_600_000 + at * 60_000);
+    const call: Report.Call = {
+      call: `${session}/call-${at}`,
+      after: before,
+      session,
+      project: "garden",
+      clientVersion: "1.4.0",
+      model: "gemini-3-flash-preview",
+      startedAt,
+      finishedAt: startedAt,
+      outcome: "ok",
+      errorType: "",
+      errorMessage: "",
+      stopReason: "STOP",
+      providerRequestId: "",
+      usage: Option.some({
+        tokens: {
+          input: size,
+          cacheRead: 0,
+          cacheWriteShort: 0,
+          cacheWriteLong: 0,
+          output: 100,
+        },
+        reasoning: 0,
+        reported: "{}",
+      }),
+      input: [
+        Steps.userMessage(
+          2 * at,
+          at === compaction ? "/compact" : `Question ${at}`,
+        ),
+      ],
+      output: [
+        at === compaction
+          ? Steps.compaction(2 * at + 1, "The conversation so far.")
+          : Steps.modelOutput(2 * at + 1, { text: `Answer ${at}.` }),
+      ],
+    };
+    before = Option.some({ call: call.call, startedAt });
+    return call;
+  });
+};
 
 /** Every call of the conversations, interleaved by `picks` while each conversation keeps its order. */
 export const interleaved = (

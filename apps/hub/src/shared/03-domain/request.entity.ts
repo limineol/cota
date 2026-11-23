@@ -42,10 +42,11 @@ export const Forwarded = Schema.TaggedStruct("forwarded", {
 });
 export type Forwarded = typeof Forwarded.Type;
 
-/** A reported request's origin: its record form, and the hub key that reported it, none for the owner. */
+/** A reported request's origin: its record form, the hub key that reported it, none for the owner, and its purpose: `compaction` for the model call its client's record names a compaction, else empty. */
 export const Reported = Schema.TaggedStruct("reported", {
   form: RecordForm,
   reportedBy: Schema.Option(HubKeyName),
+  purpose: Schema.Literals(["", "compaction"]),
 });
 export type Reported = typeof Reported.Type;
 

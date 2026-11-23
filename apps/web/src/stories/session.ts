@@ -927,7 +927,7 @@ export const missingSession: ReadonlyArray<Fixture> = [
 
 const reportedId = "0193a4c2-0007-7000-8000-5e5510000000";
 
-/** The steps of an Antigravity conversation as the record form renders them: a tool call and its result, a step of a kind the renderer does not know, a compaction's summary, and what came after it. */
+/** The steps of an Antigravity conversation as the record form renders them: a tool call and its result, a command that ran on with the later result of its call, a step of a kind the renderer does not know, a compaction's summary, and what came after it. */
 const reportedEntries = () => {
   const make = entries();
   return [
@@ -950,6 +950,16 @@ const reportedEntries = () => {
       "call-2",
       null,
       "# Open questions\n\n- Who keeps the archive once a day is over?\n- When is the next release?",
+    ),
+    make.call("call-2b", "run_command", {
+      CommandLine: "bun test docs",
+      WaitMsBeforeAsync: 10000,
+    }),
+    make.result("call-2b", null, "The command runs on as task-5."),
+    make.result(
+      "call-2b",
+      "run_command",
+      "Task task-5 finished with result:\nCommand exited with code 0.\n\n12 pass, 0 fail",
     ),
     make.other(
       JSON.stringify({
@@ -1000,7 +1010,7 @@ const reported = summariesOf(
     ...each,
     origin: "reported" as Origin,
     operation: "generate",
-    purpose: "",
+    purpose: n === 2 ? "compaction" : "",
     model: "gemini-3-flash-preview",
     servedModel: "",
     stopReason: unfinished ? "" : "STOP",
@@ -1015,7 +1025,7 @@ const reported = summariesOf(
   };
 });
 
-const reportedSegments = segmentsOf(reported, ["start", "size"]);
+const reportedSegments = segmentsOf(reported, ["start", "compaction"]);
 
 const fromTheRecord = usageOf(reported);
 

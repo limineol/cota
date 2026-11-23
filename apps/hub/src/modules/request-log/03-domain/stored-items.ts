@@ -57,7 +57,7 @@ export const nothingForwarded: Omit<
 /**
  * A request's columns, without its conversation: a forwarded one's origin
  * beside the rest; a reported one's record form as its protocol, the key that
- * reported it as its hub key, and nothing forwarded.
+ * reported it as its hub key, its purpose, and nothing else forwarded.
  */
 export const storedOf = ({
   conversation: _,
@@ -73,6 +73,7 @@ export const storedOf = ({
     ...nothingForwarded,
     protocol: origin.form,
     hubKey: Option.getOrElse(origin.reportedBy, () => "" as const),
+    purpose: origin.purpose,
   };
 };
 

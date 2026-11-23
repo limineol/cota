@@ -1,14 +1,20 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Arbitrary, Context, Effect, Layer, Schema } from "effect";
 import * as ReportRequests from "#modules/request-log/02-application/commands/report-requests.command.ts";
+import { RequestLogReader } from "#modules/request-log/02-application/interfaces/request-log-reader.ts";
 import { RequestsRepository } from "#modules/request-log/02-application/interfaces/requests.repository.ts";
 import * as Report from "#modules/request-log/03-domain/report.ts";
+import { rolesOf } from "#modules/request-log/03-domain/request-role.ts";
+import { segmentsOf } from "#modules/request-log/03-domain/segment.ts";
+import * as Session from "#modules/request-log/03-domain/session.ts";
 import * as PriceLists from "#modules/request-log/04-infrastructure/prices/prices.ts";
 import * as InMemoryReportedThrough from "#modules/request-log/05-tests/fakes/in-memory-reported-through.ts";
+import * as InMemoryRequestLogReader from "#modules/request-log/05-tests/fakes/in-memory-request-log-reader.ts";
 import * as Reports from "#modules/request-log/05-tests/reports.ts";
 import * as Scratch from "#modules/request-log/05-tests/scratch.ts";
 import * as Conversation from "#shared/03-domain/conversation.ts";
 import { HubKeyName } from "#shared/03-domain/ids.ts";
+import * as ClickHouseRequestLogReader from "./clickhouse-request-log-reader.ts";
 import * as ClickHouseRequests from "./clickhouse-requests.repository.ts";
 import * as ClickHouse from "./client.ts";
 import { Param } from "./client.ts";
@@ -26,6 +32,7 @@ const world = Effect.gen(function* () {
     ReportRequests.layer(pools).pipe(
       Layer.provideMerge(ClickHouseRequests.layer),
       Layer.provide([PriceLists.layer(pools), InMemoryReportedThrough.layer]),
+      Layer.merge(ClickHouseRequestLogReader.layer),
       Layer.provideMerge(Scratch.layer),
     ),
   );
@@ -34,6 +41,7 @@ const world = Effect.gen(function* () {
     clickHouse: Context.get(context, ClickHouse.ClickHouse),
     faults: Context.get(context, Scratch.Scratch).faults,
     reportRequests: Context.get(context, ReportRequests.ReportRequests),
+    reader: Context.get(context, RequestLogReader),
   };
 });
 
@@ -103,6 +111,24 @@ const delivered = (w: World, calls: ReadonlyArray<Report.Call>) =>
     return yield* Effect.die("a report was never stored");
   });
 
+/** Each session's segments as a reader's requests give them: why each began, and how many requests it holds. */
+const segmentsIn = (
+  reader: RequestLogReader["Service"],
+  sessions: ReadonlyArray<string>,
+) =>
+  Effect.map(
+    reader.sessionRequests(sessions, Session.read, Session.mostListedRequests),
+    (found) =>
+      sessions.map((session) =>
+        segmentsOf(rolesOf(found.get(session) ?? [])).map(
+          ({ startedBy, requests }) => ({
+            startedBy,
+            requests: requests.length,
+          }),
+        ),
+      ),
+  ).pipe(Effect.orDie);
+
 const plans = Arbitrary.sampleEffect(Reports.reported, {
   count: 4,
   seed: 6,
@@ -149,6 +175,53 @@ describe("reported requests in ClickHouse", () => {
             expect(left()).toBe(0);
           }
         }
+      }).pipe(Effect.scoped),
+    120_000,
+  );
+
+  it.live(
+    "begins a reported session's segment at the call after a compaction its record names, though the prompt does not shrink, and once for one that shrinks it, in ClickHouse as in memory",
+    () =>
+      Effect.gen(function* () {
+        const conversations = [
+          Reports.compacted(
+            "compacted-flat",
+            [30_000, 31_000, 32_000, 32_100],
+            2,
+          ),
+          Reports.compacted(
+            "compacted-shrunk",
+            [90_000, 100_000, 30_000, 31_000],
+            1,
+          ),
+        ];
+        const sessions = ["compacted-flat", "compacted-shrunk"];
+        const w = yield* world;
+        const inMemory = yield* Reports.started();
+        for (const calls of conversations) {
+          yield* delivered(w, calls);
+          yield* inMemory.reportRequests
+            .execute(Reports.reportOf(calls), { reporter, machine: "studio" })
+            .pipe(Effect.orDie);
+        }
+        const expected = [
+          [
+            { startedBy: "start", requests: 3 },
+            { startedBy: "compaction", requests: 1 },
+          ],
+          [
+            { startedBy: "start", requests: 2 },
+            { startedBy: "compaction", requests: 2 },
+          ],
+        ];
+
+        expect(yield* segmentsIn(w.reader, sessions)).toEqual(expected);
+        expect(
+          yield* segmentsIn(
+            InMemoryRequestLogReader.make(() => inMemory.memory),
+            sessions,
+          ),
+        ).toEqual(expected);
       }).pipe(Effect.scoped),
     120_000,
   );

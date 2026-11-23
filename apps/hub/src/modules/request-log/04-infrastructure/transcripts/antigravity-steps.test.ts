@@ -14,6 +14,13 @@ const call = {
   arguments: '{"Path":"notes.txt"}',
 };
 
+const command = {
+  id: "call_10",
+  name: "run_command",
+  arguments:
+    '{"CommandLine":"sleep 20 && wc -l notes.txt","WaitMsBeforeAsync":10000}',
+};
+
 const conversation: ReadonlyArray<Schema.JsonObject> = [
   Steps.userMessage(0, "What does the file say?"),
   Steps.modelOutput(1, {
@@ -25,7 +32,15 @@ const conversation: ReadonlyArray<Schema.JsonObject> = [
   Steps.modelOutput(3, { text: "It says two lines." }),
   Steps.userMessage(4, "/compact"),
   Steps.compaction(5, "<summary>The file has two lines.</summary>"),
-  Steps.step(6, 99, [
+  Steps.modelOutput(6, { calls: [command] }),
+  Steps.toolResult(7, command, "Running in the background."),
+  Steps.taskNotification(
+    8,
+    command,
+    "Command exited with code 0.\n2 notes.txt",
+  ),
+  Steps.taskNotification(9, command, "Not a task's end.", "other_notification"),
+  Steps.step(10, 99, [
     { number: 50, text: "a step of a kind the table does not know" },
   ]),
 ];
@@ -49,6 +64,10 @@ describe("the record form antigravity-steps", () => {
       "It says two lines.",
       "/compact",
       "<summary>The file has two lines.</summary>",
+      command.arguments,
+      "Running in the background.",
+      "Command exited with code 0.\n2 notes.txt",
+      "",
       "",
     ]);
   });
@@ -113,7 +132,7 @@ describe("the record form antigravity-steps", () => {
     ]);
   });
 
-  it("renders a user's message, the model's thoughts, text and calls, a tool's result named by its call, and a compaction's summary", () => {
+  it("renders a user's message, the model's thoughts, text and calls, a tool's result named by its call, a compaction's summary, and a task's notification as a later result of the call that started it", () => {
     const [first, ...rest] = conversation;
     expect(
       Transcript.plain(
@@ -185,8 +204,40 @@ describe("the record form antigravity-steps", () => {
         part: "input",
       },
       {
+        kind: "tool-call",
+        callId: "call_10",
+        name: "run_command",
+        input: command.arguments,
+        cut: 0,
+        part: "input",
+      },
+      {
+        kind: "tool-result",
+        callId: "call_10",
+        name: "run_command",
+        output: "Running in the background.",
+        error: false,
+        cut: 0,
+        part: "input",
+      },
+      {
+        kind: "tool-result",
+        callId: "call_10",
+        name: "run_command",
+        output: "Command exited with code 0.\n2 notes.txt",
+        error: false,
+        cut: 0,
+        part: "input",
+      },
+      {
         kind: "other",
-        json: Conversation.canonical(conversation[6] ?? null),
+        json: Conversation.canonical(conversation[9] ?? null),
+        cut: 0,
+        part: "input",
+      },
+      {
+        kind: "other",
+        json: Conversation.canonical(conversation[10] ?? null),
         cut: 0,
         part: "output",
       },

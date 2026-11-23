@@ -366,6 +366,9 @@ export const builtOf = (
       form,
       reportedBy:
         reporter._tag === "Owner" ? Option.none() : Option.some(reporter.name),
+      purpose: AntigravitySteps.isCompaction(checked.output)
+        ? "compaction"
+        : "",
     },
   };
   const digests = (items: ReadonlyArray<Conversation.Item>) =>

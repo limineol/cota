@@ -171,6 +171,15 @@ const messageAt = (
 ): Option.Option<ReadonlyArray<Read>> =>
   Option.flatMap(last(fields, number), fieldsOf);
 
+const messageThrough = (
+  fields: ReadonlyArray<Read>,
+  ...path: ReadonlyArray<number>
+): Option.Option<ReadonlyArray<Read>> =>
+  path.reduce<Option.Option<ReadonlyArray<Read>>>(
+    (at, number) => Option.flatMap(at, (each) => messageAt(each, number)),
+    Option.some(fields),
+  );
+
 const textAt = (
   fields: ReadonlyArray<Read>,
   number: number,
@@ -178,9 +187,8 @@ const textAt = (
 
 /**
  * Which fields of a step hold what a person reads, by its `step_type`: read
- * by trial on one conversation, in which every entry was seen, and to be
- * confirmed on another before the request reporter is built (ADR-0029,
- * Facts to confirm when built). A step of another type, or one whose field
+ * by trial on the conversations `docs/specs/reported-requests/spec.md` names
+ * (The table of fields), no more. A step of another type, or one whose field
  * the table names is missing or unreadable, is not read.
  */
 export const table = {
@@ -190,8 +198,26 @@ export const table = {
   modelOutput: { stepType: 15, payload: 20, text: 1, thoughts: 3, toolCall: 7 },
   /** A tool call, in the model's output and in a tool's step: field 1 its id, 2 its name, 3 its arguments as JSON text. */
   toolCall: { id: 1, name: 2, arguments: 3 },
-  /** A tool's run (of `read_file`, the only tool seen): `metadata` field 4 the call, `step_payload` field 140 a message whose field 2 is a message whose field 1 is the result's text. */
+  /** A tool's run: `metadata` field 4 the call, `step_payload` field 140 a message whose field 2 is a message whose field 1 is the result's text. */
   toolResult: { stepType: 132, call: 4, payload: 140, result: 2, text: 1 },
+  /**
+   * A task's notification, the end of a command that outlived its tool call:
+   * `step_payload` field 114, a message whose field 1 is its text, field 3
+   * its kind (`task_notification`), and field 4 the task, a message whose
+   * field 12 is a message whose field 1 is a message whose field 3 is the
+   * tool call that started it.
+   */
+  taskNotification: {
+    stepType: 101,
+    payload: 114,
+    text: 1,
+    kind: 3,
+    kindWord: "task_notification",
+    task: 4,
+    origin: 12,
+    started: 1,
+    call: 3,
+  },
   /** A compaction: `step_payload` field 30, a message whose field 5 is the summary. */
   compaction: { stepType: 23, payload: 30, summary: 5 },
 } as const;
@@ -267,6 +293,32 @@ export const saidOf = (step: Step): Option.Option<Said> => {
           text,
         }),
       );
+    case table.taskNotification.stepType: {
+      const notification = table.taskNotification;
+      return Option.flatMap(
+        Option.filter(messageAt(payload, notification.payload), (said) =>
+          Option.contains(
+            textAt(said, notification.kind),
+            notification.kindWord,
+          ),
+        ),
+        (said) =>
+          Option.map(textAt(said, notification.text), (text) => ({
+            kind: "result",
+            call: Option.map(
+              messageThrough(
+                said,
+                notification.task,
+                notification.origin,
+                notification.started,
+                notification.call,
+              ),
+              callOf,
+            ),
+            text,
+          })),
+      );
+    }
     case table.compaction.stepType:
       return Option.map(
         Option.flatMap(messageAt(payload, table.compaction.payload), (said) =>
@@ -309,6 +361,10 @@ export const textOf = (item: unknown): string =>
         .filter((text) => text !== "")
         .join("\n"),
   });
+
+/** Whether the table reads a step as a compaction's summary: the output of the model call that compacted the conversation. */
+export const isCompaction = (step: Step): boolean =>
+  Option.exists(saidOf(step), (said) => said.kind === "compaction");
 
 /** The text of a user's message step; nothing for any other step. */
 export const userTextOf = (item: unknown): Option.Option<string> =>

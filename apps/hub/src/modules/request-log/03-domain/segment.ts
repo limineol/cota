@@ -1,13 +1,14 @@
 import { Option } from "effect";
 import type { Roled } from "./request-role.ts";
 import type { SessionRequest } from "./session.ts";
+import { isRecordForm } from "./stored-protocol.ts";
 
 /**
- * Why a segment began: the session's start, or a prompt under half the
- * previous one's. No client's own compaction is recorded yet
- * (`docs/specs/sessions/spec.md`, Segments), so none begins a segment.
+ * Why a segment began: the session's start, a compaction its client named
+ * just before it, or a prompt under half the previous one's
+ * (`docs/specs/sessions/spec.md`, Segments).
  */
-export type StartedBy = "start" | "size";
+export type StartedBy = "start" | "compaction" | "size";
 
 export interface Segment {
   readonly index: number;
@@ -35,11 +36,18 @@ const tipOf = (requests: ReadonlyArray<SessionRequest>): SessionRequest =>
 const dropsUnderHalf = (size: number, previous: number): boolean =>
   2 * size < previous;
 
+/** A model call its client's record names a compaction: a record form's request whose purpose is `compaction` (ADR-0029). */
+const namesCompaction = (request: SessionRequest): boolean =>
+  isRecordForm(request.protocol) && request.purpose === "compaction";
+
 /**
  * Cuts a session's main requests, in order, into segments
- * (`docs/specs/sessions/spec.md`, Segments): a new one begins at an `ok`
- * request whose prompt size is under half that of the latest `ok` request
- * with a prompt size in the current one (T4 to T7).
+ * (`docs/specs/sessions/spec.md`, Segments): a new one begins at the request
+ * after an `ok` compaction its client named, whatever the sizes, and at an
+ * `ok` request whose prompt size is under half that of the latest `ok`
+ * request with a prompt size in the current one, unless it is itself a named
+ * compaction, which stays in the segment it compacts (T4 to T7). One
+ * compaction so begins one segment, never two.
  */
 export const segmentsOf = (
   roled: ReadonlyArray<Roled>,
@@ -50,14 +58,21 @@ export const segmentsOf = (
     const current = open[open.length - 1];
     const size =
       request.outcome === "ok" ? request.promptSize : Option.none<number>();
-    const cuts =
+    const before = current?.requests.at(-1);
+    const compacted =
+      before !== undefined &&
+      before.outcome === "ok" &&
+      namesCompaction(before);
+    const dropped =
       current !== undefined &&
+      !namesCompaction(request) &&
       Option.isSome(size) &&
       Option.isSome(current.sized) &&
       dropsUnderHalf(size.value, current.sized.value);
-    if (current === undefined || cuts) {
+    if (current === undefined || compacted || dropped) {
       open.push({
-        startedBy: current === undefined ? "start" : "size",
+        startedBy:
+          current === undefined ? "start" : compacted ? "compaction" : "size",
         requests: [request],
         sized: size,
       });

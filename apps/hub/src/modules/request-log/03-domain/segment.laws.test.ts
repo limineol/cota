@@ -4,6 +4,7 @@ import * as Generated from "#modules/request-log/05-tests/sessions.ts";
 import type { Roled } from "./request-role.ts";
 import { segmentsOf } from "./segment.ts";
 import type { SessionRequest } from "./session.ts";
+import { isRecordForm } from "./stored-protocol.ts";
 
 const idsOf = (requests: ReadonlyArray<SessionRequest>) =>
   requests.map(({ id }) => id);
@@ -16,6 +17,10 @@ const mainOf = (roled: ReadonlyArray<Roled>) =>
 /** The size the size rule reads of a request: its prompt size when it is `ok`. */
 const sizeOf = (request: SessionRequest): Option.Option<number> =>
   request.outcome === "ok" ? request.promptSize : Option.none();
+
+/** A compaction its client named: a record form's request whose purpose is `compaction`. */
+const named = (request: SessionRequest): boolean =>
+  isRecordForm(request.protocol) && request.purpose === "compaction";
 
 describe("segments", () => {
   it.effect.prop(
@@ -39,7 +44,7 @@ describe("segments", () => {
   );
 
   it.effect.prop(
-    "T5: a segment begins at a main request other than the first exactly when the size rule holds for it",
+    "T5: a segment begins at a main request other than the first exactly when the compaction or the size rule holds for it",
     { roled: Generated.mainConversation },
     ({ roled }) =>
       Effect.sync(() => {
@@ -54,36 +59,54 @@ describe("segments", () => {
               current.map(sizeOf).findLast(Option.isSome) ?? Option.none(),
             );
             const size = Option.getOrUndefined(sizeOf(request));
+            const before = current.at(-1);
+            const compactionRule =
+              before !== undefined && before.outcome === "ok" && named(before);
+            const sizeRule =
+              !named(request) &&
+              size !== undefined &&
+              previous !== undefined &&
+              2 * size < previous;
             return {
               id: request.id,
               begins: at === 0,
-              sizeRule:
-                size !== undefined &&
-                previous !== undefined &&
-                2 * size < previous,
+              rules: compactionRule || sizeRule,
+              startedBy: compactionRule ? "compaction" : "size",
+              said: segments[index]?.startedBy,
             };
           }),
         );
 
         expect(
-          walked.slice(1).filter(({ begins, sizeRule }) => begins !== sizeRule),
+          walked.slice(1).filter(({ begins, rules }) => begins !== rules),
+        ).toEqual([]);
+        expect(
+          walked
+            .slice(1)
+            .filter(
+              ({ begins, startedBy, said }) => begins && startedBy !== said,
+            ),
         ).toEqual([]);
       }),
     { arbitrary: { runs: 300 } },
   );
 
   it.effect.prop(
-    "T6: within a segment, no ok request with a prompt size has one under half of the previous such request's",
+    "T6: within a segment, no ok request with a prompt size but a compaction its client named has one under half of the previous such request's",
     { roled: Generated.mainConversation },
     ({ roled }) =>
       Effect.sync(() => {
         const drops = segmentsOf(roled).flatMap(({ requests }) => {
-          const sizes = requests.flatMap((request) =>
-            Option.toArray(sizeOf(request)),
+          const sized = requests.flatMap((request) =>
+            Option.toArray(
+              Option.map(sizeOf(request), (size) => ({ request, size })),
+            ),
           );
-          return sizes.flatMap((size, at) => {
-            const previous = sizes[at - 1];
-            return previous !== undefined && 2 * size < previous
+          return sized.flatMap(({ request, size }, at) => {
+            const previous = sized[at - 1]?.size;
+            return previous !== undefined &&
+              !named(request) &&
+              2 * size < previous
               ? [{ previous, size }]
               : [];
           });
