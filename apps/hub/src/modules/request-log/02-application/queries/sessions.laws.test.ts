@@ -8,6 +8,7 @@ import * as ReadSnippets from "#modules/request-log/02-application/queries/read-
 import * as FirstPrompt from "#modules/request-log/03-domain/first-prompt.ts";
 import { rolesOf } from "#modules/request-log/03-domain/request-role.ts";
 import * as Session from "#modules/request-log/03-domain/session.ts";
+import * as StoredItems from "#modules/request-log/03-domain/stored-items.ts";
 import * as Title from "#modules/request-log/03-domain/title.ts";
 import * as Traffic from "#modules/request-log/03-domain/traffic.ts";
 import * as RenderedTranscripts from "#modules/request-log/04-infrastructure/transcripts/transcripts.ts";
@@ -181,7 +182,10 @@ layer(overHeld)("the sessions list over the in-memory reader", (it) => {
             Option.fromUndefinedOr(from?.logged),
             (request) =>
               Option.flatMap(request.conversation, ({ input }) =>
-                FirstPrompt.firstPromptOf(request.origin.protocol, input),
+                FirstPrompt.firstPromptOf(
+                  StoredItems.protocolOf(request),
+                  input,
+                ),
               ),
           );
 

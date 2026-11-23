@@ -42,6 +42,7 @@ import {
 import * as Sessions from "#modules/request-log/05-tests/sessions.ts";
 import * as Generated from "#modules/request-log/05-tests/traffic.ts";
 import * as Conversation from "#shared/03-domain/conversation.ts";
+import type * as Request from "#shared/03-domain/request.entity.ts";
 import { compareText } from "#shared/03-domain/text.ts";
 import * as Harness from "#shared/05-tests/harness.ts";
 import * as ClickHouseRequestLogReader from "./clickhouse-request-log-reader.ts";
@@ -158,7 +159,7 @@ const chatOf = (
   minute: number,
   said: ReadonlyArray<Schema.Json>,
   answer: ReadonlyArray<Schema.Json>,
-): PricedRequest => ({
+): PricedRequest<Request.ForwardedRequest> => ({
   request: Harness.requestOf({
     id: Sessions.idOf(id, minute),
     startedAt: DateTime.makeUnsafe(Date.UTC(2026, 10, 12, 9, minute)),
@@ -217,7 +218,9 @@ describe("search in ClickHouse", () => {
         const conduit = { role: "user", content: "Check the conduit." };
         // The writer asks which items the session has; when that fails, it
         // writes every item of the request again.
-        const writtenAgain = (log: ReadonlyArray<PricedRequest>) =>
+        const writtenAgain = (
+          log: ReadonlyArray<PricedRequest<Request.ForwardedRequest>>,
+        ) =>
           Effect.gen(function* () {
             faults.faultOf = (query) =>
               query.startsWith("SELECT session, digest FROM items")
@@ -494,7 +497,7 @@ describe("search in ClickHouse", () => {
         const clickHouse = yield* ClickHouse.ClickHouse;
         const reader = yield* RequestLogReader;
         const { database } = yield* Scratch.Scratch;
-        const before: PricedRequest = {
+        const before: PricedRequest<Request.ForwardedRequest> = {
           request: Harness.requestOf({
             session: "before",
             protocol: "openai-chat",

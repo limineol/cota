@@ -1,4 +1,4 @@
-import { Context, Deferred, Effect, Layer, Option } from "effect";
+import { Context, DateTime, Deferred, Effect, Layer, Option } from "effect";
 import {
   type PricedRequest,
   RequestsRepository,
@@ -8,7 +8,7 @@ import {
 import type * as StoredItems from "#modules/request-log/03-domain/stored-items.ts";
 import type * as Conversation from "#shared/03-domain/conversation.ts";
 
-export type Fault = "none" | "unreached" | "lost" | "declined";
+export type Fault = "none" | "unreached" | "lost" | "cut" | "declined";
 
 export interface Attempt {
   readonly token: string;
@@ -23,6 +23,7 @@ export interface InMemory {
   readonly attempts: Array<Attempt>;
   readonly asked: Array<ReadonlyArray<string>>;
   readonly faults: Array<Fault>;
+  /** Whether asking what the log holds fails. */
   questionFails: boolean;
   /** Whether reading the request log fails, as when ClickHouse cannot be reached. */
   readingFails: boolean;
@@ -41,8 +42,10 @@ export class InMemoryRequests extends Context.Service<
 /**
  * A repository that keeps what it stores in memory, skips a batch whose token
  * it has stored, and fails as it is told, batch by batch: one `unreached` is
- * not stored and fails, one `lost` is stored but answered with a failure, and
- * one `declined` is declined. It declines a batch that holds a request
+ * not stored and fails, one `lost` is stored but answered with a failure, one
+ * `cut` stores its items and its requests' items but not its requests and
+ * fails, as a delivery interrupted between tables, and one `declined` is
+ * declined. It declines a batch that holds a request
  * `declines` names too, and stores nothing of a declined batch.
  */
 export const make = (ready = true) =>
@@ -92,15 +95,16 @@ export const make = (ready = true) =>
             memory.attempts.push({ token, stored: false });
             return yield* new RequestsRepositoryDeclined({
               detail: "the batch was declined",
+              code: "117",
             });
           }
           const stored = fault !== "unreached" && !tokens.has(token);
           memory.attempts.push({ token, stored });
           if (stored) {
-            tokens.add(token);
+            if (fault !== "cut") tokens.add(token);
             memory.items.push(...batch.items);
             memory.requestItems.push(...batch.requestItems);
-            memory.requests.push(...batch.requests);
+            if (fault !== "cut") memory.requests.push(...batch.requests);
           }
           if (fault !== "none") return yield* failed(`the batch was ${fault}`);
         }),
@@ -111,6 +115,62 @@ export const make = (ready = true) =>
           return memory.items
             .filter((item) => sessions.includes(item.session))
             .map(({ session, digest }) => ({ session, digest }));
+        }),
+      held: (asked) =>
+        Effect.gen(function* () {
+          if (memory.questionFails) return yield* failed("no answer");
+          const within = (at: DateTime.Utc) =>
+            !DateTime.isLessThan(at, asked.from) &&
+            !DateTime.isGreaterThan(at, asked.to);
+          return {
+            requests: new Set(
+              asked.requests
+                .filter(({ id }) =>
+                  memory.requests.some(
+                    ({ request }) =>
+                      request.id === id && within(request.startedAt),
+                  ),
+                )
+                .map(({ id }) => id),
+            ),
+            requestItems: new Set(
+              asked.requests
+                .filter(({ id, session }) =>
+                  memory.requestItems.some(
+                    (each) => each.requestId === id && each.session === session,
+                  ),
+                )
+                .map(({ id }) => id),
+            ),
+          };
+        }),
+      partsOf: (id, session, startedAt) =>
+        Effect.gen(function* () {
+          if (memory.questionFails) return yield* failed("no answer");
+          const at = DateTime.toEpochMillis(startedAt);
+          const request = memory.requests.find(
+            ({ request }) =>
+              request.id === id &&
+              request.session === session &&
+              DateTime.toEpochMillis(request.startedAt) === at,
+          );
+          const requestItems = memory.requestItems.find(
+            (each) =>
+              each.requestId === id &&
+              each.session === session &&
+              DateTime.toEpochMillis(each.startedAt) === at,
+          );
+          if (request === undefined || requestItems === undefined) {
+            return Option.none();
+          }
+          const contents = contentsOf(session, requestItems.output);
+          const output = requestItems.output.flatMap((digest) => {
+            const content = contents.get(digest);
+            return content === undefined ? [] : [content];
+          });
+          return output.length === requestItems.output.length
+            ? Option.some({ requestItems, output })
+            : Option.none();
         }),
       conversationOf: (id) =>
         Effect.suspend(() =>

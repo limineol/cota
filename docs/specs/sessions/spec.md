@@ -2,8 +2,8 @@
 status: active
 scope: apps/hub
 owner: limineol
-last_verified: 2026-11-19
-review_by: 2027-02-19
+last_verified: 2026-11-23
+review_by: 2027-02-23
 supersedes: []
 code:
   - apps/hub/src/modules/request-log/03-domain/session.ts
@@ -13,6 +13,7 @@ code:
   - apps/hub/src/modules/request-log/03-domain/first-prompt.ts
   - apps/hub/src/modules/request-log/03-domain/transcript.ts
   - apps/hub/src/modules/request-log/03-domain/stored-protocol.ts
+  - apps/hub/src/modules/request-log/03-domain/antigravity-steps.ts
   - apps/hub/src/shared/03-domain/item-text.ts
   - apps/hub/src/modules/request-log/02-application/interfaces/transcripts.ts
   - apps/hub/src/modules/request-log/04-infrastructure/transcripts
@@ -44,9 +45,10 @@ What the rules read of a request, besides its columns, is in `session.ts` (`read
 A request's role is decided by the first of these rules that applies:
 
 1. **No conversation.** A request without a `request_items` row (an operation that carries no conversation, or a body that could not be read) is `utility`.
-2. **Title.** For `anthropic-messages`: a request whose params hold `output_config.format.type` `json_schema` and whose `output_config.format.schema.required` is exactly `["title"]` is `title`. This is the shape of Claude Code's request to name its session (recorded, 2.1.322, `recorded-session-title.json`), as far as the recording shows it: its `output_config.format.type` is `json_schema` and its schema has four fields, but the scrubber replaced the schema's words, so that `required` is exactly `["title"]` is (constructed). The request also says `auxiliary`, has the same `system` digests as the main conversation and an empty `tools` list (recorded), which is why this rule comes before rules 4 and 5. Other protocols have no title shape yet.
-3. **The client says subagent.** For `anthropic-messages`: its kept header `x-claude-code-agent-id` is not empty. For `chatgpt-codex`: its kept header `x-openai-subagent` is not empty. Then it is `subagent`. (Constructed: no recording has either header; Codex's is read from its source, `subagent-review.json`.)
-4. **The client's purpose.**
+2. **A record's model call.** A request whose `protocol` is a record form (`antigravity-steps`, Record forms below) is `main`: a client's record holds one conversation, and the request reporter reports no sub-agent's (ADR-0029). A compaction in it is one of its steps, and the size rule cuts a segment there (ADR-0029, fact 4).
+3. **Title.** For `anthropic-messages`: a request whose params hold `output_config.format.type` `json_schema` and whose `output_config.format.schema.required` is exactly `["title"]` is `title`. This is the shape of Claude Code's request to name its session (recorded, 2.1.322, `recorded-session-title.json`), as far as the recording shows it: its `output_config.format.type` is `json_schema` and its schema has four fields, but the scrubber replaced the schema's words, so that `required` is exactly `["title"]` is (constructed). The request also says `auxiliary`, has the same `system` digests as the main conversation and an empty `tools` list (recorded), which is why this rule comes before rules 5 and 6. Other protocols have no title shape yet.
+4. **The client says subagent.** For `anthropic-messages`: its kept header `x-claude-code-agent-id` is not empty. For `chatgpt-codex`: its kept header `x-openai-subagent` is not empty. Then it is `subagent`. (Constructed: no recording has either header; Codex's is read from its source, `subagent-review.json`.)
+5. **The client's purpose.**
 
    | Protocol | `purpose` | Role |
    | --- | --- | --- |
@@ -54,8 +56,8 @@ A request's role is decided by the first of these rules that applies:
    | `anthropic-messages` | `auxiliary`, `quota_probe` | `utility` |
    | `chatgpt-codex` | `turn` | `main` |
 
-   Any other purpose goes on to rule 5. Recorded: Claude Code 2.1.322 sends `main` and `auxiliary` (with `CLAUDE_CODE_GATEWAY_HINT_HEADERS=1`), and Codex 0.167.2 sends `request_kind` `turn` on every recorded request, the only value recorded; `quota_probe` is the hub's own word for Claude Code's quota check (constructed). OpenCode sends no purpose.
-5. **Structure.** A request that does not have tools is `utility`. Among the session's requests with tools that no rule above decided, those with the same thread key form a thread; the thread whose requests' prompt sizes add up to the most (a request without a prompt size adds nothing) is the **main thread**, and when two are equal, the one holding the latest request. Its requests are `main`; the requests of every other thread, and those without a thread key, are `subagent`.
+   Any other purpose goes on to rule 6. Recorded: Claude Code 2.1.322 sends `main` and `auxiliary` (with `CLAUDE_CODE_GATEWAY_HINT_HEADERS=1`), and Codex 0.167.2 sends `request_kind` `turn` on every recorded request, the only value recorded; `quota_probe` is the hub's own word for Claude Code's quota check (constructed). OpenCode sends no purpose.
+6. **Structure.** A request that does not have tools is `utility`. Among the session's requests with tools that no rule above decided, those with the same thread key form a thread; the thread whose requests' prompt sizes add up to the most (a request without a prompt size adds nothing) is the **main thread**, and when two are equal, the one holding the latest request. Its requests are `main`; the requests of every other thread, and those without a thread key, are `subagent`.
 
 A Codex subagent sends its own session id (`x-codex-parent-thread-id` names its parent), so it is a session of its own, all of whose requests are `subagent`.
 
@@ -92,6 +94,7 @@ The session's **first main request** is its first request whose role is `main` a
 | `openai-chat` | an item whose `role` is `user`, with string content or a `text` part | the string, or the last `text` part's `text` |
 | `bifrost-responses` | an item of type `message` (or with no type) whose `role` is `user`, with string content or an `input_text` part | the string, or the last `input_text` part's `text` |
 | `bifrost-chat` | as `openai-chat` | as `openai-chat` |
+| `antigravity-steps` | a step the record form's table reads as a user's message | its text (Record forms) |
 
 A session without a main request with a conversation, or whose first main request has no such message, has no first prompt.
 
@@ -136,15 +139,23 @@ An imported request's items are in a **source form** (ADR-0025, `docs/specs/impo
 - **`bifrost-responses`**: Bifrost's Responses items, which it logged for every client but a Chat Completions one (Claude Code's Anthropic Messages converted by Bifrost, with ids it made up, and Codex's own). Rendered by `chatgpt-codex`'s rules above; an item's text for search is `chatgpt-codex`'s (`docs/specs/protocols/spec.md`, the Codex backend's Conversation, `apps/hub/src/shared/03-domain/item-text.ts`). Of the types the prototype's log holds, `compaction`, `compaction_trigger`, `additional_tools` and `configuration_update` are shown as `other`.
 - **`bifrost-chat`**: Bifrost's Chat Completions messages, for OpenCode and Pi. Rendered, and its text read, by `openai-chat`'s rules.
 
-No source form has a title shape, a purpose or kept headers, so an imported request's role is decided by rules 1 and 5 alone, and its session's title is the one the import reported.
+No source form has a title shape, a purpose or kept headers, so an imported request's role is decided by rules 1 and 6 alone, and its session's title is the one the import reported.
+
+## Record forms
+
+A reported request's items are in a **record form** (ADR-0029, `docs/specs/reported-requests/spec.md`, The record form), which the request log reads wherever it reads a protocol, as it reads a source form: its `protocol` names it, and its renderer, its items' text for search, its role rule (rule 2) and its row of the first prompt's table are these.
+
+- **`antigravity-steps`**: each item one step of an Antigravity conversation's record, its protocol buffers written out field by field without a schema. What is read of a step is the record form's **table of fields** (`03-domain/antigravity-steps.ts`, `table`), read by trial on one conversation: a user's message is a `message` whose role is `user`; the model's output is `reasoning` (its thoughts, where the step has them), a `message` whose role is `assistant` (its text, where it has one) and a `tool-call` per call (its id, name and arguments as JSON text), in that order, and a `message` with no parts when it has none of them; a tool's step is a `tool-result` (the call's id, from the step's `metadata`, and the result's text; never an error); a compaction is a `message` whose role is `assistant`, its summary. A step of a type the table does not know, one whose field the table names is missing or is not a protocol buffer by the record form's rules, and an item that is not a step, are `other`, the step's JSON. Its text for search is the text of the user's message, the model's text and its calls' arguments, the result, or the summary, joined by line breaks; a step the table does not know has none. A record has no tool definitions, so the inspector lists none.
+
+A record form has no title shape, purpose or kept headers either: a reported session's title is the one a machine reported, and its requests are all `main`.
 
 ## Laws
 
 | Id | Law | Held by |
 | --- | --- | --- |
 | T1 | **One role each.** Every request of a session has exactly one request role, and it depends on that session's requests only. | property |
-| T2 | **The client's word wins.** A request that rule 2, 3 or 4 decides has that role whatever the other requests of its session are. | property |
-| T3 | **One main thread.** The requests that rule 5 makes `main` all have the same thread key. | property |
+| T2 | **The client's word wins.** A request that rule 2, 3, 4 or 5 decides has that role whatever the other requests of its session are. | property |
+| T3 | **One main thread.** The requests that rule 6 makes `main` all have the same thread key. | property |
 | T4 | **Segments cover the main conversation.** The segments are non-empty runs of consecutive main requests, in order, and every main request is in exactly one. | property |
 | T5 | **Cut where the rule says, and only there.** A segment begins at a main request other than the first exactly when the size rule holds for it. | property |
 | T6 | **No drop inside a segment.** Within a segment, no `ok` request with a prompt size has one under half of the previous such request's. | property |
@@ -155,11 +166,11 @@ No source form has a title shape, a purpose or kept headers, so an imported requ
 | T11 | **Cuts are counted.** For every text in an entry, its length plus `cut` is the length of the text before cutting, and `cut` is 0 when the text fits. | property |
 | T12 | **The first prompt is the person's.** A first prompt comes from a request whose role is `main`, never from a `title`, `subagent` or `utility` request. | property |
 
-T1 to T7 run over generated sessions (`apps/hub/src/modules/request-log/05-tests/sessions.ts`): requests with generated protocols, purposes, kept headers, outcomes, prompt sizes around halves of each other, `system` and first-input digests shared between threads, title shapes and near misses, and requests without a conversation; T4 to T7 over generated main conversations. T1 compares the roles of a session given in two orders, and of two equal threads given latest first, where only the session's order picks the main one; T2 compares each request's role in its session alone and among other requests with the role rules 2 to 4 give it, read from this spec; T3 reads thread keys from this spec too.
+T1 to T7 run over generated sessions (`apps/hub/src/modules/request-log/05-tests/sessions.ts`): requests with generated protocols (the record form among them), purposes, kept headers, outcomes, prompt sizes around halves of each other, `system` and first-input digests shared between threads, title shapes and near misses, and requests without a conversation; T4 to T7 over generated main conversations. T1 compares the roles of a session given in two orders, and of two equal threads given latest first, where only the session's order picks the main one; T2 compares each request's role in its session alone and among other requests with the role rules 2 to 5 give it, read from this spec; T3 reads thread keys from this spec too.
 
 T8 and T12 run `ListSessions` over the in-memory reader and titles, on generated request logs whose requests carry conversations in each protocol's shapes (`sessionLog` in the same file): main threads, subagents, title requests whose answers read as a title and ones that do not, utility requests, prompts past 500 characters, and reports of those sessions, some empty, many at the same instant. Each listed session's title and first prompt are compared with the ones these laws pick from the generated requests: T8 holds the order of report, generated title and none, and T12 that the prompt is the first main request's. Both take each request's role from `rolesOf`, which T1 to T3 hold, and read a title answer with `Title.generatedOf` and a prompt with `FirstPrompt.firstPromptOf`, the shipped readers, which `title.test.ts` and `first-prompt.test.ts` hold by example. So T8 and T12 hold how `ListSessions` puts these rules together, not the rules themselves. T9 stores generated reports, shuffled and some twice, in the in-memory titles and in a scratch ClickHouse database, and compares each session's latest with the latest by this spec's order.
 
-T10 and T11 render generated items of each protocol's and each source form's shapes (`apps/hub/src/modules/request-log/05-tests/transcripts.ts`): every block, part and item type the rules above name, items they do not know, JSON that is not an object, empty contents, texts of characters of one to four UTF-8 bytes past the generated length, and the same item twice in a row. T11 renders each request whole and cut, and compares each text's length and `cut` with its whole length. T10 also renders the stored items of every recorded exchange (`apps/hub/src/shared/05-tests/replay`), whose transcripts must show no item or block as its JSON but those listed under "Shown as JSON on purpose", and hold none of the exchange's credentials or the replay's secrets.
+T10 and T11 render generated items of each protocol's, each source form's and the record form's shapes (the record form's steps constructed from its table by a builder, `05-tests/antigravity-steps.ts`, never read from a real record) (`apps/hub/src/modules/request-log/05-tests/transcripts.ts`): every block, part and item type the rules above name, items they do not know, JSON that is not an object, empty contents, texts of characters of one to four UTF-8 bytes past the generated length, and the same item twice in a row. T11 renders each request whole and cut, and compares each text's length and `cut` with its whole length. T10 also renders the stored items of every recorded exchange (`apps/hub/src/shared/05-tests/replay`), whose transcripts must show no item or block as its JSON but those listed under "Shown as JSON on purpose", and hold none of the exchange's credentials or the replay's secrets.
 
 ## Not built, on purpose
 

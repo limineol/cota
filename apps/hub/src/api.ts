@@ -2,6 +2,7 @@ import { HttpApi, OpenApi } from "effect/http-api";
 import * as MachineApi from "#modules/admission/01-presentation/machine.api.ts";
 import * as DisplayNamesApi from "#modules/display-names/01-presentation/display-names.api.ts";
 import * as PoolsApi from "#modules/quota/01-presentation/pools.api.ts";
+import * as ReportsApi from "#modules/request-log/01-presentation/reports.api.ts";
 import * as RequestsApi from "#modules/request-log/01-presentation/requests.api.ts";
 import * as SearchApi from "#modules/request-log/01-presentation/search.api.ts";
 import * as SessionsApi from "#modules/request-log/01-presentation/sessions.api.ts";
@@ -26,6 +27,7 @@ export const Api = HttpApi.make("cota")
   .add(PoolsApi.group)
   .add(MachineApi.group)
   .add(RoutesApi.group)
+  .add(ReportsApi.group)
   .annotate(OpenApi.Title, "Cota hub")
   .annotate(
     OpenApi.Description,

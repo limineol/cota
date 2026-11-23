@@ -10,12 +10,21 @@ import { BodyTooLarge, UnsupportedMediaType } from "./problems.ts";
 
 export const maxBodyBytes = 1024 * 1024;
 
+/** The limit of the request log's `reports` group, whose reports carry conversations. */
+export const maxReportBytes = 64 * 1024 * 1024;
+
 /**
  * Answers 415 to an API request whose body is not said to be JSON, and 413 to
  * one whose body is over 1 MiB, before or while it is read.
  */
 export class JsonBody extends HttpApiMiddleware.Service<JsonBody>()(
   "@cota/hub/api/JsonBody",
+  { error: [UnsupportedMediaType, BodyTooLarge] },
+) {}
+
+/** `JsonBody` with the `reports` group's limit, 64 MiB. */
+export class ReportBody extends HttpApiMiddleware.Service<ReportBody>()(
+  "@cota/hub/api/ReportBody",
   { error: [UnsupportedMediaType, BodyTooLarge] },
 ) {}
 
@@ -43,16 +52,15 @@ const refused = <E>(problem: E) =>
     return yield* Effect.fail(problem);
   });
 
-const tooLarge = refused(
-  new BodyTooLarge({
-    detail: `The API takes a body of at most ${maxBodyBytes / (1024 * 1024)} MiB.`,
-  }),
-);
-
-export const layer: Layer.Layer<JsonBody> = Layer.succeed(
-  JsonBody,
-  (httpEffect) =>
+const limitedTo =
+  (maxBytes: number) =>
+  <A, E, R>(httpEffect: Effect.Effect<A, E, R>) =>
     Effect.gen(function* () {
+      const tooLarge = refused(
+        new BodyTooLarge({
+          detail: `The API takes a body of at most ${maxBytes / (1024 * 1024)} MiB.`,
+        }),
+      );
       const { headers } = yield* HttpServerRequest.HttpServerRequest;
       if (hasBody(headers) && !isJson(headers["content-type"])) {
         return yield* refused(
@@ -62,17 +70,26 @@ export const layer: Layer.Layer<JsonBody> = Layer.succeed(
           }),
         );
       }
-      if (Number(headers["content-length"] ?? 0) > maxBodyBytes) {
+      if (Number(headers["content-length"] ?? 0) > maxBytes) {
         return yield* tooLarge;
       }
       return yield* httpEffect.pipe(
         Effect.provideService(
           HttpServerRequest.MaxBodySize,
-          ByteSize.bytes(maxBodyBytes),
+          ByteSize.bytes(maxBytes),
         ),
         Effect.catchDefect((defect) =>
           isTooLarge(defect) ? tooLarge : Effect.die(defect),
         ),
       );
-    }),
+    });
+
+export const layer: Layer.Layer<JsonBody> = Layer.succeed(
+  JsonBody,
+  limitedTo(maxBodyBytes),
+);
+
+export const reportLayer: Layer.Layer<ReportBody> = Layer.succeed(
+  ReportBody,
+  limitedTo(maxReportBytes),
 );

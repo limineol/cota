@@ -6,6 +6,7 @@ import * as Search from "#modules/request-log/03-domain/search.ts";
 import * as StoredItems from "#modules/request-log/03-domain/stored-items.ts";
 import * as Traffic from "#modules/request-log/03-domain/traffic.ts";
 import * as Conversation from "#shared/03-domain/conversation.ts";
+import type * as Request from "#shared/03-domain/request.entity.ts";
 import { compareText } from "#shared/03-domain/text.ts";
 import * as Harness from "#shared/05-tests/harness.ts";
 import * as Sessions from "./sessions.ts";
@@ -311,8 +312,8 @@ export const boundWords = [
 ];
 
 /** The bound's law's log: one session, each request carrying one of `boundWords` as its prompt, on 12 November 2026. */
-export const boundLog: ReadonlyArray<PricedRequest> = boundWords.map(
-  (word, at) => ({
+export const boundLog: ReadonlyArray<PricedRequest<Request.ForwardedRequest>> =
+  boundWords.map((word, at) => ({
     request: Harness.requestOf({
       id: Sessions.idOf(at + 1),
       startedAt: DateTime.makeUnsafe(Date.UTC(2026, 10, 12, 9, at)),
@@ -325,8 +326,7 @@ export const boundLog: ReadonlyArray<PricedRequest> = boundWords.map(
       ),
     }),
     cost: Option.none(),
-  }),
-);
+  }));
 
 /** The day the bound's law's log is in, unfiltered. */
 export const boundAsked: Traffic.Asked = {

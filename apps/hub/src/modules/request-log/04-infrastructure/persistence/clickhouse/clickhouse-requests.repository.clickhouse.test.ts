@@ -27,7 +27,7 @@ import * as StoredItems from "#modules/request-log/03-domain/stored-items.ts";
 import * as PriceLists from "#modules/request-log/04-infrastructure/prices/prices.ts";
 import * as Scratch from "#modules/request-log/05-tests/scratch.ts";
 import { LoginFingerprint, PoolId } from "#shared/03-domain/ids.ts";
-import type { ProtocolName } from "#shared/03-domain/protocol-name.ts";
+import { ProtocolName } from "#shared/03-domain/protocol-name.ts";
 import * as Request from "#shared/03-domain/request.entity.ts";
 import * as Harness from "#shared/05-tests/harness.ts";
 import * as Replay from "#shared/05-tests/replay/replay.ts";
@@ -48,6 +48,8 @@ const replayed: ReadonlyArray<Replay.Replay> = await Effect.runPromise(
   }).pipe(Effect.provide(Layer.provideMerge(Replay.layer, TestClock.layer()))),
 );
 
+const isProtocolName = Schema.is(ProtocolName);
+
 const listOf: Readonly<Record<ProtocolName, string>> = {
   "anthropic-messages": "anthropic",
   "chatgpt-codex": "openai",
@@ -59,7 +61,14 @@ const prices = Layer.succeed(
   Prices.of({
     of: (asked) =>
       PriceLists.priceOf(
-        { prices: Option.some(listOf[asked.protocol]), ownPrices: {} },
+        {
+          prices: Option.some(
+            isProtocolName(asked.protocol)
+              ? listOf[asked.protocol]
+              : "anthropic",
+          ),
+          ownPrices: {},
+        },
         asked,
       ),
   }),

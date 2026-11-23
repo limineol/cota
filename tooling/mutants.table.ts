@@ -36,7 +36,17 @@ export type Law =
   | "L4"
   | "L5"
   | "L6"
+  | "L7"
+  | "L8"
+  | "L9"
+  | "L10"
+  | "L11"
+  | "L12"
+  | "L13"
+  | "L14"
   | "L15"
+  | "L16"
+  | "L17"
   | "S1"
   | "S2"
   | "M1"
@@ -385,12 +395,42 @@ const h7 =
 const h9 =
   "H9: for generated request logs written by RecordRequest, every reading query answers the same over ClickHouse as over the in-memory reader, search's hits and the sessions a search query selects included";
 const requestRole = `${requestLog}/03-domain/request-role.ts`;
+
+const reportRequests = `${requestLog}/02-application/commands/report-requests.command.ts`;
+const reportDomain = `${requestLog}/03-domain/report.ts`;
+const reportsHandlers = `${requestLog}/01-presentation/reports.handlers.ts`;
+const sqliteReportedThrough = `${requestLog}/04-infrastructure/persistence/sqlite/sqlite-reported-through.ts`;
+const l7 =
+  "L7: the stored requests' hub key is the caller's hub key's name, empty for the owner, and their machine the caller's x-cota-machine, whatever the report holds";
+const l7Contract =
+  "L7: the stored requests' hub key is the caller's hub key's name, empty for the owner, and their machine the caller's x-cota-machine, whatever the body names";
+const l8 =
+  "L8: a reported request's id is a function of its client, call key and start alone, a UUID version 7 stamped with the start, and two call keys never share one";
+const l8Text = "L8: a reported request's id is the one the spec's text gives";
+const l9 =
+  "L9: however a report is delivered again, by its reporter or another, in part, with others, or after a delivery stored in part, the log holds each call once, with the rows one delivery of each call gives";
+const l10 =
+  "L10: a report answered 200 has every one of its calls held in the log at the moment of the answer";
+const l11 =
+  "L11: a report answered with any problem but request-log-unavailable and hub-store-unavailable changes nothing in the log or the hub store";
+const l12 =
+  "L12: for any conversation in any cut into reports, each call's input part is every item of the calls before it and its own input, in order, its output part its own, and each item is stored once per session";
+const l13 =
+  "L13: every stored reported request has its record form as its protocol, and the empty value of every column the forwarded origin holds";
+const l14 =
+  "L14: storing any report beside any forwarded traffic changes no answer of the quota sources, the only reading of the request log that admission, the fallback or the pools group's windows rest on";
+const l15Report =
+  "L15: a report naming a pool that is not observed stores nothing, whichever hub key sends it";
+const l16 =
+  "L16: for any sequence of reports, a machine's, client's and pool's through is the greatest any of their reports gave";
+const l17 =
+  "L17: a reported request's cost is the one the writer gives a request of its pool, model and usage, and none where that has no price";
 const segment = `${requestLog}/03-domain/segment.ts`;
 const t1 =
   "T1: every request of a session has exactly one request role, and it depends on that session's requests only";
 const t1LatestFirst = `${t1}, for two equal threads given latest first`;
 const t2 =
-  "T2: a request that rule 2, 3 or 4 decides has that role whatever the other requests of its session are";
+  "T2: a request that rule 2, 3, 4 or 5 decides has that role whatever the other requests of its session are";
 const t5 =
   "T5: a segment begins at a main request other than the first exactly when the size rule holds for it";
 const title = `${requestLog}/03-domain/title.ts`;
@@ -3217,7 +3257,7 @@ export const layer = (policy: Policy): Layer.Layer<Fallback> =>
     replace:
       "    Option.isSome(Option.flatMap(request.conversation, threadKeyOf));",
     killedBy:
-      "T3: the requests that rule 5 makes main all have the same thread key",
+      "T3: the requests that rule 6 makes main all have the same thread key",
   },
   {
     name: "the last segment is dropped",
@@ -7119,8 +7159,8 @@ export const layer = (policy: Admission.Policy) =>
     name: "a request's id is random, not its source id's",
     law: "Z5",
     file: importDomain,
-    find: ".update(`cota-import:bifrost:${sourceId}`)",
-    replace: ".update(crypto.randomUUID())",
+    find: "stampedIdOf(`cota-import:bifrost:${sourceId}`, startedAt)",
+    replace: "stampedIdOf(crypto.randomUUID(), startedAt)",
     killedBy: z5,
   },
   {
@@ -7402,5 +7442,144 @@ export const layer = (policy: Admission.Policy) =>
     replace:
       '      const ran = await options.machine.run(["cota", ...given.args].join(" "), given.stdin);',
     killedBy: o8Served,
+  },
+  {
+    name: "a reported request's id leaves out its call key",
+    law: "L8",
+    file: reportDomain,
+    find: "`cota-report:${JSON.stringify([client, callKey])}`",
+    replace: "`cota-report:${JSON.stringify([client])}`",
+    killedBy: l8,
+  },
+  {
+    name: "a reported request's id joins its parts with colons",
+    law: "L8",
+    file: reportDomain,
+    find: "`cota-report:${JSON.stringify([client, callKey])}`",
+    replace: "`cota-report:${client}:${callKey}`",
+    killedBy: l8Text,
+  },
+  {
+    name: "a report stores the requests the log already holds",
+    law: "L9",
+    file: reportRequests,
+    find: "          if (held.requests.has(each.request.id)) continue;",
+    replace: "          if (false) continue;",
+    killedBy: l9,
+  },
+  {
+    name: "a report stores the items the session already has",
+    law: "L9",
+    file: reportRequests,
+    find: "          if (known.has(key)) continue;",
+    replace: "          if (false) continue;",
+    killedBy: l9,
+  },
+  {
+    name: "a report stores the requests' items the log already holds",
+    law: "L9",
+    file: reportRequests,
+    find: "          .filter(({ request }) => !held.requestItems.has(request.id))",
+    replace: "          .filter(() => true)",
+    killedBy: l9,
+  },
+  {
+    name: "a report whose store failed is answered as stored",
+    law: "L10",
+    file: reportRequests,
+    find: "                  RequestsRepositoryFailed: (error) =>\n                    Effect.fail(unavailable(error)),",
+    replace:
+      "                  RequestsRepositoryFailed: () =>\n                    Effect.succeed({ stored: 0, held: 0 }),",
+    killedBy: l10,
+  },
+  {
+    name: "a report stores the requests before the one the log cannot hold, and then refuses",
+    law: "L11",
+    file: reportRequests,
+    find: "          if (!repository.holds(one)) {\n            return yield* new Report.ReportRefused({",
+    replace:
+      '          if (!repository.holds(one)) {\n            yield* repository.store({ items: [], requestItems: [], requests }, "partial");\n            return yield* new Report.ReportRefused({',
+    killedBy: l11,
+  },
+  {
+    name: "a call's input part leaves out its call before's",
+    law: "L12",
+    file: reportDomain,
+    find: "      tools: [],\n      input: [...earlier, ...digests(input)],",
+    replace: "      tools: [],\n      input: digests(input),",
+    killedBy: l12,
+  },
+  {
+    name: "a call before read from the log is given without its input",
+    law: "L12",
+    file: reportRequests,
+    find: "                    input: parts.value.requestItems.input,",
+    replace: "                    input: [],",
+    killedBy: l12,
+  },
+  {
+    name: "a reported request is stored as streamed",
+    law: "L13",
+    file: storedItems,
+    find: "  stream: false,",
+    replace: "  stream: true,",
+    killedBy: l13,
+  },
+  {
+    name: "a reported request carries a quota header",
+    law: "L14",
+    file: storedItems,
+    find: "  rateLimits: {},",
+    replace:
+      '  rateLimits: { "anthropic-ratelimit-unified-5h-utilization": "0.5" },',
+    killedBy: l14,
+  },
+  {
+    name: "a report bills a subscription pool",
+    law: "L15",
+    file: reportRequests,
+    find: '        if (pool.value.kind !== "observed") {',
+    replace: '        if (pool.value.kind === "keyed") {',
+    killedBy: l15Report,
+  },
+  {
+    name: "a reported request's hub key is left empty",
+    law: "L7",
+    file: reportDomain,
+    find: '        reporter._tag === "Owner" ? Option.none() : Option.some(reporter.name),',
+    replace: "        Option.none(),",
+    killedBy: l7,
+  },
+  {
+    name: "the reports group reports a hub key's calls as the owner's",
+    law: "L7",
+    file: reportsHandlers,
+    find: '                : { _tag: "HubKey", name: caller.hubKey.name },',
+    replace: '                : { _tag: "Owner" },',
+    killedBy: l7Contract,
+  },
+  {
+    name: "reported through takes the latest report's through",
+    law: "L16",
+    file: sqliteReportedThrough,
+    find: "  through = MAX(through, excluded.through),",
+    replace: "  through = excluded.through,",
+    killedBy: l16,
+  },
+  {
+    name: "a reported request is priced without its model",
+    law: "L17",
+    file: reportRequests,
+    find: "                model: request.model,",
+    replace: '                model: "",',
+    killedBy: l17,
+  },
+  {
+    name: "a record's model call is not decided main",
+    law: "T2",
+    file: requestRole,
+    find: '  if (isRecordForm(request.protocol)) return Option.some("main");',
+    replace: "",
+    killedBy: t2,
   },
 ];

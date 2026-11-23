@@ -233,6 +233,7 @@ describe("hub store laws", () => {
               "display-names/0001-display-names",
               "quota/0001-quota-logins",
               "routes/0001-routes",
+              "request-log/0001-reported-through",
             ],
             [["Firefox"]],
           ]);
@@ -260,6 +261,7 @@ describe("hub store laws", () => {
               "display-names/0001-display-names",
               "quota/0001-quota-logins",
               "routes/0001-routes",
+              "request-log/0001-reported-through",
               "sign-in/0002-owner-password",
               "sign-in/0003-passkeys",
             ],
@@ -303,6 +305,7 @@ describe("hub store laws", () => {
               "display-names/0001-display-names",
               "quota/0001-quota-logins",
               "routes/0001-routes",
+              "request-log/0001-reported-through",
               "sign-in/0003-passkeys",
             ],
             [["Firefox"]],
@@ -323,7 +326,7 @@ describe("hub store laws", () => {
             Result.isFailure(started) && started.failure.problem,
             contentsOf(path),
           ]).toEqual([
-            "was written by a newer hub: it holds display-names/0001-display-names, quota/0001-quota-logins, routes/0001-routes, sign-in/0002-owner-password, sign-in/0003-passkeys, which this hub does not know",
+            "was written by a newer hub: it holds display-names/0001-display-names, quota/0001-quota-logins, request-log/0001-reported-through, routes/0001-routes, sign-in/0002-owner-password, sign-in/0003-passkeys, which this hub does not know",
             before,
           ]);
         }),

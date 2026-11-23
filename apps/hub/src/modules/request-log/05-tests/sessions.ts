@@ -97,7 +97,12 @@ const promptSize = pick([
 
 const generated = Arbitrary.all({
   minute: int(0, 12),
-  protocol: pick(["anthropic-messages", "chatgpt-codex", "openai-chat"]),
+  protocol: pick([
+    "anthropic-messages",
+    "chatgpt-codex",
+    "openai-chat",
+    "antigravity-steps",
+  ]),
   purpose: pick([
     "",
     "",
@@ -429,35 +434,37 @@ export const sessionLog = (maxLength: number) =>
   }).pipe(
     Arbitrary.map(({ log, said }) => {
       const latest = new Map<string, Request.RequestId>();
-      return log.map(({ request, cost }, index): PricedRequest => {
-        const each = said[index] ?? said[0];
-        if (each === undefined) return { request, cost };
-        const previous = latest.get(each.session);
-        latest.set(each.session, request.id);
-        const { body, output } = exchangeOf(index, each);
-        const header =
-          each.protocol === "chatgpt-codex"
-            ? "x-openai-subagent"
-            : "x-claude-code-agent-id";
-        return {
-          request: {
-            ...request,
-            session: each.session,
-            ...(each.diverted ? { stopReason: "end_turn" } : {}),
-            conversation: each.conversation
-              ? Conversation.read(rulesOf(each.protocol), body, output)
-              : Option.none(),
-            origin: {
-              ...request.origin,
-              protocol: each.protocol,
-              purpose: each.purpose,
-              clientHeaders: each.subagent ? { [header]: "agent-7" } : {},
-              ...(each.diverted ? divertedAfter(request, previous) : {}),
+      return log.map(
+        ({ request, cost }, index): PricedRequest<Request.ForwardedRequest> => {
+          const each = said[index] ?? said[0];
+          if (each === undefined) return { request, cost };
+          const previous = latest.get(each.session);
+          latest.set(each.session, request.id);
+          const { body, output } = exchangeOf(index, each);
+          const header =
+            each.protocol === "chatgpt-codex"
+              ? "x-openai-subagent"
+              : "x-claude-code-agent-id";
+          return {
+            request: {
+              ...request,
+              session: each.session,
+              ...(each.diverted ? { stopReason: "end_turn" } : {}),
+              conversation: each.conversation
+                ? Conversation.read(rulesOf(each.protocol), body, output)
+                : Option.none(),
+              origin: {
+                ...request.origin,
+                protocol: each.protocol,
+                purpose: each.purpose,
+                clientHeaders: each.subagent ? { [header]: "agent-7" } : {},
+                ...(each.diverted ? divertedAfter(request, previous) : {}),
+              },
             },
-          },
-          cost,
-        };
-      });
+            cost,
+          };
+        },
+      );
     }),
   );
 

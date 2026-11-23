@@ -2,6 +2,7 @@ import { BunHttpClient } from "@effect/platform-bun";
 import { Duration, Effect, type HashMap, Layer, Option } from "effect";
 import { HttpApiBuilder } from "effect/http-api";
 import { Api } from "#api.ts";
+import * as ReportsHandlers from "#modules/request-log/01-presentation/reports.handlers.ts";
 import * as RequestsHandlers from "#modules/request-log/01-presentation/requests.handlers.ts";
 import * as SearchHandlers from "#modules/request-log/01-presentation/search.handlers.ts";
 import * as SessionsHandlers from "#modules/request-log/01-presentation/sessions.handlers.ts";
@@ -9,8 +10,10 @@ import * as SqlHandlers from "#modules/request-log/01-presentation/sql.handlers.
 import * as TrafficHandlers from "#modules/request-log/01-presentation/traffic.handlers.ts";
 import * as ArchiveDays from "#modules/request-log/02-application/commands/archive-days.command.ts";
 import * as RecordRequest from "#modules/request-log/02-application/commands/record-request.command.ts";
+import * as ReportRequests from "#modules/request-log/02-application/commands/report-requests.command.ts";
 import * as ReportSessionTitles from "#modules/request-log/02-application/commands/report-session-titles.command.ts";
 import type { RequestLogReader } from "#modules/request-log/02-application/interfaces/request-log-reader.ts";
+import type { RequestsRepository } from "#modules/request-log/02-application/interfaces/requests.repository.ts";
 import type { SessionTitles } from "#modules/request-log/02-application/interfaces/session-titles.ts";
 import type { SqlConsole } from "#modules/request-log/02-application/interfaces/sql-console.ts";
 import type { Transcripts } from "#modules/request-log/02-application/interfaces/transcripts.ts";
@@ -37,10 +40,12 @@ import * as ClickHouseRequests from "#modules/request-log/04-infrastructure/pers
 import * as ClickHouseSessionTitles from "#modules/request-log/04-infrastructure/persistence/clickhouse/clickhouse-session-titles.ts";
 import * as ClickHouseSqlConsole from "#modules/request-log/04-infrastructure/persistence/clickhouse/clickhouse-sql-console.ts";
 import * as ClickHouse from "#modules/request-log/04-infrastructure/persistence/clickhouse/client.ts";
+import * as SqliteReportedThrough from "#modules/request-log/04-infrastructure/persistence/sqlite/sqlite-reported-through.ts";
 import * as PriceLists from "#modules/request-log/04-infrastructure/prices/prices.ts";
 import * as RenderedTranscripts from "#modules/request-log/04-infrastructure/transcripts/transcripts.ts";
 import type { PoolId } from "#shared/03-domain/ids.ts";
 import type * as Pool from "#shared/03-domain/pool.entity.ts";
+import type { HubStore } from "#shared/04-infrastructure/hub-store/hub-store.ts";
 
 export interface Options {
   readonly clickhouse: ClickHouse.Connection;
@@ -101,6 +106,24 @@ export const sql: Layer.Layer<Sql, never, SqlConsole> = Layer.mergeAll(
   ReadSchema.layer,
 );
 
+/**
+ * The command the `reports` group answers, over the repository given, priced
+ * from each pool's prices, with reported through in the hub store.
+ */
+export const reports = (
+  pools: HashMap.HashMap<PoolId, Pool.Pool>,
+): Layer.Layer<
+  ReportRequests.ReportRequests,
+  never,
+  RequestsRepository | HubStore
+> =>
+  ReportRequests.layer(pools).pipe(
+    Layer.provide([PriceLists.layer(pools), SqliteReportedThrough.layer]),
+  );
+
+/** The request log's steps in the hub store. */
+export const steps = SqliteReportedThrough.steps;
+
 export const archiverStarts = Duration.minutes(1);
 export const archiverPause = Duration.hours(1);
 
@@ -142,6 +165,7 @@ export const layer = (
   | Sessions
   | QuotaSources
   | Sql
+  | RequestsRepository
 > =>
   Layer.mergeAll(
     Option.match(options.archive, {
@@ -160,6 +184,7 @@ export const layer = (
       ]),
     ),
     sql.pipe(Layer.provide(ClickHouseSqlConsole.layer(options.sql))),
+    ClickHouseRequests.layer,
   ).pipe(
     Layer.provide(ClickHouse.layer(options.clickhouse)),
     Layer.provide(BunHttpClient.layer),
@@ -174,11 +199,12 @@ export const poolModels = (
 /** The name models.dev gives each model of the shipped price lists, by model id, for the display names. */
 export const modelNames = PriceLists.modelNames;
 
-/** The handlers of the `traffic`, `sessions`, `requests`, `search` and `sql` groups. */
+/** The handlers of the `traffic`, `sessions`, `requests`, `search`, `sql` and `reports` groups. */
 export const api = Layer.mergeAll(
   HttpApiBuilder.group(Api, "traffic", TrafficHandlers.build),
   HttpApiBuilder.group(Api, "sessions", SessionsHandlers.build),
   HttpApiBuilder.group(Api, "requests", RequestsHandlers.build),
   HttpApiBuilder.group(Api, "search", SearchHandlers.build),
   HttpApiBuilder.group(Api, "sql", SqlHandlers.build),
+  HttpApiBuilder.group(Api, "reports", ReportsHandlers.build),
 );
