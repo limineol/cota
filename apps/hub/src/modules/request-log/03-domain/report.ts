@@ -16,10 +16,6 @@ export type Reporter =
   | { readonly _tag: "Owner" }
   | { readonly _tag: "HubKey"; readonly name: HubKeyName };
 
-/** `key:<the hub key's name>`, or `owner`, as a reported request's id is made from it. */
-export const reporterText = (reporter: Reporter): string =>
-  reporter._tag === "Owner" ? "owner" : `key:${reporter.name}`;
-
 /** The name of the hub key that reported, or `owner`, as reported through keeps it. */
 export const reportedByText = (reporter: Reporter): string =>
   reporter._tag === "Owner" ? "owner" : reporter.name;
@@ -27,20 +23,17 @@ export const reportedByText = (reporter: Reporter): string =>
 /**
  * A reported request's id (L8): a UUID version 7 stamped with the call's
  * start, whose other bits are the SHA-256 of `cota-report:` and the JSON of
- * `[<reporter>, <client>, <call key>]`. A hub key's name and a call key may
- * hold any character, so the parts are written as JSON strings, which no two
- * different parts share.
+ * `[<client>, <call key>]`. Who reports a call is no part of it: a hub key
+ * renamed or replaced, or a data folder copied to another machine, reports
+ * the same requests, which the log then holds. A stored id is for ever, so
+ * this text never changes.
  */
 export const idOf = (
-  reporter: Reporter,
   client: ReportedClient,
   callKey: string,
   startedAt: DateTime.Utc,
 ): Request.RequestId =>
-  stampedIdOf(
-    `cota-report:${JSON.stringify([reporterText(reporter), client, callKey])}`,
-    startedAt,
-  );
+  stampedIdOf(`cota-report:${JSON.stringify([client, callKey])}`, startedAt);
 
 /** The record form a reported client's items are kept in. */
 export const formOf: Readonly<Record<ReportedClient, RecordForm>> = {
@@ -257,7 +250,7 @@ export const check = Effect.fn("Report.check")(function* (
     const done: Checked = {
       place,
       call,
-      id: idOf(caller.reporter, report.client, call.call, call.startedAt),
+      id: idOf(report.client, call.call, call.startedAt),
       input: steps.slice(0, call.input.length),
       output: only,
     };

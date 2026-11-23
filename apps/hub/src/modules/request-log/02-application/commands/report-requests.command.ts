@@ -102,7 +102,7 @@ export const layer = (
 
       /** The call before of each call whose call before is not earlier in the report, as the log holds it in the call's session. */
       const beforesFromLog = Effect.fn("ReportRequests.beforesFromLog")(
-        function* (checked: Report.CheckedReport, reporter: Report.Reporter) {
+        function* (checked: Report.CheckedReport) {
           const found = new Map<number, Report.Before>();
           const earlier = new Set<string>();
           for (const each of checked.calls) {
@@ -113,7 +113,6 @@ export const layer = (
             ) {
               const after = call.after.value;
               const id = Report.idOf(
-                reporter,
                 checked.report.client,
                 after.call,
                 after.startedAt,
@@ -167,7 +166,7 @@ export const layer = (
         pool: Pick<Pool.Pool, "id" | "provider">,
         reporter: Report.Reporter,
       ) {
-        const fromLog = yield* beforesFromLog(checked, reporter);
+        const fromLog = yield* beforesFromLog(checked);
         const built = yield* Report.builtAll(checked, pool, reporter, (each) =>
           Option.fromUndefinedOr(fromLog.get(each.place)),
         );

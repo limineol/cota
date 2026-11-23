@@ -59,7 +59,7 @@ const Count = Schema.Struct({ held: Schema.FiniteFromString });
 const heldIn = ({ clickHouse }: World, calls: ReadonlyArray<Report.Call>) =>
   Effect.gen(function* () {
     const ids = calls.map((call) =>
-      Report.idOf(reporter, "antigravity", call.call, call.startedAt),
+      Report.idOf("antigravity", call.call, call.startedAt),
     );
     const counted = (table: string, column: string) =>
       clickHouse.select(
@@ -182,7 +182,7 @@ describe("reported requests in ClickHouse", () => {
             const input = call.input.map(digestOf);
             const output = call.output.map(digestOf);
             const row = byId.get(
-              Report.idOf(reporter, "antigravity", call.call, call.startedAt),
+              Report.idOf("antigravity", call.call, call.startedAt),
             );
             expect(row?.input).toEqual([...before, ...input]);
             expect(row?.output).toEqual(output);

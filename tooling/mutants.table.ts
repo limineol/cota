@@ -405,9 +405,10 @@ const l7 =
 const l7Contract =
   "L7: the stored requests' hub key is the caller's hub key's name, empty for the owner, and their machine the caller's x-cota-machine, whatever the body names";
 const l8 =
-  "L8: a reported request's id is a function of its reporter, client, call key and start alone, a UUID version 7 stamped with the start, and two reporters never share one whatever their call keys";
+  "L8: a reported request's id is a function of its client, call key and start alone, a UUID version 7 stamped with the start, and two call keys never share one";
+const l8Text = "L8: a reported request's id is the one the spec's text gives";
 const l9 =
-  "L9: however a report is delivered again, in part, with others, or after a delivery stored in part, the log holds each call once, with the rows one delivery of each call gives";
+  "L9: however a report is delivered again, by its reporter or another, in part, with others, or after a delivery stored in part, the log holds each call once, with the rows one delivery of each call gives";
 const l10 =
   "L10: a report answered 200 has every one of its calls held in the log at the moment of the answer";
 const l11 =
@@ -7443,21 +7444,20 @@ export const layer = (policy: Admission.Policy) =>
     killedBy: o8Served,
   },
   {
-    name: "a reported request's id leaves out its reporter",
+    name: "a reported request's id leaves out its call key",
     law: "L8",
     file: reportDomain,
-    find: "    `cota-report:${JSON.stringify([reporterText(reporter), client, callKey])}`,",
-    replace: "    `cota-report:${JSON.stringify([client, callKey])}`,",
+    find: "`cota-report:${JSON.stringify([client, callKey])}`",
+    replace: "`cota-report:${JSON.stringify([client])}`",
     killedBy: l8,
   },
   {
     name: "a reported request's id joins its parts with colons",
     law: "L8",
     file: reportDomain,
-    find: "    `cota-report:${JSON.stringify([reporterText(reporter), client, callKey])}`,",
-    replace:
-      "    `cota-report:${reporterText(reporter)}:${client}:${callKey}`,",
-    killedBy: l8,
+    find: "`cota-report:${JSON.stringify([client, callKey])}`",
+    replace: "`cota-report:${client}:${callKey}`",
+    killedBy: l8Text,
   },
   {
     name: "a report stores the requests the log already holds",

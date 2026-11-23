@@ -39,8 +39,8 @@ type World = Effect.Success<ReturnType<typeof Reports.started>>;
 
 const atNow = TestClock.setTime(DateTime.toEpochMillis(Reports.now));
 
-const idOf = (reporter: Report.Reporter, call: Report.Call) =>
-  Report.idOf(reporter, "antigravity", call.call, call.startedAt);
+const idOf = (call: Report.Call) =>
+  Report.idOf("antigravity", call.call, call.startedAt);
 
 const callerOf = (
   reporter: Report.Reporter,
@@ -115,6 +115,7 @@ const once = (
 const deliveries = Arbitrary.all({
   plan: Reports.reported,
   reporter: pick(Reports.reporters),
+  againBy: pick(Reports.reporters),
   faults: Arbitrary.array(
     pick(["none", "unreached", "lost", "cut", "declined"]),
     { maxLength: 20 },
@@ -127,8 +128,8 @@ const deliveries = Arbitrary.all({
 
 /**
  * Each report sent until it is stored, through faults, and after some of them
- * a run of the calls sent so far sent again: whole reports, parts of them, and
- * several together.
+ * a run of the calls sent so far sent again, by a reporter that may be
+ * another: whole reports, parts of them, and several together.
  */
 const deliveredMany = (
   generated: typeof deliveries extends Arbitrary.Arbitrary<infer A> ? A : never,
@@ -147,7 +148,7 @@ const deliveredMany = (
         yield* delivered(
           world,
           sent.slice(from, from + again.length),
-          generated.reporter,
+          generated.againBy,
           faults,
           answered,
         );
@@ -162,7 +163,7 @@ const digestOf = (step: Schema.JsonObject) =>
 
 describe("reported requests laws", () => {
   it.effect.prop(
-    "L9: however a report is delivered again, in part, with others, or after a delivery stored in part, the log holds each call once, with the rows one delivery of each call gives",
+    "L9: however a report is delivered again, by its reporter or another, in part, with others, or after a delivery stored in part, the log holds each call once, with the rows one delivery of each call gives",
     { generated: deliveries },
     ({ generated }) =>
       Effect.gen(function* () {
@@ -184,7 +185,7 @@ describe("reported requests laws", () => {
         let world: World | undefined;
         const answered = (calls: ReadonlyArray<Report.Call>) => {
           for (const call of calls) {
-            const id = idOf(generated.reporter, call);
+            const id = idOf(call);
             if (world !== undefined && !holds(world.memory, id)) {
               missing.push(call.call);
             }
@@ -213,7 +214,7 @@ describe("reported requests laws", () => {
           const input = call.input.map(digestOf);
           const output = call.output.map(digestOf);
           const row = world.memory.requestItems.find(
-            ({ requestId }) => requestId === idOf(reporter, call),
+            ({ requestId }) => requestId === idOf(call),
           );
           expect(row?.input).toEqual([...before, ...input]);
           expect(row?.output).toEqual(output);
@@ -482,7 +483,7 @@ const defective = (
         caller,
       };
     case "values the log cannot hold": {
-      const id = idOf(reporter, call);
+      const id = idOf(call);
       world.memory.holds = ({ request }) => request.id !== id;
       return { report, caller };
     }
@@ -708,7 +709,7 @@ describe("a reported request's cost", () => {
         const reported = plan.calls.map(
           (call) =>
             world.memory.requests.find(
-              ({ request }) => request.id === idOf(reporter, call),
+              ({ request }) => request.id === idOf(call),
             )?.cost,
         );
         expect(reported).toEqual(yield* writersCosts(pools, plan.calls));
