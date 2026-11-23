@@ -4,14 +4,16 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   statSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "@effect/vitest";
-import { Arbitrary, Effect, Option, Schema } from "effect";
+import { Arbitrary, Effect, Option, Result, Schema } from "effect";
 import { ClientRecords } from "#02-application/interfaces/client-records.ts";
 import { fromStart, readingOf } from "#03-domain/antigravity-record.ts";
 import { written } from "#05-tests/antigravity-databases.ts";
@@ -28,7 +30,7 @@ const conversation = "c0ffee00-0000-4000-8000-000000000002";
 
 /** A data folder in a scratch directory: a conversation's database held open by a writer, as a live client holds it, and files the reader must never open. */
 const folderWith = (plans: ReadonlyArray<Plan>) => {
-  const folder = mkdtempSync(join(tmpdir(), "cota-agy-"));
+  const folder = realpathSync(mkdtempSync(join(tmpdir(), "cota-agy-")));
   mkdirSync(join(folder, "conversations"));
   mkdirSync(join(folder, "logs"));
   writeFileSync(
@@ -101,6 +103,27 @@ const read = (disk: Disk, folder: string, scratch: string) =>
     return { listed, copied };
   }).pipe(Effect.provide(layerOf(disk)));
 
+/** What listing and reading a folder failed with, as the path and reason a run says. */
+const refused = (disk: Disk, folder: string, scratch: string) =>
+  Effect.gen(function* () {
+    const records = yield* ClientRecords;
+    const failure = (
+      result: Result.Result<unknown, { path: string; reason: string }>,
+    ) =>
+      Result.isFailure(result)
+        ? { path: result.failure.path, reason: result.failure.reason }
+        : undefined;
+    return {
+      listed: failure(yield* Effect.result(records.conversations(folder))),
+      copied: failure(
+        yield* Effect.result(records.read(folder, conversation, scratch, -1)),
+      ),
+    };
+  }).pipe(Effect.provide(layerOf(disk)));
+
+/** Directories a J23 run makes beside the folder, removed after it. */
+const linked: Array<string> = [];
+
 describe("the Antigravity reader over SQLite", () => {
   it.effect.prop(
     "J23: A run opens no file of a data folder but `conversations/*.db` and their `-wal`, opens none of them to write, and leaves every file of the folder as it was.",
@@ -129,8 +152,14 @@ describe("the Antigravity reader over SQLite", () => {
             const allowed =
               {
                 readBytes: [database, `${database}-wal`],
-                status: [folder, database, `${database}-wal`],
+                status: [
+                  folder,
+                  join(folder, "conversations"),
+                  database,
+                  `${database}-wal`,
+                ],
                 names: [join(folder, "conversations")],
+                realPath: [folder],
               }[how] ?? [];
             expect({ how, path, allowed: allowed.includes(path) }).toEqual({
               how,
@@ -139,10 +168,55 @@ describe("the Antigravity reader over SQLite", () => {
             });
           }
           expect(readdirSync(scratch)).toEqual([]);
+
+          // A database that is a link out of `conversations` is not read, nor
+          // is a `conversations` that is a link: each is said as the folder's.
+          const outside = realpathSync(
+            mkdtempSync(join(tmpdir(), "cota-out-")),
+          );
+          linked.push(outside);
+          const linkedDb = join(folder, "conversations", "0-linked.db");
+          writeFileSync(join(outside, "elsewhere.db"), readFileSync(database));
+          symlinkSync(join(outside, "elsewhere.db"), linkedDb);
+          const outOf = watched();
+          expect((yield* refused(outOf.disk, folder, scratch)).listed).toEqual({
+            path: linkedDb,
+            reason: `it leads out of ${join(folder, "conversations")}, and cota reads no conversation out of it`,
+          });
+          expect(
+            outOf.touched.filter(({ path }) => path.startsWith(outside)),
+          ).toEqual([]);
+          rmSync(linkedDb);
+          const other = realpathSync(mkdtempSync(join(tmpdir(), "cota-agy-")));
+          linked.push(other);
+          symlinkSync(
+            join(folder, "conversations"),
+            join(other, "conversations"),
+          );
+          const through = watched();
+          const saying = {
+            path: join(other, "conversations"),
+            reason:
+              "it is a symbolic link, and cota reads no conversation through one",
+          };
+          expect(yield* refused(through.disk, other, scratch)).toEqual({
+            listed: saying,
+            copied: saying,
+          });
+          expect(
+            through.touched.filter(
+              ({ how }) => how === "readBytes" || how === "names",
+            ),
+          ).toEqual([]);
+          expect(filesOf(folder)).toEqual(before);
+          expect(readdirSync(scratch)).toEqual([]);
         } finally {
           db.close();
           rmSync(folder, { recursive: true, force: true });
           rmSync(scratch, { recursive: true, force: true });
+          for (const each of linked.splice(0)) {
+            rmSync(each, { recursive: true, force: true });
+          }
         }
       }),
     { arbitrary: { runs: 20 } },

@@ -1,6 +1,6 @@
 import { Database } from "bun:sqlite";
 import * as fs from "node:fs/promises";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 import { Effect, Layer, Option } from "effect";
 import {
   ClientRecords,
@@ -19,6 +19,7 @@ import { type Stamps, sameStamps } from "#03-domain/requests.ts";
 export interface Status {
   readonly isFile: boolean;
   readonly isDirectory: boolean;
+  readonly isLink: boolean;
   readonly size: number;
   readonly changedAt: number;
 }
@@ -41,6 +42,7 @@ export const nodeDisk: Disk = {
     return {
       isFile: status.isFile(),
       isDirectory: status.isDirectory(),
+      isLink: status.isSymbolicLink(),
       size: status.size,
       changedAt: status.mtimeMs,
     };
@@ -65,6 +67,16 @@ const codeOf = (cause: unknown): string | undefined =>
 
 const isMissing = (cause: unknown) =>
   codeOf(cause) === "ENOENT" || codeOf(cause) === "ENOTDIR";
+
+/** A path the reader will not read through: a linked `conversations` directory, or a file that leads out of it. */
+class NotFollowed extends Error {
+  constructor(
+    readonly path: string,
+    readonly reason: string,
+  ) {
+    super(reason);
+  }
+}
 
 const reasonOf = (cause: unknown): string => {
   switch (codeOf(cause)) {
@@ -190,14 +202,35 @@ export const layerOf = (disk: Disk): Layer.Layer<ClientRecords> => {
   const attempt = <A>(path: string, run: () => Promise<A>) =>
     Effect.tryPromise({
       try: run,
-      catch: (cause) => new FilesFailed({ path, reason: reasonOf(cause) }),
+      catch: (cause) =>
+        cause instanceof NotFollowed
+          ? new FilesFailed({ path: cause.path, reason: cause.reason })
+          : new FilesFailed({ path, reason: reasonOf(cause) }),
     });
 
-  const stampOf = async (path: string) => {
+  /**
+   * A file of the `conversations` directory `within` (a real path), by its
+   * real path and its stamp: a link is followed only to a file inside it.
+   */
+  const fileOf = async (path: string, within: string) => {
     try {
-      const status = await disk.status(path);
+      let real = path;
+      let status = await disk.status(path);
+      if (status.isLink) {
+        real = await disk.realPath(path);
+        if (!real.startsWith(`${within}${sep}`)) {
+          throw new NotFollowed(
+            path,
+            `it leads out of ${within}, and cota reads no conversation out of it`,
+          );
+        }
+        status = await disk.status(real);
+      }
       return status.isFile
-        ? Option.some({ size: status.size, changedAt: status.changedAt })
+        ? Option.some({
+            real,
+            stamp: { size: status.size, changedAt: status.changedAt },
+          })
         : Option.none();
     } catch (cause) {
       if (isMissing(cause)) return Option.none();
@@ -205,34 +238,69 @@ export const layerOf = (disk: Disk): Layer.Layer<ClientRecords> => {
     }
   };
 
-  const stampsOf = async (database: string): Promise<Option.Option<Stamps>> => {
-    const db = await stampOf(database);
+  /** A conversation's database and its `-wal`, by their real paths, and their stamps. */
+  const filesOf = async (database: string, within: string) => {
+    const db = await fileOf(database, within);
     if (Option.isNone(db)) return Option.none();
-    return Option.some({ db: db.value, wal: await stampOf(`${database}-wal`) });
+    const wal = await fileOf(`${database}-wal`, within);
+    const stamps: Stamps = {
+      db: db.value.stamp,
+      wal: Option.map(wal, ({ stamp }) => stamp),
+    };
+    return Option.some({
+      db: db.value.real,
+      wal: Option.map(wal, ({ real }) => real),
+      stamps,
+    });
+  };
+
+  /**
+   * The `conversations` directory of a data folder's real path, or none
+   * when it has none; one that is a link is not read.
+   */
+  const conversationsOf = async (real: string) => {
+    const directory = join(real, "conversations");
+    try {
+      const status = await disk.status(directory);
+      if (status.isLink) {
+        throw new NotFollowed(
+          directory,
+          "it is a symbolic link, and cota reads no conversation through one",
+        );
+      }
+      return status.isDirectory ? Option.some(directory) : Option.none();
+    } catch (cause) {
+      if (isMissing(cause)) return Option.none();
+      throw cause;
+    }
   };
 
   const copyOnce = async (
     database: string,
+    within: string,
     scratch: string,
     conversation: string,
     after: number,
   ): Promise<Copied | "again"> => {
-    const before = await stampsOf(database);
+    const before = await filesOf(database, within);
     if (Option.isNone(before)) return { _tag: "Changing" };
     const directory = await disk.makeScratch(scratch);
     try {
       const copy = join(directory, "conversation.db");
-      await disk.writeBytes(copy, await disk.readBytes(database));
+      await disk.writeBytes(copy, await disk.readBytes(before.value.db));
       if (Option.isSome(before.value.wal)) {
         await disk.writeBytes(
           `${copy}-wal`,
-          await disk.readBytes(`${database}-wal`),
+          await disk.readBytes(before.value.wal.value),
         );
       }
-      const afterCopy = await stampsOf(database);
+      const afterCopy = await filesOf(database, within);
       if (
         Option.isNone(afterCopy) ||
-        !sameStamps(before.value, afterCopy.value)
+        afterCopy.value.db !== before.value.db ||
+        Option.getOrUndefined(afterCopy.value.wal) !==
+          Option.getOrUndefined(before.value.wal) ||
+        !sameStamps(before.value.stamps, afterCopy.value.stamps)
       ) {
         return "again";
       }
@@ -245,7 +313,7 @@ export const layerOf = (disk: Disk): Layer.Layer<ClientRecords> => {
           onSome: (each): Copied => ({
             _tag: "Read",
             record: each,
-            stamps: before.value,
+            stamps: before.value.stamps,
           }),
         });
       } finally {
@@ -275,19 +343,24 @@ export const layerOf = (disk: Disk): Layer.Layer<ClientRecords> => {
           }
         }),
       conversations: (folder) =>
-        attempt(folder, async () => {
+        attempt(join(folder, "conversations"), async () => {
+          let real: string;
           try {
-            if (!(await disk.status(folder)).isDirectory) {
+            real = await disk.realPath(folder);
+            if (!(await disk.status(real)).isDirectory) {
               return Option.none<ReadonlyArray<Listed>>();
             }
           } catch (cause) {
             if (isMissing(cause)) return Option.none<ReadonlyArray<Listed>>();
             throw cause;
           }
-          const directory = join(folder, "conversations");
+          const directory = await conversationsOf(real);
+          if (Option.isNone(directory)) {
+            return Option.some<ReadonlyArray<Listed>>([]);
+          }
           let names: ReadonlyArray<string>;
           try {
-            names = await disk.names(directory);
+            names = await disk.names(directory.value);
           } catch (cause) {
             if (isMissing(cause)) return Option.some<ReadonlyArray<Listed>>([]);
             throw cause;
@@ -295,31 +368,42 @@ export const layerOf = (disk: Disk): Layer.Layer<ClientRecords> => {
           const listed: Array<Listed> = [];
           for (const name of [...names].sort()) {
             if (!name.endsWith(".db") || name.length <= 3) continue;
-            const stamps = await stampsOf(join(directory, name));
-            if (Option.isSome(stamps)) {
+            const files = await filesOf(
+              join(directory.value, name),
+              directory.value,
+            );
+            if (Option.isSome(files)) {
               listed.push({
                 conversation: name.slice(0, -3),
-                stamps: stamps.value,
+                stamps: files.value.stamps,
               });
             }
           }
           return Option.some<ReadonlyArray<Listed>>(listed);
         }),
-      read: (folder, conversation, scratch, after) => {
-        const database = join(folder, "conversations", `${conversation}.db`);
-        return attempt(database, async () => {
-          for (let tried = 0; tried < copies; tried++) {
-            const copied = await copyOnce(
-              database,
-              scratch,
-              conversation,
-              after,
+      read: (folder, conversation, scratch, after) =>
+        attempt(
+          join(folder, "conversations", `${conversation}.db`),
+          async () => {
+            const directory = await conversationsOf(
+              await disk.realPath(folder),
             );
-            if (copied !== "again") return copied;
-          }
-          return { _tag: "Changing" } satisfies Copied;
-        });
-      },
+            if (Option.isNone(directory))
+              return { _tag: "Changing" } satisfies Copied;
+            const database = join(directory.value, `${conversation}.db`);
+            for (let tried = 0; tried < copies; tried++) {
+              const copied = await copyOnce(
+                database,
+                directory.value,
+                scratch,
+                conversation,
+                after,
+              );
+              if (copied !== "again") return copied;
+            }
+            return { _tag: "Changing" } satisfies Copied;
+          },
+        ),
     }),
   );
 };

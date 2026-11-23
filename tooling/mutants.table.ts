@@ -7798,9 +7798,26 @@ export const layer = (policy: Admission.Policy) =>
     name: "the reader copies the -shm",
     law: "J23",
     file: cliSqliteRecords,
-    find: "      const afterCopy = await stampsOf(database);",
+    find: "      const afterCopy = await filesOf(database, within);",
     replace:
-      "      await disk.writeBytes(`${copy}-shm`, await disk.readBytes(`${database}-shm`));\n      const afterCopy = await stampsOf(database);",
+      "      await disk.writeBytes(`${copy}-shm`, await disk.readBytes(`${database}-shm`));\n      const afterCopy = await filesOf(database, within);",
+    killedBy: j23,
+  },
+  {
+    name: "a database linked out of the conversations directory is read",
+    law: "J23",
+    file: cliSqliteRecords,
+    find: "        if (!real.startsWith(`${within}${sep}`)) {",
+    replace: "        if (!real.startsWith(sep)) {",
+    killedBy: j23,
+  },
+  {
+    name: "a conversations directory that is a link is read through",
+    law: "J23",
+    file: cliSqliteRecords,
+    find: "      if (status.isLink) {\n        throw new NotFollowed(\n          directory,",
+    replace:
+      "      if (status.isLink && status.isFile) {\n        throw new NotFollowed(\n          directory,",
     killedBy: j23,
   },
   {
