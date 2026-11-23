@@ -152,6 +152,10 @@ export function LiveState({
   );
 }
 
+/** A pool's usage as the cards are ordered by it: its tokens over the last 30 days, every class summed, none without traffic. */
+export const usageOf = (figures: Figures): number =>
+  figures.month === undefined ? 0 : tokensIn(figures.month.usage);
+
 const figureOf = (row: BreakdownRow | undefined) => (
   <>
     <strong>{tokens(row === undefined ? 0 : tokensIn(row.usage))}</strong>
