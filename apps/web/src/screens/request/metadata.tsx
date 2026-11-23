@@ -8,9 +8,11 @@ import type { ReactNode } from "react";
 import { useNameOf } from "#shared/names.tsx";
 import { counted, millis, plural } from "#shared/words.ts";
 import type { RequestRecord } from "./queries.ts";
-import { toTheSecond } from "./words.ts";
+import { notInTheRecord, reported, toTheSecond } from "./words.ts";
 
 const none = <FieldNone>none</FieldNone>;
+
+const absent = <FieldNone>{notInTheRecord}</FieldNone>;
 
 const orNone = (value: string): ReactNode => (value === "" ? none : value);
 
@@ -66,6 +68,9 @@ export function MetadataPanel({
   readonly request: RequestRecord;
 }) {
   const nameOf = useNameOf();
+  const fromARecord = reported(request);
+  /** A field only a hub in the path can know: for a reported request, why it is absent. */
+  const seen = (value: ReactNode): ReactNode => (fromARecord ? absent : value);
   return (
     <Fields>
       <FieldGroup level={2} title="Where it went">
@@ -93,18 +98,20 @@ export function MetadataPanel({
             request.servedModel
           )}
         </Field>
-        <Field name="Service tier">{orNone(request.serviceTier)}</Field>
-        <Field name="Streamed">{request.stream ? "yes" : "no"}</Field>
+        <Field name="Service tier">{seen(orNone(request.serviceTier))}</Field>
+        <Field name="Streamed">{seen(request.stream ? "yes" : "no")}</Field>
         <Field name="Stop reason">{orNone(request.stopReason)}</Field>
         <Field name="Provider's request id">
           {orNone(request.providerRequestId)}
         </Field>
         <Field name="Login fingerprint">
-          {request.loginFingerprint === null ||
-          request.loginFingerprint === "" ? (
-            <FieldNone>none: a keyed pool, or no login sent</FieldNone>
-          ) : (
-            request.loginFingerprint
+          {seen(
+            request.loginFingerprint === null ||
+              request.loginFingerprint === "" ? (
+              <FieldNone>none: a keyed pool, or no login sent</FieldNone>
+            ) : (
+              request.loginFingerprint
+            ),
           )}
         </Field>
       </FieldGroup>
@@ -116,11 +123,19 @@ export function MetadataPanel({
           />
         </Field>
         <Field name="Client version">{orNone(request.clientVersion)}</Field>
-        <Field name="User agent">{orNone(request.userAgent)}</Field>
-        <Field name="Hub key">{orNone(request.hubKey)}</Field>
+        <Field name="User agent">{seen(orNone(request.userAgent))}</Field>
+        {fromARecord ? (
+          <Field name="Reported by">
+            {request.hubKey === "" ? "the owner" : request.hubKey}
+          </Field>
+        ) : (
+          <Field name="Hub key">{orNone(request.hubKey)}</Field>
+        )}
         <Field name="Session">{request.session}</Field>
         <Field name="Session id read from">
-          {request.sessionSource === "" ? (
+          {fromARecord ? (
+            "the client's record"
+          ) : request.sessionSource === "" ? (
             <FieldNone>nowhere: the hub made the key</FieldNone>
           ) : (
             request.sessionSource
@@ -150,32 +165,44 @@ export function MetadataPanel({
       <FieldGroup level={2} title="Timing and size">
         <Field name="Started">{toTheSecond(millis(request.startedAt))}</Field>
         <Field name="First byte after">
-          {request.firstByteMs === null ? (
-            <FieldNone>none came</FieldNone>
-          ) : (
-            `${counted(request.firstByteMs)} ms`
+          {seen(
+            request.firstByteMs === null ? (
+              <FieldNone>none came</FieldNone>
+            ) : (
+              `${counted(request.firstByteMs)} ms`
+            ),
           )}
         </Field>
         <Field name="Duration">{counted(request.durationMs)} ms</Field>
-        <Field name="Request body">{bytes(request.requestBytes)}</Field>
-        <Field name="Response body">{bytes(request.responseBytes)}</Field>
+        <Field name="Request body">{seen(bytes(request.requestBytes))}</Field>
+        <Field name="Response body">{seen(bytes(request.responseBytes))}</Field>
         <Field name="Response read to the end">
-          {request.readingComplete ? (
-            "yes"
-          ) : (
-            <FieldNone>no: usage and output may be short</FieldNone>
+          {seen(
+            request.readingComplete ? (
+              "yes"
+            ) : (
+              <FieldNone>no: usage and output may be short</FieldNone>
+            ),
           )}
         </Field>
       </FieldGroup>
       <Headers
         title="Quota headers"
         headers={request.rateLimits}
-        empty="None came with the answer"
+        empty={
+          fromARecord
+            ? "None: the client's record has no headers"
+            : "None came with the answer"
+        }
       />
       <Headers
         title="Client headers kept"
         headers={request.clientHeaders}
-        empty="None on the protocol's list"
+        empty={
+          fromARecord
+            ? "None: the client's record has no headers"
+            : "None on the protocol's list"
+        }
       />
     </Fields>
   );

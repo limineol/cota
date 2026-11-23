@@ -14,7 +14,10 @@ import { useNow } from "#shared/now.tsx";
 import { millis } from "#shared/words.ts";
 import { Written } from "#shared/written.tsx";
 import type { Inspected, RequestRecord } from "./queries.ts";
-import { toTheSecond } from "./words.ts";
+import { notInTheRecord, reported, toTheSecond } from "./words.ts";
+
+/** The error type of a call whose step was still unfinished when its machine reported it (`docs/specs/request-reporter/spec.md`). */
+const unfinished = "cota_reported_unfinished";
 
 export function ErrorPanel({ request }: { readonly request: RequestRecord }) {
   const now = useNow();
@@ -27,12 +30,22 @@ export function ErrorPanel({ request }: { readonly request: RequestRecord }) {
           <Field name="Error type">
             {request.errorType === "" ? (
               <FieldNone>none recorded</FieldNone>
+            ) : request.errorType === unfinished ? (
+              <>
+                {request.errorType}{" "}
+                <FieldNone>
+                  (the client's step was not finished when its machine reported
+                  it, and is kept as it was then)
+                </FieldNone>
+              </>
             ) : (
               request.errorType
             )}
           </Field>
           <Field name="Upstream status">
-            {request.upstreamStatus === 0 ? (
+            {reported(request) ? (
+              <FieldNone>none: {notInTheRecord}</FieldNone>
+            ) : request.upstreamStatus === 0 ? (
               <FieldNone>none: the provider never answered</FieldNone>
             ) : (
               request.upstreamStatus
@@ -83,6 +96,18 @@ export function ErrorPanel({ request }: { readonly request: RequestRecord }) {
 }
 
 export function ToolsPanel({ answer }: { readonly answer: Inspected }) {
+  if (reported(answer.request)) {
+    return (
+      <Empty>
+        <EmptyTitle>The client's record has no tool definitions.</EmptyTitle>
+        <EmptyDescription>
+          A record keeps the tools the model called, with their results, in
+          Input and Output; it does not keep the definitions the model was
+          given.
+        </EmptyDescription>
+      </Empty>
+    );
+  }
   if (answer.tools === null || answer.tools.length === 0) {
     return (
       <Empty>
@@ -110,6 +135,17 @@ export function ToolsPanel({ answer }: { readonly answer: Inspected }) {
 }
 
 export function ParamsPanel({ answer }: { readonly answer: Inspected }) {
+  if (reported(answer.request)) {
+    return (
+      <Empty>
+        <EmptyTitle>The client's record has no params.</EmptyTitle>
+        <EmptyDescription>
+          A record keeps a conversation's steps, not the settings the client
+          sent beside them.
+        </EmptyDescription>
+      </Empty>
+    );
+  }
   if (answer.params === null) {
     return (
       <Empty>

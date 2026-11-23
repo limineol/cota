@@ -400,6 +400,12 @@ const reportRequests = `${requestLog}/02-application/commands/report-requests.co
 const reportDomain = `${requestLog}/03-domain/report.ts`;
 const reportsHandlers = `${requestLog}/01-presentation/reports.handlers.ts`;
 const sqliteReportedThrough = `${requestLog}/04-infrastructure/persistence/sqlite/sqlite-reported-through.ts`;
+const storedProtocol = `${requestLog}/03-domain/stored-protocol.ts`;
+const reportedThroughDomain = `${requestLog}/03-domain/reported-through.ts`;
+const readBack =
+  "reads a reported request back: its origin, its transcript by the record form's table, and its body as its steps through its input";
+const lateness =
+  "answers every machine's, client's and pool's reported through in that order, late once it is more than 5 minutes behind the hub's clock";
 const l7 =
   "L7: the stored requests' hub key is the caller's hub key's name, empty for the owner, and their machine the caller's x-cota-machine, whatever the report holds";
 const l7Contract =
@@ -7581,5 +7587,42 @@ export const layer = (policy: Admission.Policy) =>
     find: '  if (isRecordForm(request.protocol)) return Option.some("main");',
     replace: "",
     killedBy: t2,
+  },
+  {
+    name: "a reported request is read as forwarded",
+    file: storedProtocol,
+    find: '    ? "reported"',
+    replace: '    ? "forwarded"',
+    killedBy: readBack,
+  },
+  {
+    name: "ClickHouse gives a session one of its requests' protocols",
+    law: "H9",
+    file: reader,
+    find: "arraySort(groupUniqArray(toString(protocol))) AS protocols",
+    replace: "[any(toString(protocol))] AS protocols",
+    killedBy: h9,
+  },
+  {
+    name: "ClickHouse reads every summary's protocol as Anthropic's",
+    law: "H9",
+    file: reader,
+    find: "started_at, toString(protocol) AS protocol,",
+    replace: "started_at, 'anthropic-messages' AS protocol,",
+    killedBy: h9,
+  },
+  {
+    name: "reported through is late only past 6 minutes",
+    file: reportedThroughDomain,
+    find: "Duration.minutes(5)",
+    replace: "Duration.minutes(6)",
+    killedBy: lateness,
+  },
+  {
+    name: "reported through exactly 5 minutes behind is late",
+    file: reportedThroughDomain,
+    find: "Duration.isGreaterThan(",
+    replace: "Duration.isGreaterThanOrEqualTo(",
+    killedBy: lateness,
   },
 ];

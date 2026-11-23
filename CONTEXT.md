@@ -343,7 +343,7 @@ A request the hub forwarded: what it sent the provider and what came back, with 
 _Avoid_: relayed request, proxied request, live request, real request
 
 **Origin**:
-Which way a request came in: **forwarded**, with what only a hub in the path can know, or **reported**, with the record form its items are kept in and the hub key that reported it. An imported request is only ever a row of the request log, whose `protocol` names its source form.
+Which way a request came in: **forwarded**, with what only a hub in the path can know, or **reported**, with the record form its items are kept in and the hub key that reported it. An imported request is only ever a row of the request log, whose `protocol` names its source form, so the request log read gives a third origin, **imported**, read from the `protocol` as the other two are.
 _Avoid_: source (an import source, a window source), kind (a pool has a kind), provenance
 
 **Operation**:
@@ -655,6 +655,10 @@ _Avoid_: cursor alone (a search's cursor), offset (the title reporter's), checkp
 **Reported through**:
 The time up to which a machine has reported what a client's record held, for each machine, client and observed pool: what the hub keeps of the latest report that read a data folder to its end, so that a machine that stopped reporting is seen.
 _Avoid_: last seen, heartbeat, lag, watermark, synced at
+
+**Late**:
+Said of a reported through more than 5 minutes behind the hub's clock: the machine has not read that client's record to its end for longer than its reporter's schedule allows, or has stopped reporting. The hub says it, and the dashboard marks it; nothing else changes.
+_Avoid_: stale, behind, offline, overdue, lagging, missed
 
 ## Quota
 

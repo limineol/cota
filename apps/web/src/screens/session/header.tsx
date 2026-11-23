@@ -1,10 +1,12 @@
 import { Identifier } from "@cota/ui/components/identifier";
+import { Note } from "@cota/ui/components/note";
 import { PageDescription, PageTitle } from "@cota/ui/components/page";
 import { Tag, Tags } from "@cota/ui/components/tag";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { rememberedList } from "#shared/last-list.ts";
 import { type Kind, useNameOf } from "#shared/names.tsx";
+import { onlyReported, ReportedMark } from "#shared/reported.tsx";
 import type { Dimension } from "#shared/sessions-search.ts";
 import type { SessionAnswer } from "./queries.ts";
 
@@ -58,6 +60,20 @@ const tagged: ReadonlyArray<{
   { key: "models", dimension: "model", label: "Model" },
 ];
 
+/** What a reported session is, and what its client's record cannot show. */
+function FromARecord({ row }: { readonly row: Row }) {
+  const nameOf = useNameOf();
+  const clients = row.clients.map((client) => nameOf("client", client));
+  return (
+    <Note>
+      Reported by its machine from {clients.join(" and ")}'s own record: what
+      the client wrote down, not what it sent. A record has no system prompt, no
+      tool definitions, no upstream status, no time to first byte and no quota
+      headers.
+    </Note>
+  );
+}
+
 export function Header({
   row,
   markOf,
@@ -67,6 +83,7 @@ export function Header({
 }) {
   const nameOf = useNameOf();
   const { range } = rememberedList();
+  const reported = onlyReported(row.origins);
   return (
     <header className="mb-6 flex flex-col gap-3">
       <div>
@@ -75,6 +92,11 @@ export function Header({
           <Source row={row} />
         </PageDescription>
       </div>
+      {reported ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <ReportedMark />
+        </div>
+      ) : null}
       <Identifier value={row.id} label="session id" />
       <Tags aria-label="What the session was made with">
         {tagged.flatMap(({ key, dimension, label }) =>
@@ -99,6 +121,7 @@ export function Header({
           )),
         )}
       </Tags>
+      {reported ? <FromARecord row={row} /> : null}
     </header>
   );
 }

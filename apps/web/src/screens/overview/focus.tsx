@@ -33,6 +33,7 @@ import {
   WindowLine,
 } from "./pools.tsx";
 import { type BreakdownRow, type Pool, useTop } from "./queries.ts";
+import { FocusReportedThrough } from "./reported.tsx";
 import { kindName, noWindows, readingProblem } from "./words.ts";
 
 const topRows = 5;
@@ -140,7 +141,13 @@ export function PoolInFocus({
         </PoolFocusProblem>
       )}
       <PoolFocusBody>
-        <PoolFocusWindows aria-label="Quota windows">
+        <PoolFocusWindows
+          aria-label={
+            pool.kind === "observed"
+              ? "Quota windows and reported through"
+              : "Quota windows"
+          }
+        >
           {pool.windows.length > 0 ? (
             pool.windows.map((window) => (
               <WindowLine
@@ -154,6 +161,9 @@ export function PoolInFocus({
           ) : (
             <PoolFocusNote>{noWindows(pool).long}</PoolFocusNote>
           )}
+          {pool.kind === "observed" ? (
+            <FocusReportedThrough pool={pool} />
+          ) : null}
         </PoolFocusWindows>
         <PoolFocusUsage aria-label={`${nameOf("pool", pool.id)} traffic`}>
           {figures.loaded ? (

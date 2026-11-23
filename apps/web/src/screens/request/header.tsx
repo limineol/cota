@@ -13,11 +13,18 @@ import { ExternalLink } from "lucide-react";
 import type { ReactNode } from "react";
 import { rememberedList } from "#shared/last-list.ts";
 import { type Kind, useNameOf } from "#shared/names.tsx";
+import { ReportedMark } from "#shared/reported.tsx";
 import type { Dimension } from "#shared/sessions-search.ts";
 import { counted, millis } from "#shared/words.ts";
-import { bodyPath } from "./conversation.tsx";
+import { bodyPath, bodyWords } from "./conversation.tsx";
 import type { Inspected, RequestRecord } from "./queries.ts";
-import { imported, outcomeText, titleOf, toTheSecond } from "./words.ts";
+import {
+  imported,
+  outcomeText,
+  reported,
+  titleOf,
+  toTheSecond,
+} from "./words.ts";
 
 const tagged: ReadonlyArray<{
   readonly key: "pool" | "project" | "client" | "machine" | "model";
@@ -30,6 +37,9 @@ const tagged: ReadonlyArray<{
   { key: "machine", dimension: "machine", label: "Machine" },
   { key: "model", dimension: "model", label: "Model" },
 ];
+
+const sentenceOf = (words: string) =>
+  words.charAt(0).toUpperCase() + words.slice(1);
 
 const roleWords = {
   main: "Main request",
@@ -68,6 +78,18 @@ function Facts({
       <span key="imported">
         Imported from a Bifrost log: its conversation is as Bifrost logged it,
         not what the client sent.{" "}
+      </span>,
+    );
+  }
+  if (reported(request)) {
+    facts.push(
+      <span key="reported">
+        Reported by {nameOf("machine", request.machine)} from{" "}
+        {nameOf("client", request.client)}'s own record: it is what the client
+        wrote down, not what it sent. A record has no system prompt, no tool
+        definitions, no upstream status, no time to first byte and no quota
+        headers, and after a compaction it still shows every step, though the
+        model was sent less.{" "}
       </span>,
     );
   }
@@ -142,9 +164,7 @@ export function Header({
                 />
               }
             >
-              {imported(request)
-                ? "The body as Bifrost logged it"
-                : "The body as the hub forwarded it"}
+              {sentenceOf(bodyWords(request))}
               <ExternalLink aria-hidden="true" />
             </Button>
             <Note>Rebuilt from the request log; opens in a new tab</Note>
@@ -161,6 +181,7 @@ export function Header({
         {answer.segment === null ? null : (
           <Badge>Segment {counted(answer.segment + 1)}</Badge>
         )}
+        {reported(request) ? <ReportedMark /> : null}
       </div>
       <Identifier value={request.id} label="request id" />
       <Tags aria-label="What the request was made with">

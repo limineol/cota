@@ -168,3 +168,14 @@ export const useTop = (
     breakdownSince((now) => now - thirtyDays, by, pool, 500),
     { ...poll, enabled },
   );
+
+const readReportedThrough = (client: Client) =>
+  client.reports.reportedThrough();
+
+export type Reporter = Effect.Success<
+  ReturnType<typeof readReportedThrough>
+>["reporters"][number];
+
+/** How far each machine has reported each client's calls to each observed pool, late or not as the hub says. */
+export const useReportedThrough = () =>
+  useApiQuery(["overview", "reported-through"], readReportedThrough, poll);

@@ -56,6 +56,7 @@ export const AFullPage: Story = {
       "href",
       "/sessions/0193a4c2-0000-7000-8000-5e5510000000",
     );
+    await expect(within(table).getAllByText("Reported")).toHaveLength(1);
     await expect(
       within(table).getByRole("columnheader", { name: "Ended" }),
     ).toHaveAttribute("aria-sort", "descending");

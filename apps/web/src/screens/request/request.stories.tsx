@@ -20,6 +20,10 @@ import {
   missingRequest,
   refusedAnswers,
   refusedRequest,
+  reportedAnswers,
+  reportedRequest,
+  unfinishedAnswers,
+  unfinishedRequest,
   unreportedAnswers,
   unreportedRequest,
 } from "#stories/request.ts";
@@ -192,6 +196,85 @@ export const AnImportedRequest: Story = {
         name: /^The body as the hub forwarded it/,
       }),
     ).not.toBeInTheDocument();
+  },
+};
+
+export const AReportedRequest: Story = {
+  ...page(pathOf(reportedRequest), reportedAnswers),
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByText("Reported")).toBeVisible();
+    await expect(
+      canvas.getByText(
+        /own record: it is what the client wrote down, not what it sent\. A record has no system prompt, no tool definitions, no upstream status, no time to first byte and no quota headers, and after a compaction it still shows every step, though the model was sent less\./,
+      ),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole("button", {
+        name: /^The steps as the client recorded them/,
+      }),
+    ).toHaveAttribute("href", `/api/requests/${reportedRequest}/body`);
+    await expect(
+      canvas.getByText(
+        "as the client recorded it; first byte not in the client's record",
+      ),
+    ).toBeVisible();
+    await expect(
+      canvas.getByText("not in the client's record; stopped: STOP"),
+    ).toBeVisible();
+    await expect(
+      canvas.getByText("1.4K uncached, 11.8K cache reads, 0 cache writes"),
+    ).toBeVisible();
+    await expect(canvas.getByText("268 of reasoning in it")).toBeVisible();
+    const tools = canvas.getByRole("link", { name: "Tools" });
+    await expect(tools).toHaveTextContent(/^Tools$/);
+  },
+};
+
+export const AReportedRequestsMetadata: Story = {
+  ...page(pathOf(reportedRequest, "metadata"), reportedAnswers),
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByText("Reported by")).toBeVisible();
+    await expect(canvas.queryByText("Hub key")).not.toBeInTheDocument();
+    await expect(
+      canvas.getAllByText("not in the client's record").length,
+    ).toBeGreaterThanOrEqual(7);
+    await expect(
+      canvas.getAllByText("None: the client's record has no headers"),
+    ).toHaveLength(2);
+    await expect(canvas.queryByText("0 bytes")).not.toBeInTheDocument();
+  },
+};
+
+export const AReportedRequestsTools: Story = {
+  ...page(pathOf(reportedRequest, "tools"), reportedAnswers),
+  play: async ({ canvas }) => {
+    await expect(
+      await canvas.findByText("The client's record has no tool definitions."),
+    ).toBeVisible();
+  },
+};
+
+export const AReportedRequestsParams: Story = {
+  ...page(pathOf(reportedRequest, "params"), reportedAnswers),
+  play: async ({ canvas }) => {
+    await expect(
+      await canvas.findByText("The client's record has no params."),
+    ).toBeVisible();
+  },
+};
+
+export const AnUnfinishedCallReported: Story = {
+  ...page(pathOf(unfinishedRequest), unfinishedAnswers),
+  play: async ({ canvas }) => {
+    const error = await canvas.findByRole("link", { name: "Error" });
+    await expect(error).toHaveAttribute("aria-current", "page");
+    await expect(canvas.getByText("cota_reported_unfinished")).toBeVisible();
+    await expect(
+      canvas.getByText(/the client's step was not finished when its machine/),
+    ).toBeVisible();
+    await expect(
+      canvas.getAllByText("none: not in the client's record").length,
+    ).toBeGreaterThan(0);
   },
 };
 

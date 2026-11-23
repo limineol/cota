@@ -47,6 +47,7 @@ import {
   when,
 } from "#shared/words.ts";
 import type { BreakdownRow, Pool, QuotaWindow as Window } from "./queries.ts";
+import { CardReportedThrough } from "./reported.tsx";
 import { kindName, noWindows, paceOf, usedText, windowName } from "./words.ts";
 
 const cardWindows = 3;
@@ -174,7 +175,8 @@ export function PoolCardView({
   readonly since: string | null;
 }) {
   const hidden = pool.windows.length - cardWindows;
-  const none = pool.windows.length === 0 ? noWindows(pool) : null;
+  const observed = pool.kind === "observed";
+  const none = pool.windows.length === 0 && !observed ? noWindows(pool) : null;
   return (
     <PoolCard
       render={
@@ -211,6 +213,7 @@ export function PoolCardView({
             detailed={false}
           />
         ))}
+        {observed ? <CardReportedThrough pool={pool} /> : null}
         {none === null ? null : (
           <PoolCardNote title={none.long}>{none.short}</PoolCardNote>
         )}

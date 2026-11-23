@@ -8,6 +8,7 @@ import {
 import { RequestRole } from "#modules/request-log/03-domain/request-role.ts";
 import * as Search from "#modules/request-log/03-domain/search.ts";
 import * as Session from "#modules/request-log/03-domain/session.ts";
+import { Origin } from "#modules/request-log/03-domain/stored-protocol.ts";
 import {
   CallerMiddleware,
   mayCall,
@@ -46,6 +47,7 @@ export const SessionRow = Schema.Struct({
   clients: Values,
   providers: Values,
   models: Values,
+  origins: Schema.Array(Origin),
   usage: Usage,
   usageUnreported: Count,
   costUsd: Money,
@@ -90,6 +92,7 @@ const sessions = HttpApiEndpoint.get("sessions", "/sessions", {
 export const RequestSummary = Schema.Struct({
   id: RequestId,
   startedAt: Time,
+  origin: Origin,
   requestRole: RequestRole,
   segment: Schema.NullOr(Count),
   operation: Schema.String,

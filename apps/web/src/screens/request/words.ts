@@ -1,6 +1,6 @@
 import type { RequestRecord } from "./queries.ts";
 
-const conversations = new Set(["messages", "chat", "responses"]);
+const conversations = new Set(["messages", "chat", "responses", "generate"]);
 
 const operationWords: Readonly<Record<string, string>> = {
   count_tokens: "A token count",
@@ -9,10 +9,16 @@ const operationWords: Readonly<Record<string, string>> = {
   image: "An image",
 };
 
-/** Whether a request was imported from the prototype's log: its protocol is a source form, whose items are as Bifrost logged them (ADR-0025). */
+/** Whether a request was imported from the prototype's log: its items are as Bifrost logged them (ADR-0025). */
 export const imported = (request: RequestRecord) =>
-  request.protocol === "bifrost-responses" ||
-  request.protocol === "bifrost-chat";
+  request.origin === "imported";
+
+/** Whether a machine reported the request from its client's record (ADR-0029): what the hub alone could know of it is not there. */
+export const reported = (request: RequestRecord) =>
+  request.origin === "reported";
+
+/** What a reported request's field says in place of a value the client's record does not have. */
+export const notInTheRecord = "not in the client's record";
 
 /** Whether a request answered or failed: failed for an error or a refusal, the two the Error tab is for. */
 export const failed = (request: RequestRecord) =>

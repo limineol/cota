@@ -223,6 +223,9 @@ const sessionRowOf = (
     clients: valuesOf(({ client }) => client),
     providers: valuesOf(({ provider }) => provider),
     models: valuesOf(({ model }) => model),
+    protocols: [...new Set(requests.map(({ protocol }) => protocol))].sort(
+      compareText,
+    ),
   };
 };
 
@@ -546,6 +549,7 @@ export const make = (
             ({ request, cost }): Session.RequestSummary => ({
               id: request.id,
               startedAt: request.startedAt,
+              protocol: request.protocol,
               operation: request.operation,
               purpose: request.purpose,
               model: request.model,

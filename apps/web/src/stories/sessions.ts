@@ -103,11 +103,12 @@ export const sessionOf = ({ index, endedAgo, snippet = null }: Shape) => {
     clients: [at(clients, index)],
     providers: [
       pool === "codex" ? "openai" : pool === "zai" ? "zai" : "anthropic",
-    ],
+    ] as ReadonlyArray<string>,
     models:
       kind === 6
         ? [at(models, index), at(models, index + 1), at(models, index + 3)]
         : [at(models, index)],
+    origins: ["forwarded"] as ReadonlyArray<"forwarded" | "reported">,
     usage: usageOf(tokens),
     usageUnreported: 0,
     costUsd: money(pool === "zai" ? 0 : tokens * 0.0000021),
@@ -135,8 +136,20 @@ export const listed = (
 const range = (from: number, count: number) =>
   Array.from({ length: count }, (_, step) => sessionOf({ index: from + step }));
 
-/** The first page of the last 7 days: fifty sessions of every kind. */
-export const firstPage = range(0, 50);
+/** A session an Antigravity record reported, on an observed pool. */
+const reportedOf = (row: Row): Row => ({
+  ...row,
+  pools: ["gemini"],
+  clients: ["antigravity"],
+  providers: ["google"],
+  models: ["gemini-3-flash-preview"],
+  origins: ["reported"],
+});
+
+/** The first page of the last 7 days: fifty sessions of every kind, the second reported. */
+export const firstPage = range(0, 50).map((row, at) =>
+  at === 1 ? reportedOf(row) : row,
+);
 
 const secondPage = range(50, 50);
 

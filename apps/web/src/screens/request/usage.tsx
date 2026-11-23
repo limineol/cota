@@ -13,6 +13,7 @@ import {
 import { cost } from "#shared/domain/quantities.ts";
 import { counted, dollarsOf } from "#shared/words.ts";
 import type { RequestRecord } from "./queries.ts";
+import { reported as wasReported } from "./words.ts";
 
 const classes: ReadonlyArray<{
   readonly name: string;
@@ -59,6 +60,7 @@ function Priced({ request }: { readonly request: RequestRecord }) {
 
 export function UsagePanel({ request }: { readonly request: RequestRecord }) {
   const reported = request.usageReported;
+  const fromARecord = wasReported(request);
   return (
     <div className="flex min-w-0 flex-col gap-7">
       <section
@@ -107,14 +109,19 @@ export function UsagePanel({ request }: { readonly request: RequestRecord }) {
         className="flex flex-col gap-2.5"
       >
         <Subheading level={2} id="usage-reported">
-          As the provider reported it
+          {fromARecord
+            ? "As the client's record holds it"
+            : "As the provider reported it"}
         </Subheading>
         {request.usage === null ? (
           <Note>
-            The provider reported no usage for this request
-            {request.readingComplete
-              ? "."
-              : ", and its answer could not be read to the end."}
+            {fromARecord
+              ? "The client's record had no usage for this call."
+              : `The provider reported no usage for this request${
+                  request.readingComplete
+                    ? "."
+                    : ", and its answer could not be read to the end."
+                }`}
           </Note>
         ) : (
           <JsonView value={request.usage} />

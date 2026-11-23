@@ -10,6 +10,10 @@ import {
   type SessionDetail,
 } from "#modules/request-log/02-application/queries/read-session.query.ts";
 import * as Session from "#modules/request-log/03-domain/session.ts";
+import {
+  originOf,
+  originsOf,
+} from "#modules/request-log/03-domain/stored-protocol.ts";
 import { CurrentCaller } from "#shared/01-presentation/caller.middleware.ts";
 import { requestLogProblem } from "#shared/01-presentation/problems.ts";
 import { askedOf, toleranceOf } from "./filters.ts";
@@ -29,6 +33,7 @@ const sessionRowOf = (session: ListedSession) => ({
   clients: session.clients,
   providers: session.providers,
   models: session.models,
+  origins: originsOf(session.protocols),
   usage: session.usage,
   usageUnreported: session.usageUnreported,
   costUsd: session.cost,
@@ -55,6 +60,7 @@ const detailOf = ({
   requests: requests.map((request) => ({
     id: request.id,
     startedAt: request.startedAt,
+    origin: originOf(request.protocol),
     requestRole: request.requestRole,
     segment: Option.getOrNull(request.segment),
     operation: request.operation,

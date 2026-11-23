@@ -21,6 +21,12 @@ export const displayNames = answer("display-names", "list", {
       source: "built-in",
     },
     { kind: "client", key: "codex", name: "Codex", source: "built-in" },
+    {
+      kind: "client",
+      key: "antigravity",
+      name: "Antigravity",
+      source: "built-in",
+    },
     { kind: "machine", key: "tower", name: "Desk", source: "owner" },
     {
       kind: "model",

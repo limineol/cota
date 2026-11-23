@@ -408,6 +408,7 @@ layer(Harness.layer())("a session's detail", (it) => {
         ) => ({
           id: request?.id,
           startedAt: at(request),
+          origin: "forwarded",
           requestRole,
           segment,
           operation: "messages",
@@ -433,6 +434,7 @@ layer(Harness.layer())("a session's detail", (it) => {
         expect(Object(detail).session).toMatchObject({
           id: "detail-1",
           requests: 3,
+          origins: ["forwarded"],
           title: {
             text: "Fixing the relay",
             source: "generated",

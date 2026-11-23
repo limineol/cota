@@ -25,6 +25,7 @@ import * as ReadBreakdown from "#modules/request-log/02-application/queries/read
 import * as ReadFacets from "#modules/request-log/02-application/queries/read-facets.query.ts";
 import * as ReadOverview from "#modules/request-log/02-application/queries/read-overview.query.ts";
 import * as ReadQuotaHeaders from "#modules/request-log/02-application/queries/read-quota-headers.query.ts";
+import * as ReadReportedThrough from "#modules/request-log/02-application/queries/read-reported-through.query.ts";
 import * as ReadSchema from "#modules/request-log/02-application/queries/read-schema.query.ts";
 import * as ReadSeries from "#modules/request-log/02-application/queries/read-series.query.ts";
 import * as ReadSession from "#modules/request-log/02-application/queries/read-session.query.ts";
@@ -106,20 +107,22 @@ export const sql: Layer.Layer<Sql, never, SqlConsole> = Layer.mergeAll(
   ReadSchema.layer,
 );
 
+export type Reports =
+  | ReportRequests.ReportRequests
+  | ReadReportedThrough.ReadReportedThrough;
+
 /**
- * The command the `reports` group answers, over the repository given, priced
- * from each pool's prices, with reported through in the hub store.
+ * The command and the query the `reports` group answers, over the repository
+ * given, priced from each pool's prices, with reported through in the hub
+ * store.
  */
 export const reports = (
   pools: HashMap.HashMap<PoolId, Pool.Pool>,
-): Layer.Layer<
-  ReportRequests.ReportRequests,
-  never,
-  RequestsRepository | HubStore
-> =>
-  ReportRequests.layer(pools).pipe(
-    Layer.provide([PriceLists.layer(pools), SqliteReportedThrough.layer]),
-  );
+): Layer.Layer<Reports, never, RequestsRepository | HubStore> =>
+  Layer.mergeAll(
+    ReportRequests.layer(pools).pipe(Layer.provide(PriceLists.layer(pools))),
+    ReadReportedThrough.layer,
+  ).pipe(Layer.provide(SqliteReportedThrough.layer));
 
 /** The request log's steps in the hub store. */
 export const steps = SqliteReportedThrough.steps;

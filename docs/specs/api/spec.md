@@ -16,6 +16,7 @@ code:
   - apps/hub/src/modules/request-log/02-application/commands/report-session-titles.command.ts
   - apps/hub/src/modules/request-log/02-application/commands/report-requests.command.ts
   - apps/hub/src/modules/request-log/03-domain/traffic.ts
+  - apps/hub/src/modules/request-log/03-domain/stored-protocol.ts
   - apps/hub/src/modules/display-names/01-presentation
   - apps/hub/src/modules/quota/01-presentation
   - apps/hub/src/modules/admission/01-presentation
@@ -26,7 +27,7 @@ code:
 
 The hub's HTTP API: what the dashboard (Milestone 3) and the owner's agents read the request log through. ADR-0011 gives its form, ADR-0012 who may call it. The definition in `apps/hub/src/api.ts` and the committed `apps/hub/openapi.json` are the contract, and this spec says what they must say.
 
-**What is built.** Every endpoint this spec lists: the conventions, the errors, the filters, the `sign-in` and `traffic` groups, the `sessions` group (`GET /api/sessions` with `q`, `GET /api/sessions/{session}` and `PUT /api/session-titles`), the `requests`, `search`, `sql` and `display-names` groups, the `reports` group (`POST /api/reported-requests`; its `GET /api/reported-through` is 6e's), `GET /api/openapi.json`, the `pools` group (`GET /api/pools` and a pool's quota login, whose behaviour is `docs/specs/quota-sources/spec.md`, `docs/specs/quota-readers/spec.md` and `docs/specs/quota-logins/spec.md`), the `machine` group (`GET /api/machine`), the `routes` group (`GET /api/routes`, `PUT /api/routes/{client}` and `GET /api/route`), the limits, and the laws H1 to H9.
+**What is built.** Every endpoint this spec lists: the conventions, the errors, the filters, the `sign-in` and `traffic` groups, the `sessions` group (`GET /api/sessions` with `q`, `GET /api/sessions/{session}` and `PUT /api/session-titles`), the `requests`, `search`, `sql` and `display-names` groups, the `reports` group (`POST /api/reported-requests` and `GET /api/reported-through`), `GET /api/openapi.json`, the `pools` group (`GET /api/pools` and a pool's quota login, whose behaviour is `docs/specs/quota-sources/spec.md`, `docs/specs/quota-readers/spec.md` and `docs/specs/quota-logins/spec.md`), the `machine` group (`GET /api/machine`), the `routes` group (`GET /api/routes`, `PUT /api/routes/{client}` and `GET /api/route`), the limits, and the laws H1 to H9.
 
 Sessions, transcripts and titles are `docs/specs/sessions/spec.md`; search `docs/specs/search/spec.md`; SQL `docs/specs/sql/spec.md`; display names `docs/specs/display-names/spec.md`; signing in, setup and who may call what `docs/specs/sign-in/spec.md`. This spec lists every endpoint with its parameters, its answer and its errors, and the rules they share.
 
@@ -40,6 +41,7 @@ Sessions, transcripts and titles are `docs/specs/sessions/spec.md`; search `docs
 - **Prompt size** is `input + cacheRead + cacheWriteShort + cacheWriteLong` of one request, or `null` when its usage was not reported.
 - **Traffic.** A model listing (`operation` `models`) is a client checking which models exist, not work. Every endpoint below except the inspector, the body and SQL leaves model listings out.
 - A field that can be absent is `null`, never missing.
+- **Origin** is `"forwarded"`, `"imported"` or `"reported"`, read from a request's stored `protocol`: a protocol, a source form or a record form (`docs/specs/reported-requests/spec.md`). Every request the API gives has one, and a session has the distinct origins of its requests, so a screen tells a reported request without a second call.
 - **Roles.** A request's request role is the field `requestRole`; `role` is always a conversation item's own, as the protocol has it (a hit's, an entry's message's).
 - **Characters**, where a text is cut or a length is limited, are Unicode code points. **Text is ordered** by code point, which is the order of its UTF-8 bytes.
 - **Percentiles** `{ p50, p95 }` are exact: of `n` values sorted, the `p`-th is the value at index `⌊p·n⌋`, counting from 0 (`quantileExact` in ClickHouse).
@@ -238,6 +240,7 @@ Extra parameters:
 | `startedAt`, `endedAt` | time | When its first and its last traffic request started. |
 | `requests`, `errors` | integer | Its traffic requests, and those whose outcome is `error`. |
 | `pools`, `projects`, `machines`, `clients`, `providers`, `models` | `string[]` | The distinct non-empty values, sorted. |
+| `origins` | `Origin[]` | The distinct origins of its requests, in the order `forwarded`, `imported`, `reported`: `["reported"]` is a session made only of reported requests. |
 | `usage`, `usageUnreported`, `costUsd`, `unpricedRequests` | | Summed over its requests. |
 | `title` | `Title` or `null` | `docs/specs/sessions/spec.md`, Titles. |
 | `firstPrompt` | string or `null` | Its first prompt, cut to 500 characters. |
@@ -262,6 +265,7 @@ One session: its requests with their roles, its segments, and the transcript of 
 | Field | Type | Holds |
 | --- | --- | --- |
 | `id`, `startedAt` | | |
+| `origin` | `Origin` | |
 | `requestRole` | `"main"`, `"subagent"`, `"title"`, `"utility"` | Its request role. |
 | `segment` | integer or `null` | Its segment's index, for a main request. |
 | `operation`, `purpose`, `model`, `servedModel`, `stopReason` | string | As recorded. |
@@ -290,7 +294,7 @@ The request inspector: one request, whatever its operation. Errors: `no-such-req
 
 | Field | Type | Holds |
 | --- | --- | --- |
-| `request` | `RequestRecord` | Every column of `requests` (`docs/specs/request-log/spec.md`), named in camel case, with `usage` parsed as JSON (or `null` when it was not reported), `rateLimits` and `clientHeaders` as objects, and `promptSize` added. |
+| `request` | `RequestRecord` | Every column of `requests` (`docs/specs/request-log/spec.md`), named in camel case, with `usage` parsed as JSON (or `null` when it was not reported), `rateLimits` and `clientHeaders` as objects, and `promptSize` and `origin` added. |
 | `requestRole` | request role or `null` | Within its session; `null` for a traffic request older than its session's latest 10,000, which the role rules do not read (`docs/specs/sessions/spec.md`, Values). |
 | `segment` | integer or `null` | `null` but for a main request among its session's latest 10,000. |
 | `params` | JSON object or `null` | The body without its conversation's parts; `null` without a conversation. |
@@ -305,7 +309,7 @@ The request's body as the hub forwarded it, rebuilt from the request log (`Rebui
 
 ## Reports (the `reports` group, the request-log module)
 
-Built in part: `POST /api/reported-requests`; `GET /api/reported-through` is 6e's. What a report holds, its checks, how it is stored and what it answers are `docs/specs/reported-requests/spec.md`.
+Built. What a report holds, its checks, how it is stored and what it answers, and reported through and when it is late, are `docs/specs/reported-requests/spec.md`.
 
 ### `POST /api/reported-requests`
 
@@ -318,6 +322,10 @@ A machine reports model calls its clients made without the hub. Any known hub ke
 | `urn:cota:report-out-of-order` | 409 | A call's call before was never stored. |
 
 and `no-such-pool` 404, `request-log-unavailable` 503 (the report is sent again) and `hub-store-unavailable` 503 (its calls are stored; its reported through was not kept).
+
+### `GET /api/reported-through`
+
+How far each machine has reported each client's calls to each observed pool. A reader key or the owner may call it. Answer: `{ reporters: Reporter[] }`, in order of machine, client and pool, empty when nothing has been reported with a `through`. `Reporter` is `{ machine, client, pool, through, reportedAt, reportedBy, late }`: `through` and `reportedAt` are times, `reportedBy` the hub key's name or `owner`, and `late` is true when `through` is more than 5 minutes behind the hub's clock (`docs/specs/reported-requests/spec.md`, Late). Errors: `hub-store-unavailable` 503.
 
 ## Search (the `search` group, the request-log module)
 

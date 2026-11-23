@@ -31,7 +31,7 @@ import { ErrorPanel, ParamsPanel, ToolsPanel } from "./panels.tsx";
 import { type Inspected, useInspected, usePoolList } from "./queries.ts";
 import type { Tab } from "./search.ts";
 import { UsagePanel } from "./usage.tsx";
-import { failed } from "./words.ts";
+import { failed, reported } from "./words.ts";
 
 export function Request() {
   return (
@@ -93,7 +93,7 @@ const tabNames: Record<Tab, string> = {
   usage: "Token usage",
 };
 
-/** The tabs a request has, in order, each with what it counts: the Error tab only for a request that failed or was refused. */
+/** The tabs a request has, in order, each with what it counts: the Error tab only for a request that failed or was refused, and no count of tools a reported request cannot know. */
 const tabsOf = (answer: Inspected) => {
   const input =
     answer.system === null && answer.input === null
@@ -107,7 +107,7 @@ const tabsOf = (answer: Inspected) => {
     ...(input === null
       ? [{ tab: "input" as const }]
       : [{ tab: "input" as const, count: input }]),
-    ...(answer.tools === null
+    ...(answer.tools === null || reported(answer.request)
       ? [{ tab: "tools" as const }]
       : [{ tab: "tools" as const, count: answer.tools.length }]),
     { tab: "params" },
