@@ -47,6 +47,8 @@ export type Law =
   | "L15"
   | "L16"
   | "L17"
+  | "L18"
+  | "L19"
   | "S1"
   | "S2"
   | "M1"
@@ -457,6 +459,10 @@ const l16 =
   "L16: for any sequence of reports, a machine's, client's and pool's through is the greatest any of their reports gave";
 const l17 =
   "L17: a reported request's cost is the one the writer gives a request of its pool, model and usage, and none where that has no price";
+const l18 =
+  "L18: a call whose call before another call already names, held in the log or earlier in the report, is stored, its input part its call before's input and output and then its own input, and the other call's rows are left as they are";
+const l19 =
+  "L19: a report holding a call the log holds, with other content than was stored, leaves that call's rows as they were, stores its items the session does not hold, and builds each later call of the report on the call as the report gives it";
 const segment = `${requestLog}/03-domain/segment.ts`;
 const t1 =
   "T1: every request of a session has exactly one request role, and it depends on that session's requests only";
@@ -7605,6 +7611,24 @@ export const layer = (policy: Admission.Policy) =>
     find: "                model: request.model,",
     replace: '                model: "",',
     killedBy: l17,
+  },
+  {
+    name: "a call before is the call before of one call only",
+    law: "L18",
+    file: reportDomain,
+    find: "    built.set(checked.call.call, each);\n",
+    replace:
+      "    built.set(checked.call.call, each);\n    if (Option.isSome(checked.call.after)) built.delete(checked.call.after.value.call);\n",
+    killedBy: l18,
+  },
+  {
+    name: "a call the log holds has none of its items stored when sent again with others",
+    law: "L19",
+    file: reportRequests,
+    find: "        for (const item of built.flatMap((each) => each.items)) {",
+    replace:
+      "        for (const item of built\n          .filter(({ request }) => !held.requests.has(request.id))\n          .flatMap((each) => each.items)) {",
+    killedBy: l19,
   },
   {
     name: "a record's model call is not decided main",
