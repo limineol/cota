@@ -42,22 +42,29 @@ const payloadOf = (field: Built): Uint8Array =>
 
 /** The bytes of a constructed protocol buffer. */
 export const encode = (fields: ReadonlyArray<Built>): Uint8Array => {
-  const bytes: Array<number> = [];
+  const chunks: Array<Uint8Array> = [];
   for (const field of fields) {
     const key = (wire: number) =>
       varintBytes((BigInt(field.number) << 3n) | BigInt(wire));
     if ("varint" in field) {
-      bytes.push(...key(0), ...varintBytes(field.varint));
+      chunks.push(new Uint8Array([...key(0), ...varintBytes(field.varint)]));
     } else if ("fixed64" in field) {
-      bytes.push(...key(1), ...littleEndian(field.fixed64, 8));
+      chunks.push(
+        new Uint8Array([...key(1), ...littleEndian(field.fixed64, 8)]),
+      );
     } else if ("fixed32" in field) {
-      bytes.push(...key(5), ...littleEndian(BigInt(field.fixed32), 4));
+      chunks.push(
+        new Uint8Array([...key(5), ...littleEndian(BigInt(field.fixed32), 4)]),
+      );
     } else {
       const payload = payloadOf(field);
-      bytes.push(...key(2), ...varintBytes(BigInt(payload.length)), ...payload);
+      chunks.push(
+        new Uint8Array([...key(2), ...varintBytes(BigInt(payload.length))]),
+        payload,
+      );
     }
   }
-  return new Uint8Array(bytes);
+  return new Uint8Array(Buffer.concat(chunks));
 };
 
 const decoder = new TextDecoder("utf-8", { fatal: true });

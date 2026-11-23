@@ -8,7 +8,7 @@ import {
 import type * as StoredItems from "#modules/request-log/03-domain/stored-items.ts";
 import type * as Conversation from "#shared/03-domain/conversation.ts";
 
-export type Fault = "none" | "unreached" | "lost" | "declined";
+export type Fault = "none" | "unreached" | "lost" | "cut" | "declined";
 
 export interface Attempt {
   readonly token: string;
@@ -42,8 +42,10 @@ export class InMemoryRequests extends Context.Service<
 /**
  * A repository that keeps what it stores in memory, skips a batch whose token
  * it has stored, and fails as it is told, batch by batch: one `unreached` is
- * not stored and fails, one `lost` is stored but answered with a failure, and
- * one `declined` is declined. It declines a batch that holds a request
+ * not stored and fails, one `lost` is stored but answered with a failure, one
+ * `cut` stores its items and its requests' items but not its requests and
+ * fails, as a delivery interrupted between tables, and one `declined` is
+ * declined. It declines a batch that holds a request
  * `declines` names too, and stores nothing of a declined batch.
  */
 export const make = (ready = true) =>
@@ -99,10 +101,10 @@ export const make = (ready = true) =>
           const stored = fault !== "unreached" && !tokens.has(token);
           memory.attempts.push({ token, stored });
           if (stored) {
-            tokens.add(token);
+            if (fault !== "cut") tokens.add(token);
             memory.items.push(...batch.items);
             memory.requestItems.push(...batch.requestItems);
-            memory.requests.push(...batch.requests);
+            if (fault !== "cut") memory.requests.push(...batch.requests);
           }
           if (fault !== "none") return yield* failed(`the batch was ${fault}`);
         }),

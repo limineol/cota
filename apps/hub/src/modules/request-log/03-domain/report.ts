@@ -26,8 +26,10 @@ export const reportedByText = (reporter: Reporter): string =>
 
 /**
  * A reported request's id (L8): a UUID version 7 stamped with the call's
- * start, whose other bits are the SHA-256 of
- * `cota-report:<reporter>:<client>:<call key>`.
+ * start, whose other bits are the SHA-256 of `cota-report:` and the JSON of
+ * `[<reporter>, <client>, <call key>]`. A hub key's name and a call key may
+ * hold any character, so the parts are written as JSON strings, which no two
+ * different parts share.
  */
 export const idOf = (
   reporter: Reporter,
@@ -36,7 +38,7 @@ export const idOf = (
   startedAt: DateTime.Utc,
 ): Request.RequestId =>
   stampedIdOf(
-    `cota-report:${reporterText(reporter)}:${client}:${callKey}`,
+    `cota-report:${JSON.stringify([reporterText(reporter), client, callKey])}`,
     startedAt,
   );
 

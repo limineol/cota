@@ -23,7 +23,7 @@ const KnownRow = Schema.Struct({ session: Schema.String, digest: UInt128 });
 
 const Content = Schema.Struct({ digest: UInt128, content: Schema.String });
 
-const Id = Schema.Struct({ id: Schema.String });
+const Found = Schema.Struct({ found: Schema.String });
 
 const instant = (name: string) =>
   `fromUnixTimestamp64Milli({${name}:Int64}, 'UTC')`;
@@ -119,10 +119,10 @@ export const layer: Layer.Layer<
         };
       }
       const requests = yield* clickHouse.select(
-        `SELECT DISTINCT toString(id) AS id FROM requests
+        `SELECT DISTINCT toString(id) AS found FROM requests
          WHERE started_at >= ${instant("from")} AND started_at <= ${instant("to")}
            AND id IN {ids:Array(UUID)}`,
-        Id,
+        Found,
         {
           from: millis(asked.from),
           to: millis(asked.to),
@@ -130,9 +130,9 @@ export const layer: Layer.Layer<
         },
       );
       const requestItems = yield* clickHouse.select(
-        `SELECT DISTINCT toString(request_id) AS id, session FROM request_items
+        `SELECT DISTINCT toString(request_id) AS found, session FROM request_items
          WHERE session IN {sessions:Array(String)} AND request_id IN {ids:Array(UUID)}`,
-        Schema.Struct({ id: Schema.String, session: Schema.String }),
+        Schema.Struct({ found: Schema.String, session: Schema.String }),
         {
           sessions: Param.strings([
             ...new Set(asked.requests.map(({ session }) => session)),
@@ -140,14 +140,15 @@ export const layer: Layer.Layer<
           ids: Param.strings(ids),
         },
       );
-      const heldIds = new Set(requests.map(({ id }) => id));
+      const heldIds = new Set(requests.map(({ found }) => found));
       return {
         requests: new Set(ids.filter((id) => heldIds.has(id))),
         requestItems: new Set(
           asked.requests
             .filter((each) =>
               requestItems.some(
-                ({ id, session }) => id === each.id && session === each.session,
+                ({ found, session }) =>
+                  found === each.id && session === each.session,
               ),
             )
             .map(({ id }) => id),
@@ -166,10 +167,10 @@ export const layer: Layer.Layer<
         at: millis(startedAt),
       };
       const rows = yield* clickHouse.select(
-        `SELECT toString(id) AS id FROM requests
+        `SELECT toString(id) AS found FROM requests
          WHERE started_at = ${instant("at")} AND id = {id:UUID} AND session = {session:String}
          LIMIT 1`,
-        Id,
+        Found,
         params,
       );
       if (rows.length === 0) return Option.none<HeldParts>();

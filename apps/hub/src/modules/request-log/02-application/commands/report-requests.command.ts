@@ -164,7 +164,7 @@ export const layer = (
 
       const store = Effect.fn("ReportRequests.store")(function* (
         checked: Report.CheckedReport,
-        pool: Pool.ObservedPool,
+        pool: Pick<Pool.Pool, "id" | "provider">,
         reporter: Report.Reporter,
       ) {
         const fromLog = yield* beforesFromLog(checked, reporter);
