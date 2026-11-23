@@ -27,7 +27,7 @@ Every request in the request log so far is one the hub forwarded, or one an impo
 7. **Not tested**: sub-agents (the schema has `has_subtrajectory` and `parent_references`), automatic compaction, the desktop app's conversations, whether a very long conversation ever drops old steps, and other versions of Antigravity.
 8. **Opening the file.** Opened read only on the live database, SQLite answered "unable to open database file" at a moment when the database had no `-wal` or `-shm` beside it; a plain copy of the files, opened afterwards, read.
 
-What follows from them, agreed by the owner: a machine reading behind a compaction finds the same rows, so a cursor on the step index is safe; a reported session is its steps, as the client wrote them, and each model call's usage, not the exact requests, so nothing depends on the request body; and the record has a stable id for each model call and step, so a second delivery of one can be recognised.
+What follows from them: a machine reading behind a compaction finds the same rows, so a cursor on the step index is safe; a reported session is its steps, as the client wrote them, and each model call's usage, not the exact requests, so nothing depends on the request body; and the record has a stable id for each model call and step, so a second delivery of one can be recognised.
 
 **What the hub has to build on.**
 
@@ -182,6 +182,7 @@ Read by trial on one conversation on one machine; each is checked again in 6d, a
 - That the database's name, `trajectory_meta`'s ids and `gen_metadata`'s call ids agree, and which one T3 Code keeps as an Antigravity thread's native id: if it is the database's name, the title reporter's T3 Code source already titles reported sessions.
 - Whether a step names the conversation's working directory, from which the project is read as a launch reads it; else the project is empty.
 - Whether the compaction's step names its model.
+- That no field of a step's `metadata` or `step_payload` holds anything of the sign-in: the record form keeps every field, read or not, so a field holding a token would be stored. The reader's fields are looked through on a throwaway conversation, by their shapes and never against the token file, before a real conversation is reported.
 - How a read-only open behaves on a live database with and without its `-wal` and `-shm`, and whether a copy can be torn by a concurrent checkpoint.
 - The desktop app's data folder and conversations, sub-agents, automatic compaction, long conversations, other versions.
 - On macOS, whether the reporter sends through `/usr/bin/curl` as the title reporter does, with a body of megabytes.
