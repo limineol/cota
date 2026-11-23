@@ -26,7 +26,7 @@ const redirecting = Bun.serve({
     new Response(null, {
       status: 307,
       headers: {
-        location: `http://127.0.0.1:${away.port}/api/reported-requests`,
+        location: new URL("/api/reported-requests", away.url).href,
       },
     }),
 });
@@ -40,15 +40,18 @@ afterAll(() => {
   storing.stop(true);
 });
 
-const hubOf = (port: number) =>
-  Result.getOrThrow(HubAddress.read(`http://127.0.0.1:${port}`, true));
+const hubOf = (server: Bun.Server<undefined>) =>
+  Result.getOrThrow(HubAddress.read(server.url.origin, true));
 
-const sent = (layer: Layer.Layer<RequestReports>, port: number) =>
+const sent = (
+  layer: Layer.Layer<RequestReports>,
+  server: Bun.Server<undefined>,
+) =>
   Effect.gen(function* () {
     const reports = yield* RequestReports;
     return yield* Effect.result(
       reports.send(
-        hubOf(port),
+        hubOf(server),
         Redacted.make("subscription-hub-key"),
         "studio",
         '{"client":"antigravity","pool":"gemini","through":null,"calls":[]}',
@@ -64,7 +67,7 @@ describe("a report's sender", () => {
     "answers a redirect as a failed send, and sends nothing where it points",
     () =>
       Effect.gen(function* () {
-        const answer = yield* sent(HttpRequestReports.layer, redirecting.port);
+        const answer = yield* sent(HttpRequestReports.layer, redirecting);
         expect(answer._tag === "Failure" && answer.failure._tag).toBe(
           "HubFailed",
         );
@@ -82,10 +85,10 @@ describe("a report's sender", () => {
         process.env.CURL_HOME = home;
         try {
           const layer = CurlRequestReports.layer(curl);
-          expect(yield* sent(layer, storing.port)).toEqual(
+          expect(yield* sent(layer, storing)).toEqual(
             Result.succeed({ stored: 2, held: 1 }),
           );
-          const redirected = yield* sent(layer, redirecting.port);
+          const redirected = yield* sent(layer, redirecting);
           expect(redirected._tag === "Failure" && redirected.failure._tag).toBe(
             "HubFailed",
           );
