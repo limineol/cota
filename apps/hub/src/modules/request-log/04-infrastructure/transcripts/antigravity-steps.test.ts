@@ -244,6 +244,52 @@ describe("the record form antigravity-steps", () => {
     ]);
   });
 
+  it("renders a tool's step read while its command ran on as a result with no output, and one done without a result's text as its JSON", () => {
+    const running = Steps.toolResultWithoutText(7, command, 2);
+    const done = Steps.toolResultWithoutText(8, command, 3);
+    expect(
+      Transcript.plain(
+        Rendered.entriesOf(
+          renderers["antigravity-steps"],
+          {
+            system: [],
+            input: [
+              Steps.modelOutput(6, { calls: [command] }),
+              running,
+              done,
+            ].map(stored),
+            output: [],
+          },
+          Rendered.longest.session,
+        ).map(({ item: _, ...entry }) => entry),
+      ),
+    ).toEqual([
+      {
+        kind: "tool-call",
+        callId: "call_10",
+        name: "run_command",
+        input: command.arguments,
+        cut: 0,
+        part: "input",
+      },
+      {
+        kind: "tool-result",
+        callId: "call_10",
+        name: "run_command",
+        output: "",
+        error: false,
+        cut: 0,
+        part: "input",
+      },
+      {
+        kind: "other",
+        json: Conversation.canonical(done),
+        cut: 0,
+        part: "input",
+      },
+    ]);
+  });
+
   it("gives as the first prompt the text of the last user's message step of the input", () => {
     const input = conversation.slice(0, 4).map(stored);
     expect(Option.getOrNull(firstPromptOf("antigravity-steps", input))).toBe(
