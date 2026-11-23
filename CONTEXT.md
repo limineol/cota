@@ -636,6 +636,14 @@ _Avoid_: protocol (a protocol is a wire format), source form (an import source's
 One delivery of a request reporter: model calls of one data folder (at most 500, and a machine sends at most 200 and 8 MiB of them), the observed pool they bill and, when the run has read the folder to its end, how far that was. The hub answers it only once its calls are stored.
 _Avoid_: upload, sync, batch alone (the writer's batches), push
 
+**Reporter**:
+The caller a report comes from: a hub key, by its name, or the owner. A reported request is kept under the reporter of its first report, and the reporter is no part of what the request is: the same model call reported by another reporter is the same request.
+_Avoid_: request reporter (the program on a machine, which sends reports), sender, source, machine (a tag the reporter states)
+
+**Call before**:
+The model call before a model call in its conversation. A report names it for each call (`after`), by its call key and its start, so that the hub makes the call's conversation from the call before's and what is new; a conversation's first call has none.
+_Avoid_: parent, previous request, follows (a diverted request follows the one refused)
+
 **Report cursor**:
 Where the request reporter stands in one conversation of a client's record: the last step it reported and the model call that step ended. It moves only on the hub's answer that the calls before it are stored, so the record itself is the reporter's outbox.
 _Avoid_: cursor alone (a search's cursor), offset (the title reporter's), checkpoint, watermark, queue
