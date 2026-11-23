@@ -160,7 +160,19 @@ export const sessionRequests = (maxLength: number, from = 0) =>
     ),
   );
 
-/** A session's main conversation: requests in order, most of them `main`. */
+/**
+ * How a generated main request is stored: a forwarded one, a record's model
+ * call, one its record names a compaction, and a forwarded one whose purpose
+ * says `compaction` but which no record names.
+ */
+const stored = {
+  forwarded: { protocol: "anthropic-messages", purpose: "" },
+  record: { protocol: "antigravity-steps", purpose: "" },
+  compaction: { protocol: "antigravity-steps", purpose: "compaction" },
+  near: { protocol: "anthropic-messages", purpose: "compaction" },
+} as const;
+
+/** A session's main conversation: requests in order, most of them `main`, some of them compactions a record names. */
 export const mainConversation = Arbitrary.array(
   Arbitrary.all({
     requestRole: pick<readonly [RequestRole, ...Array<RequestRole>]>([
@@ -173,17 +185,24 @@ export const mainConversation = Arbitrary.array(
     ]),
     outcome: pick(["ok", "ok", "ok", "ok", "error", "cancelled"]),
     promptSize,
+    kind: pick([
+      "forwarded",
+      "forwarded",
+      "record",
+      "record",
+      "compaction",
+      "near",
+    ]),
   }),
   { maxLength: 30 },
 ).pipe(
   Arbitrary.map((requests) =>
-    requests.map(({ requestRole, outcome, promptSize }, index) => ({
+    requests.map(({ requestRole, outcome, promptSize, kind }, index) => ({
       requestRole,
       request: {
         id: idOf(index, index),
         startedAt: DateTime.makeUnsafe(start + index * 60_000),
-        protocol: "anthropic-messages" as const,
-        purpose: requestRole,
+        ...stored[kind],
         outcome,
         promptSize,
         clientHeaders: {},

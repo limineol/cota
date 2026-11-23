@@ -362,6 +362,10 @@ export const textOf = (item: unknown): string =>
         .join("\n"),
   });
 
+/** Whether the table reads a step as a compaction: the model call that step is the output of summarised the conversation. */
+export const isCompaction = (step: Step): boolean =>
+  Option.exists(saidOf(step), (said) => said.kind === "compaction");
+
 /** The text of a user's message step; nothing for any other step. */
 export const userTextOf = (item: unknown): Option.Option<string> =>
   Option.flatMap(Option.flatMap(stepOf(item), saidOf), (said) =>

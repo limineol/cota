@@ -454,7 +454,7 @@ const l11 =
 const l12 =
   "L12: for any conversation in any cut into reports, each call's input part is every item of the calls before it and its own input, in order, its output part its own, and each item is stored once per session";
 const l13 =
-  "L13: every stored reported request has its record form as its protocol, and the empty value of every column the forwarded origin holds";
+  "L13: every stored reported request has its record form as its protocol, its purpose compaction exactly when its output is a compaction's step, and the empty value of every other column the forwarded origin holds";
 const l14 =
   "L14: storing any report beside any forwarded traffic changes no answer of the quota sources, the only reading of the request log that admission, the fallback or the pools group's windows rest on";
 const l15Report =
@@ -474,7 +474,9 @@ const t1LatestFirst = `${t1}, for two equal threads given latest first`;
 const t2 =
   "T2: a request that rule 2, 3, 4 or 5 decides has that role whatever the other requests of its session are";
 const t5 =
-  "T5: a segment begins at a main request other than the first exactly when the size rule holds for it";
+  "T5: a segment begins at a main request other than the first exactly when the compaction or the size rule holds for it";
+const reportedSegments =
+  "begins a reported session's segment at the call after a compaction its record names, though the prompt does not shrink, and once for one that shrinks it";
 const title = `${requestLog}/03-domain/title.ts`;
 const listSessions = `${requestLog}/02-application/queries/list-sessions.query.ts`;
 const sessionTitles = `${requestLog}/04-infrastructure/persistence/clickhouse/clickhouse-session-titles.ts`;
@@ -3334,7 +3336,55 @@ export const layer = (policy: Policy): Layer.Layer<Fallback> =>
     find: "    if (Option.isSome(size)) current.sized = size;",
     replace: "    if (Option.isNone(current.sized)) current.sized = size;",
     killedBy:
-      "T6: within a segment, no ok request with a prompt size has one under half of the previous such request's",
+      "T6: within a segment, no ok request with a prompt size but a compaction its client named has one under half of the previous such request's",
+  },
+  {
+    name: "a compaction its client names begins no segment",
+    law: "T5",
+    file: segment,
+    find: "    if (current === undefined || compacted || dropped) {",
+    replace: "    if (current === undefined || dropped) {",
+    killedBy: t5,
+  },
+  {
+    name: "a compaction that did not end ok begins a segment",
+    law: "T5",
+    file: segment,
+    find: '      before.outcome === "ok" &&\n',
+    replace: "",
+    killedBy: t5,
+  },
+  {
+    name: "a forwarded request whose purpose says compaction begins a segment",
+    law: "T5",
+    file: segment,
+    find: '  isRecordForm(request.protocol) && request.purpose === "compaction";',
+    replace: '  request.purpose === "compaction";',
+    killedBy: t5,
+  },
+  {
+    name: "a named compaction's own call begins a segment by size, so one compaction begins two",
+    law: "T5",
+    file: segment,
+    find: "      !namesCompaction(request) &&\n",
+    replace: "",
+    killedBy: t5,
+  },
+  {
+    name: "a reported compaction's call is stored without its purpose",
+    law: "L13",
+    file: reportDomain,
+    find: '      purpose: AntigravitySteps.isCompaction(checked.output)\n        ? "compaction"\n        : "",',
+    replace: '      purpose: "",',
+    killedBy: l13,
+  },
+  {
+    name: "a reported request's purpose is not written to its columns",
+    law: "L13",
+    file: storedItems,
+    find: "    purpose: origin.purpose,\n",
+    replace: "",
+    killedBy: reportedSegments,
   },
   {
     name: "a segment's tip is its last request, ok or not",

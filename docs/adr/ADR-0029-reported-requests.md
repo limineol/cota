@@ -58,6 +58,7 @@ const Forwarded = Schema.TaggedStruct("forwarded", {
 const Reported = Schema.TaggedStruct("reported", {
   form: RecordForm,
   reportedBy: Schema.Option(HubKeyName),
+  purpose: Schema.Literals(["", "compaction"]),
 });
 
 export const Request = Schema.Struct({
@@ -89,7 +90,8 @@ The fields keep their types of today (`request.entity.ts`). `hubKey` is a forwar
 | `outcome`, `error_type`, `error_message` | As reported: `ok`, `error` or `cancelled`, never `refused` |
 | the token columns, `usage_reported`, `usage` | The call's usage in the request log's classes, and the record's usage as JSON |
 | `cost_usd` | Priced as the writer prices any request (Cost, below) |
-| `session_source`, `user_agent`, `diverted_from`, `login_fingerprint`, `purpose`, `served_model`, `service_tier`, `error_body` | empty |
+| `purpose` | `compaction` for the call whose output is the record's compaction step, which the hub reads from the steps it stores; else empty |
+| `session_source`, `user_agent`, `diverted_from`, `login_fingerprint`, `served_model`, `service_tier`, `error_body` | empty |
 | `stream` | false |
 | `upstream_status` | 0, the hub's "never answered": it never asked |
 | `rate_limits`, `client_headers` | empty maps |
@@ -120,7 +122,7 @@ For each model call: its call key, its usage, its model, when it started and fin
 **A reported session is the client's record, not the exact requests.** For Antigravity that is its steps and each model call's usage. Its limits, which the sessions screens and the request log spec state:
 
 - **The system prompt and the tool definitions are not captured.** They are in the record only for the newest call (fact 6), so nothing is built on them.
-- **After a compaction the log shows every step, the compaction one of them.** A model call's `input` holds every step before it, which after a compaction is more than the model was sent; its usage is what the model read. The size rule still cuts a segment there, as the prompt falls by more than half (fact 4).
+- **After a compaction the log shows every step, the compaction one of them.** A model call's `input` holds every step before it, which after a compaction is more than the model was sent; its usage is what the model read. A segment begins at the call after the compaction's own, which the record names: the hub stores that call with the purpose `compaction`, and the sessions' compaction rule cuts there whatever the sizes (`docs/specs/sessions/spec.md`, Segments). The prompt fell by more than half after the spike's compaction (fact 4), but not after a short conversation's (Facts to confirm when built), so the size rule alone is not enough.
 - **A step reported unfinished stays so.** A model call whose step the client left unfinished for 10 minutes, or went on past, is reported as it is, as an error; if the client finishes that step later, the log keeps what was reported, since a reported request is never changed. A step read past while unfinished and without usage is remembered, and reported as a model call if it finishes with one (`docs/specs/request-reporter/spec.md`, A step not finished).
 - **Up to a run late.** A reported request reaches the log when the machine's next run sends it: 30 seconds, or as long as the machine is away.
 - **A format with no published schema**, which any update of Antigravity can change. The reader checks the tables and columns it reads, reports nothing from a record it cannot read and says so, and never guesses (`docs/specs/request-reporter/spec.md`).
@@ -186,6 +188,7 @@ Read by trial on one conversation on one machine; each was checked again in 6d (
 - **Sign-in material: none seen, by shape, in one conversation.** No field of a step held anything shaped as a Google access or refresh token, an API key, a JWT or a bearer header; the long texts were paths and the conversation's own. Two fields hold opaque bytes, a tool call's 7 and the model output's 20.14, which the third party's definitions name the model's thought signatures, and the usage's 8 holds the provider's response headers (a session number seen). Open: judged by shape on one conversation, never against the token file.
 - **Opening the file: changed.** A read-only open of a database in WAL mode whose `-wal` and `-shm` are absent fails, wherever it is (fact 8); a read-only open of one being written opens its `-shm` to write and changes its bytes. So the reader never opens the client's database: it always copies the database and its `-wal`, never `-shm`, into a directory of its own, comparing their sizes and times before and after, and reads the copy. Against a writer checkpointing (truncating its `-wal`) every third write, 238 copies were made: none was torn, and 53 saw the files change while copying, which the reader reads again.
 - **Not tested still**: the desktop app's data folder and conversations, sub-agents, automatic compaction, long conversations, other versions of Antigravity. Open.
+- **Seen in a first real run, 2026-11-23.** Four throwaway conversations, made through T3 Code's bundled Antigravity on one macOS machine, were reported by `cota requests report` to a throwaway hub. Two things were found that the spike's conversation did not show. A command that outlives its tool call's wait (`run_command` with `WaitMsBeforeAsync`) ends in a step of type 101, a task's notification, which the next model call reads: the record form's table now reads it (`docs/specs/reported-requests/spec.md`, The table of fields). And `/compact` in a short conversation did not shrink the prompt: about 35,000 tokens at the compaction's own call and at the call after it, the client's fixed preamble most of it, so the size rule cut no segment; the compaction's call is now named by its purpose (After a compaction, above). The same run saw tool steps (132) of `write_file` and `run_command` beside `read_file`, read as the table reads `read_file`'s.
 - **`/usr/bin/curl` with a body of megabytes**: the reporter sends the body as a file curl reads (`--data-binary @<file>`); tested against a whole hub of the harness with a body of several megabytes (`apps/cli/src/01-presentation/requests.contract.test.ts`), not from a launchd job. Open for launchd, as ADR-0022's.
 
 ## Alternatives weighed

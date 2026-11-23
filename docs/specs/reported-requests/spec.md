@@ -142,7 +142,8 @@ It never goes through `RecordRequest`'s queue, and a stored answer means the row
 | `first_byte_ms`, `follows`, `refusal_reset` | null |
 | `duration_ms` | `finishedAt` less `startedAt`, in milliseconds |
 | `session`, `project`, `client_version`, `model`, `stop_reason`, `provider_request_id` | As reported |
-| `session_source`, `user_agent`, `diverted_from`, `login_fingerprint`, `purpose`, `served_model`, `service_tier`, `error_body` | empty |
+| `session_source`, `user_agent`, `diverted_from`, `login_fingerprint`, `served_model`, `service_tier`, `error_body` | empty |
+| `purpose` | `compaction` when the call's `output` step is one the record form's table reads as a compaction (for `antigravity-steps`, a step of type 23 whose summary it reads): the client's record names the call so. Else empty. |
 | `machine` | The caller's `x-cota-machine` |
 | `client` | The report's `client` |
 | `hub_key` | The reporting hub key's name; empty for the owner |
@@ -160,7 +161,7 @@ It never goes through `RecordRequest`'s queue, and a stored answer means the row
 | `request_bytes`, `response_bytes` | 0 |
 | `reading_complete` | true |
 
-In the `Request` entity it is a request whose `origin` is `reported`, with its record form and its reporter (`reportedBy`, none for the owner); the fields of a `forwarded` origin are what the table writes as empty (ADR-0029, One record, two ways in). The reader's record of a stored request has an origin read from its `protocol`: `forwarded` for a protocol, `imported` for a source form, `reported` for a record form (`originOf`, `03-domain/stored-protocol.ts`). The read API gives it as each request's `origin`, and a session's as `origins` (`docs/specs/api/spec.md`, Sessions).
+In the `Request` entity it is a request whose `origin` is `reported`, with its record form, its reporter (`reportedBy`, none for the owner) and its purpose (`""` or `compaction`); the other fields of a `forwarded` origin are what the table writes as empty (ADR-0029, One record, two ways in). The reader's record of a stored request has an origin read from its `protocol`: `forwarded` for a protocol, `imported` for a source form, `reported` for a record form (`originOf`, `03-domain/stored-protocol.ts`). The read API gives it as each request's `origin`, and a session's as `origins` (`docs/specs/api/spec.md`, Sessions).
 
 ## The answer and its problems
 
@@ -210,7 +211,7 @@ What the request log reads of the form, as it reads a source form's (`docs/specs
 
 - **Its text**, for search: the text of the fields the table names as what a person would read (a user's message, the model's output, a tool call's arguments and result, a task's notification, a compaction's summary), joined by line breaks. A step of a kind the table does not know gives no text.
 - **Its renderer** (`04-infrastructure/transcripts/antigravity-steps.ts`): a user's message is a `message` whose role is `user`; the model's output a `message` whose role is `assistant`, with `reasoning` before it where the table finds the model's thoughts; a tool call a `tool-call` and its `tool-result`; a task's notification a `tool-result` too, of the call that started the task, its text (below); a compaction a `message` whose role is `assistant`, its summary. A length-delimited field the table names as a message is read as a protocol buffer by the same rules. A step, or a field, the table does not know is `other`, its JSON, under the transcript's rules for withholding and cutting.
-- **Its request role**: a rule before the title rule, **a record's model call**: a request of a record form is `main`, since a record holds one conversation and the reader reports no sub-agent's. Its segments are cut by the size rule, which a compaction meets (ADR-0029, fact 4).
+- **Its request role**: a rule before the title rule, **a record's model call**: a request of a record form is `main`, since a record holds one conversation and the reader reports no sub-agent's. Its **segments**: a compaction's own call is stored with the purpose `compaction` (The columns of a reported request), and the next call begins a segment whatever the prompt sizes (`docs/specs/sessions/spec.md`, Segments): the prompt does not always fall by half after one.
 - **Its first prompt**: the text of the last user's message step in the first main request's `input`.
 - **Its body**: `GET /api/requests/{id}/body` rebuilds `{ "steps": [ … ] }`, every step through the call's input as the client recorded it; the inspector says, as for an imported request, that it is not what the client sent.
 
@@ -273,7 +274,7 @@ No pool may name an observed pool as its `fallback` (`the fallback pool "<id>" i
 | L10 | **Stored before answered.** A report answered 200 has every one of its calls held in the log at the moment of the answer. | property, clickhouse |
 | L11 | **Refused is nothing stored.** A report answered with any problem but `request-log-unavailable` and `hub-store-unavailable` changes nothing in the log or the hub store. | property, contract |
 | L12 | **The call before, and what is new.** For any conversation reported in any cut of reports, each call's `input` part is the digests of every item of the calls before it and its own `input`, in order, and its `output` its own; each item is stored once per session. | property, clickhouse |
-| L13 | **A reported request is marked, and holds nothing forwarded.** Every stored reported request has a record form as its `protocol`, and every column the forwarded origin holds is its empty value of the columns table. | property |
+| L13 | **A reported request is marked, and holds nothing forwarded.** Every stored reported request has a record form as its `protocol`, its `purpose` `compaction` exactly when its output is a compaction's step, and every other column the forwarded origin holds is its empty value of the columns table. | property |
 | L14 | **A report decides nothing.** Storing any report changes no answer of admission, parks no login, diverts no request and changes no quota window the pools group answers. | property |
 | L15 | **Observed pools are reported to, never forwarded to.** A report naming a pool that is not observed stores nothing, and no request admitted by the relay names an observed pool. | property, contract |
 | L16 | **Reported through never goes back.** For any sequence of reports, a machine's, client's and pool's `through` is the greatest any of their reports gave. | property |

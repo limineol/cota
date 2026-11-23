@@ -236,13 +236,20 @@ describe("reported requests laws", () => {
   );
 
   it.effect.prop(
-    "L13: every stored reported request has its record form as its protocol, and the empty value of every column the forwarded origin holds",
+    "L13: every stored reported request has its record form as its protocol, its purpose compaction exactly when its output is a compaction's step, and the empty value of every other column the forwarded origin holds",
     { plan: Reports.reported, reporter: pick(Reports.reporters) },
     ({ plan, reporter }) =>
       Effect.gen(function* () {
         yield* atNow;
         const world = yield* once(plan.reports, reporter);
         expect(world.memory.requests).toHaveLength(plan.calls.length);
+        const compactions = new Set(
+          plan.calls
+            .filter((call) => call.output.some((step) => step.step_type === 23))
+            .map((call) =>
+              Report.idOf("antigravity", call.call, call.startedAt),
+            ),
+        );
         for (const { request } of world.memory.requests) {
           const {
             protocol,
@@ -294,7 +301,7 @@ describe("reported requests laws", () => {
             userAgent: "",
             divertedFrom: Option.none(),
             loginFingerprint: Option.none(),
-            purpose: "",
+            purpose: compactions.has(request.id) ? "compaction" : "",
             servedModel: "",
             serviceTier: "",
             errorBody: "",

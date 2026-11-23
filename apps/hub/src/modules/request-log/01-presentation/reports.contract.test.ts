@@ -64,6 +64,54 @@ const callsOf = (session: string) => [
   },
 ];
 
+const minuteOf = (at: number) =>
+  new Date(Date.UTC(2026, 10, 11, 10, at)).toISOString();
+
+/** The calls of a conversation whose prompts are `sizes`, the one at `compaction` a compaction its record names. */
+const compactedCalls = (
+  session: string,
+  sizes: ReadonlyArray<number>,
+  compaction: number,
+) =>
+  sizes.map((size, at) => ({
+    call: `${session}-${at}`,
+    after:
+      at === 0
+        ? null
+        : { call: `${session}-${at - 1}`, startedAt: minuteOf(at - 1) },
+    session,
+    project: "garden",
+    clientVersion: "1.4.0",
+    model: "gemini-3-flash-preview",
+    startedAt: minuteOf(at),
+    finishedAt: minuteOf(at),
+    outcome: "ok",
+    errorType: "",
+    errorMessage: "",
+    stopReason: "STOP",
+    providerRequestId: "",
+    usage: {
+      input: size,
+      cacheRead: 0,
+      cacheWriteShort: 0,
+      cacheWriteLong: 0,
+      output: 100,
+      reasoning: 0,
+      reported: {},
+    },
+    input: [
+      Steps.userMessage(
+        2 * at,
+        at === compaction ? "/compact" : `Question ${at}`,
+      ),
+    ],
+    output: [
+      at === compaction
+        ? Steps.compaction(2 * at + 1, "The conversation so far.")
+        : Steps.modelOutput(2 * at + 1, { text: `Answer ${at}.` }),
+    ],
+  }));
+
 const reportOf = (session: string, changes: Record<string, unknown> = {}) => ({
   client: "antigravity",
   pool: "gemini",
@@ -240,6 +288,48 @@ layer(Harness.layer())("POST /api/reported-requests", (it) => {
             ],
           },
         });
+      }),
+  );
+
+  it.effect(
+    "begins a reported session's segment at the call after a compaction its record names, though the prompt does not shrink, and once for one that shrinks it",
+    () =>
+      Effect.gen(function* () {
+        const conversations = [
+          ["compacted-flat", [30_000, 31_000, 32_000, 32_100], 2],
+          ["compacted-shrunk", [90_000, 100_000, 30_000, 31_000], 1],
+        ] as const;
+        const reader = { "x-cota-key": Harness.secrets.readerHubKey };
+        const segments = [];
+        for (const [session, sizes, compaction] of conversations) {
+          const report = {
+            client: "antigravity",
+            pool: "gemini",
+            through: null,
+            calls: compactedCalls(session, sizes, compaction),
+          };
+          expect((yield* sent(report, keys.fleet)).status).toBe(200);
+          const detail = yield* Harness.problemOf(
+            yield* Harness.send(`/api/sessions/${session}`, {
+              headers: reader,
+            }),
+          );
+          segments.push(detail.body);
+        }
+        expect(segments).toMatchObject([
+          {
+            segments: [
+              { startedBy: "start", requests: 3 },
+              { startedBy: "compaction", requests: 1 },
+            ],
+          },
+          {
+            segments: [
+              { startedBy: "start", requests: 2 },
+              { startedBy: "compaction", requests: 2 },
+            ],
+          },
+        ]);
       }),
   );
 
