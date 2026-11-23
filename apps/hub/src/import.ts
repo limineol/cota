@@ -187,6 +187,11 @@ const importing = Effect.gen(function* () {
         `The pool map sends ${sourcePool} to ${id}, which the hub's configuration does not have.`,
       );
     }
+    if (pool.value.kind === "observed") {
+      return yield* stop(
+        `The pool map sends ${sourcePool} to ${id}, an observed pool, which only reported requests bill.`,
+      );
+    }
     pools.set(sourcePool, {
       id,
       provider: pool.value.provider,

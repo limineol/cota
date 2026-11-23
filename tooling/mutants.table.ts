@@ -36,6 +36,7 @@ export type Law =
   | "L4"
   | "L5"
   | "L6"
+  | "L15"
   | "S1"
   | "S2"
   | "M1"
@@ -669,6 +670,10 @@ const planCredential =
 const config = "apps/hub/src/config/config.ts";
 const neverReported =
   "R7: a forwarded request's client is never a reported client, whatever its tag and user agent";
+const observedRefusals =
+  "refuses what an observed pool cannot have, an observed pool without its provider, a pool that is neither observed nor names its protocol, and a fallback pool that is observed";
+const observedAtTheRelay =
+  "L15: no request admitted by the relay names an observed pool: every hub key in x-cota-key is answered 403 cota_hub_key_scope there, as the bearer token or in x-api-key 403 cota_hub_key_rejected, and nothing is forwarded or recorded";
 const anthropic =
   "apps/hub/src/modules/relay/04-infrastructure/protocols/anthropic-messages/anthropic-messages.ts";
 const codex =
@@ -1898,6 +1903,46 @@ export const layer = (policy: Policy): Layer.Layer<Fallback> =>
     find: '    client: name === undefined || isReported(name) ? "unknown" : name,',
     replace: '    client: name ?? "unknown",',
     killedBy: neverReported,
+  },
+  {
+    name: "an observed pool may hold what only a forwarded pool has",
+    file: config,
+    find: "      if (pool[field] !== undefined) {",
+    replace: "      if (false) {",
+    killedBy: observedRefusals,
+  },
+  {
+    name: "an observed pool need not name its provider",
+    file: config,
+    find: "    if (pool.provider === undefined) {",
+    replace: "    if (false) {",
+    killedBy: observedRefusals,
+  },
+  {
+    name: "an observed pool may be a fallback pool",
+    file: config,
+    find: "    } else if (fallback.observed === true) {",
+    replace: "    } else if (false) {",
+    killedBy: observedRefusals,
+  },
+  {
+    name: "the admission policy opens an observed pool to keyed hub keys",
+    law: "L15",
+    file: config,
+    find: "  pools: HashMap.map(config.pools, ({ kind }) => kind),",
+    replace:
+      '  pools: HashMap.map(config.pools, ({ kind }) => (kind === "observed" ? "keyed" : kind)),',
+    killedBy: observedAtTheRelay,
+  },
+  {
+    name: "every hub key opens an observed pool",
+    law: "L15",
+    file: admission,
+    find: "export const opens = (scope: Scope, kind: Kind): boolean => scope === kind;",
+    replace:
+      'export const opens = (scope: Scope, kind: Kind): boolean => scope === kind || kind === "observed";',
+    killedBy:
+      "L15: no request admitted by the relay names an observed pool, whatever hub key it presents",
   },
   {
     name: "the copy holds the client back when its reader falls behind",

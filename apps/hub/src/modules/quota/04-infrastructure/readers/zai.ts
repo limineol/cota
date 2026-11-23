@@ -10,7 +10,6 @@ import type { HttpClient } from "effect/http";
 import * as Plan from "#modules/quota/03-domain/plan.ts";
 import type { QuotaReading } from "#modules/quota/03-domain/sources.ts";
 import * as ProviderCall from "#modules/quota/04-infrastructure/provider-call.ts";
-import type * as Pool from "#shared/03-domain/pool.entity.ts";
 import { type Given, readingOf } from "./reading.ts";
 import * as UsageEndpoint from "./usage-endpoint.ts";
 
@@ -112,12 +111,12 @@ export const urlOf = (baseUrl: string): string =>
 /** Reads a Z.ai pool's windows and plan with its held key (`docs/specs/quota-readers/spec.md`, Z.ai). */
 export const read = (
   http: HttpClient.HttpClient,
-  pool: Pool.Pool,
+  baseUrl: string,
   key: Redacted.Redacted<string>,
 ) =>
   UsageEndpoint.read(http, {
     provider: "Z.ai",
-    url: urlOf(pool.baseUrl),
+    url: urlOf(baseUrl),
     credential: key,
     answer: Answer,
     reading: readingFrom,

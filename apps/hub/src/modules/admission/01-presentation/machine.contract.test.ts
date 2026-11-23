@@ -14,6 +14,9 @@ interface Answer {
     readonly displayName: string | null;
     readonly models: ReadonlyArray<{ readonly id: string }>;
   }>;
+  readonly observedPools: ReadonlyArray<{
+    readonly displayName: string | null;
+  }>;
 }
 
 const machineOf = (headers: Record<string, string>) =>
@@ -124,6 +127,8 @@ const subscriptionPools = [
   },
 ];
 
+const observedPools = [{ id: "gemini", provider: "google", displayName: null }];
+
 layer(Harness.layer())("the machine group", (it) => {
   it.effect(
     "answers a keyed hub key its name and scope and the keyed pools, in order of id, each with the models of its price list",
@@ -133,6 +138,7 @@ layer(Harness.layer())("the machine group", (it) => {
         expect(withoutModels(body)).toEqual({
           hubKey: { name: "fleet", scope: "keyed" },
           pools: keyedPools,
+          observedPools,
         });
         expect(anthropicModels).toBeGreaterThan(10);
       }),
@@ -167,16 +173,18 @@ layer(Harness.layer())("the machine group", (it) => {
   );
 
   it.effect(
-    "answers a subscription hub key the subscription pools with no models, a reader key no pool, and the owner every pool with no hub key",
+    "answers a subscription hub key the subscription pools with no models, a reader key no pool, and the owner every pool with no hub key, an observed one among them with no protocol, and every caller the observed pools",
     () =>
       Effect.gen(function* () {
         expect(withoutModels((yield* machineOf(clients)).body)).toEqual({
           hubKey: { name: "clients", scope: "subscription" },
           pools: subscriptionPools,
+          observedPools,
         });
         expect((yield* machineOf(reader)).body).toEqual({
           hubKey: { name: "agents", scope: "reader" },
           pools: [],
+          observedPools,
         });
         expect(
           withoutModels((yield* machineOf(yield* Harness.signIn())).body),
@@ -186,30 +194,42 @@ layer(Harness.layer())("the machine group", (it) => {
             subscriptionPools[0],
             subscriptionPools[1],
             keyedPools[0],
+            {
+              id: "gemini",
+              kind: "observed",
+              protocol: null,
+              provider: "google",
+              displayName: null,
+              models: 0,
+            },
             keyedPools[1],
             keyedPools[2],
             subscriptionPools[2],
             subscriptionPools[3],
             keyedPools[3],
           ],
+          observedPools,
         });
       }),
   );
 
   it.effect(
-    "answers the owner's name for a pool, and for a model in place of its built-in one",
+    "answers the owner's name for a pool, an observed one among them, and for a model in place of its built-in one",
     () =>
       Effect.gen(function* () {
         yield* named("pool", "console", "Console");
+        yield* named("pool", "gemini", "Gemini");
         yield* named("model", "claude-opus-5-5", "Opus");
         const { body } = yield* machineOf(fleet);
         yield* unnamed("pool", "console");
+        yield* unnamed("pool", "gemini");
         yield* unnamed("model", "claude-opus-5-5");
         const console = body.pools.find(({ id }) => id === "console");
         expect([
           withoutModels(body).pools[0]?.displayName,
+          body.observedPools[0]?.displayName,
           console?.models.find(({ id }) => id === "claude-opus-5-5"),
-        ]).toMatchObject(["Console", { name: "Opus" }]);
+        ]).toMatchObject(["Console", "Gemini", { name: "Opus" }]);
       }),
   );
 

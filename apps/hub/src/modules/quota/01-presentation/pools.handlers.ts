@@ -139,12 +139,17 @@ const noSuchPool = ({ pool }: QuotaLogin.NoSuchPool) =>
     }),
   );
 
-const notTaken = ({ pool, takes, given }: QuotaLogin.QuotaLoginNotTaken) =>
+const notTaken = ({
+  pool,
+  kind,
+  takes,
+  given,
+}: QuotaLogin.QuotaLoginNotTaken) =>
   Effect.fail(
     new PoolsApi.QuotaLoginNotTakenProblem({
       detail: Option.match(takes, {
         onNone: () =>
-          `The pool ${JSON.stringify(pool)} is a keyed pool: only a subscription pool takes a quota login.`,
+          `The pool ${JSON.stringify(pool)} is ${kind === "observed" ? "an observed" : "a keyed"} pool: only a subscription pool takes a quota login.`,
         onSome: (takes) =>
           `The pool ${JSON.stringify(pool)} takes a ${QuotaLogin.nameOf(takes)} login, not a ${QuotaLogin.nameOf(given)} one.`,
       }),
@@ -154,7 +159,7 @@ const notTaken = ({ pool, takes, given }: QuotaLogin.QuotaLoginNotTaken) =>
 const poolOf = (answer: PoolAnswer): typeof PoolsApi.Pool.Type => ({
   id: answer.pool.id,
   kind: answer.pool.kind,
-  protocol: answer.pool.protocol,
+  protocol: answer.pool.kind === "observed" ? null : answer.pool.protocol,
   provider: answer.pool.provider,
   plan: Option.getOrNull(answer.plan),
   windows: answer.windows.map(windowOf),

@@ -2,8 +2,8 @@
 status: active
 scope: apps/hub
 owner: limineol
-last_verified: 2026-11-17
-review_by: 2027-02-17
+last_verified: 2026-11-23
+review_by: 2027-02-23
 supersedes: []
 code:
   - apps/hub/src/modules/routes
@@ -23,7 +23,7 @@ Which pool a launch of a client bills for a project: each client's ordered list 
 - **Project pattern**: trimmed and lowercased when stored, then 1 to 200 code points, with no control character, at most one `*`, and that only as its last character; `*` alone is not one. A pattern without `*` is **exact**; one with it is a **prefix** pattern, whose **stem** is the pattern without its `*`.
 - **Route**: `{ position, pattern, pool }`, where `position` counts from 1 in the order the routes are tried and `pool` is a pool's id.
 - **A client's list**: its routes in order (0 to 200 of them), its **default pool** (a pool's id, or none), its **revision** (an integer, 0 for a list never stored, one more at each stored change) and when it last changed.
-- **Fits**: a pool fits a routed client when the configuration has it and its protocol is the client's. A subscription pool and a keyed pool both fit Claude Code; every pool that fits Codex is a subscription pool.
+- **Fits**: a pool fits a routed client when the configuration has it and its protocol is the client's. A subscription pool and a keyed pool both fit Claude Code; every pool that fits Codex is a subscription pool. An observed pool speaks no protocol, so it fits no client: a route, a default pool or an override naming one is refused as one that does not speak the client's protocol (ADR-0029).
 
 Lowercasing is `toLowerCase` on the whole string, which depends on no locale.
 
@@ -31,7 +31,7 @@ Lowercasing is `toLowerCase` on the whole string, which depends on no locale.
 
 1. A pattern **matches** a project when, the project lowercased, an exact pattern equals it, or a prefix pattern's stem starts it. `acme/*` matches `acme/api` and `acme/tools/cli`, not `acme`; `acme*` matches `acme`, `acme-site` and `acme/api`.
 2. A client's answer for a project is its first route, by position, whose pattern matches the project; else its default pool; else **no route**.
-3. When the route or the default pool answered names a pool that does not fit the client (the configuration no longer has it, or its protocol changed), the answer is that problem, `route-pool-gone`, naming the position (or the default). No later route and no default pool is tried in its place.
+3. When the route or the default pool answered names a pool that does not fit the client (the configuration no longer has it, or its protocol changed, or it became an observed pool), the answer is that problem, `route-pool-gone`, naming the position (or the default). No later route and no default pool is tried in its place.
 4. With an **override** (a pool named in the question), the answer is that pool when it fits the client, whatever the routes; an override the configuration does not have is `no-such-pool`, and one that does not fit is `pool-not-for-client`.
 5. The answer depends on the client's list, the configuration and the question, and on nothing else: not the caller, not the time.
 
@@ -137,7 +137,7 @@ A `routes` group, owned by the `routes` module, with the conventions and errors 
 }
 ```
 
-`routes-changed`'s detail is `The routes of claude-code changed since revision 3; read them again.`, `no-route`'s `No route of codex matches the project "acme/api", and codex has no default pool.`, and `pool-not-for-client`'s `The pool claude speaks anthropic-messages, and codex speaks chatgpt-codex.`
+`routes-changed`'s detail is `The routes of claude-code changed since revision 3; read them again.`, `no-route`'s `No route of codex matches the project "acme/api", and codex has no default pool.`, and `pool-not-for-client`'s `The pool claude speaks anthropic-messages, and codex speaks chatgpt-codex.`, or, for an observed pool, `The pool gemini is an observed pool, which speaks no protocol, and codex speaks chatgpt-codex.`
 
 ## Settings → Routes
 
@@ -167,7 +167,7 @@ The dashboard's fourth part of Settings, `/settings/routes`, lists and changes e
 | N10 | **One change per revision.** Of changes sent from the same revision, one at a time or together, exactly one is stored, and every stored list is exactly the routes and default pool of one change. | property |
 | N11 | **Routes open nothing.** For any lists stored, every request to a pool is admitted or rejected as it would be with none. | contract |
 
-N1 to N4, N8 and N9 run over generated lists and projects: patterns and projects drawn from a small alphabet (`a`, `b`, `/`, `-` and an uppercase `A`) so that prefixes, equal patterns and near misses are common, lists of up to 12 routes with and without a default pool, configurations in which some routes' pools are gone or of another protocol, and overrides that fit, do not fit and do not exist. Each answer is compared with the one worked out by reading the list in order with this spec's matching rule. N5 generates lists whose patterns are sometimes not patterns, and compares each refusal as shadowed or as the same pattern with a search over every project of the alphabet, lowercased (case is N4's), and one character no pattern holds (`z`), up to two characters longer than the longest pattern, which is enough for patterns that are exact or prefixes (the extra character stands for every character the patterns do not name); N6 builds lists by adding generated routes one at a time while the check accepts them, and asks the same search, for each route of the list, for a project it is the first match of. N7 runs `ChangeRoutes` over generated configurations and lists, and checks every list stored against the configuration it was stored under. N10 runs `ChangeRoutes` over generated sequences of changes, some sent together, some from the current revision and some from a stale one, over the in-memory store and over SQLite in a temporary file, and compares the stored lists with the changes that were answered as stored. N11 stores generated lists for both clients through the API of a whole hub, and sends a request to every pool of the harness's configuration and one it lacks, from every kind of caller (none, an unknown key, a keyed, a subscription and a reader key, and a hub key as a bearer token); every answer, its status and the hub's error, is the one the same hub gave before any list was stored, which is what admission (`docs/specs/admission/spec.md`, A1 to A5) decides.
+N1 to N4, N8 and N9 run over generated lists and projects: patterns and projects drawn from a small alphabet (`a`, `b`, `/`, `-` and an uppercase `A`) so that prefixes, equal patterns and near misses are common, lists of up to 12 routes with and without a default pool, configurations in which some routes' pools are gone, of another protocol or observed, and overrides that fit, do not fit and do not exist. Each answer is compared with the one worked out by reading the list in order with this spec's matching rule. N5 generates lists whose patterns are sometimes not patterns, and compares each refusal as shadowed or as the same pattern with a search over every project of the alphabet, lowercased (case is N4's), and one character no pattern holds (`z`), up to two characters longer than the longest pattern, which is enough for patterns that are exact or prefixes (the extra character stands for every character the patterns do not name); N6 builds lists by adding generated routes one at a time while the check accepts them, and asks the same search, for each route of the list, for a project it is the first match of. N7 runs `ChangeRoutes` over generated configurations and lists, and checks every list stored against the configuration it was stored under. N10 runs `ChangeRoutes` over generated sequences of changes, some sent together, some from the current revision and some from a stale one, over the in-memory store and over SQLite in a temporary file, and compares the stored lists with the changes that were answered as stored. N11 stores generated lists for both clients through the API of a whole hub, and sends a request to every pool of the harness's configuration and one it lacks, from every kind of caller (none, an unknown key, a keyed, a subscription and a reader key, and a hub key as a bearer token); every answer, its status and the hub's error, is the one the same hub gave before any list was stored, which is what admission (`docs/specs/admission/spec.md`, A1 to A5) decides.
 
 ## Not built, on purpose
 

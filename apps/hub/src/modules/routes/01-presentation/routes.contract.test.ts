@@ -76,7 +76,7 @@ layer(Harness.layer())("the routes group", (it) => {
   );
 
   it.effect(
-    "refuses a list, naming every route and the default pool that is refused and why, and stores nothing",
+    "refuses a list, naming every route and the default pool that is refused and why, a route to an observed pool among them, and stores nothing",
     () =>
       Effect.gen(function* () {
         const refused = yield* Harness.problemOf(
@@ -89,6 +89,7 @@ layer(Harness.layer())("the routes group", (it) => {
               { pattern: "ACME*", pool: "codex" },
               { pattern: " beta ", pool: "work" },
               { pattern: "*", pool: "solo" },
+              { pattern: "gem", pool: "gemini" },
             ],
             defaultPool: "codex",
           }),
@@ -101,7 +102,7 @@ layer(Harness.layer())("the routes group", (it) => {
             status: 400,
             title: "The routes were not stored.",
             detail:
-              "The routes of claude-code were not stored: route 2: shadowed by route 1; route 3: not a project pattern; route 3: no such pool; route 4: the pool does not speak the client's protocol; route 4: the same pattern as an earlier route; route 5: the pool does not speak the client's protocol; route 6: not a project pattern; the default pool: the pool does not speak the client's protocol.",
+              "The routes of claude-code were not stored: route 2: shadowed by route 1; route 3: not a project pattern; route 3: no such pool; route 4: the pool does not speak the client's protocol; route 4: the same pattern as an earlier route; route 5: the pool does not speak the client's protocol; route 6: not a project pattern; route 7: the pool does not speak the client's protocol; the default pool: the pool does not speak the client's protocol.",
             refusals: [
               { position: 2, reason: "shadowed", shadowedBy: 1 },
               { position: 3, reason: "not-a-pattern", shadowedBy: null },
@@ -110,6 +111,7 @@ layer(Harness.layer())("the routes group", (it) => {
               { position: 4, reason: "same-pattern", shadowedBy: null },
               { position: 5, reason: "pool-not-for-client", shadowedBy: null },
               { position: 6, reason: "not-a-pattern", shadowedBy: null },
+              { position: 7, reason: "pool-not-for-client", shadowedBy: null },
               {
                 position: null,
                 reason: "pool-not-for-client",
@@ -239,7 +241,7 @@ layer(Harness.layer())("the routes group", (it) => {
   );
 
   it.effect(
-    "answers no-route, no-such-pool and pool-not-for-client as problems",
+    "answers no-route, no-such-pool and pool-not-for-client as problems, the last for an override naming an observed pool too",
     () =>
       Effect.gen(function* () {
         const problem = (query: string) =>
@@ -250,6 +252,7 @@ layer(Harness.layer())("the routes group", (it) => {
           yield* problem("client=codex&project=acme/api"),
           yield* problem("client=codex&project=acme/api&pool=nowhere"),
           yield* problem("client=codex&project=acme/api&pool=claude"),
+          yield* problem("client=codex&project=acme/api&pool=gemini"),
         ]).toEqual([
           {
             status: 404,
@@ -281,6 +284,17 @@ layer(Harness.layer())("the routes group", (it) => {
               title: "That pool does not speak this client's protocol.",
               detail:
                 "The pool claude speaks anthropic-messages, and codex speaks chatgpt-codex.",
+            },
+          },
+          {
+            status: 400,
+            contentType: "application/problem+json",
+            body: {
+              type: "urn:cota:pool-not-for-client",
+              status: 400,
+              title: "That pool does not speak this client's protocol.",
+              detail:
+                "The pool gemini is an observed pool, which speaks no protocol, and codex speaks chatgpt-codex.",
             },
           },
         ]);

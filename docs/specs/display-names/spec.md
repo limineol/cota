@@ -30,7 +30,7 @@ The hub names some ids itself, so the owner does not have to:
 - **Clients**: `antigravity` is Antigravity, `claude-code` is Claude Code, `codex` is Codex, `opencode` is OpenCode, `pi` is Pi (`apps/hub/src/shared/03-domain/client.ts`).
 - **Models**: the name models.dev gives the model, for every model in the price lists the hub ships. `bun run prices:update` writes each model's `name` into `prices.json` beside its prices; the hub never fetches names while running. A model models.dev gives no name has no built-in name. When two lists name one model id differently, the first list's name, in the order of the lists' names, is its built-in name.
 
-The request log's module gives the models' names to the display-names module through `hub.ts`. Pools, machines and projects have no built-in names: their ids are the owner's own.
+The request log's module gives the models' names to the display-names module through `hub.ts`. Pools, machines and projects have no built-in names: their ids are the owner's own. An observed pool is named as any pool, and `GET /api/machine` answers its name in `observedPools` to every caller.
 
 ## Reading and changing
 

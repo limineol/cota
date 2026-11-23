@@ -114,23 +114,26 @@ const pool = Arbitrary.all({
     const shared = {
       id: PoolId.make(id),
       provider: `provider-${id}`,
-      baseUrl: `https://${id}.example`,
       prices: list === "none" ? Option.none() : Option.some(list),
       ownPrices: Object.fromEntries(
         own.map(({ model, price }) => [model, price]),
       ),
     };
+    const baseUrl = `https://${id}.example`;
+    if (kind === "observed") return { ...shared, kind };
     return kind === "keyed"
       ? {
           ...shared,
           kind,
           protocol: "openai-chat",
+          baseUrl,
           key: Option.some(Redacted.make(`held-key-of-${id}`)),
         }
       : {
           ...shared,
           kind,
           protocol: "anthropic-messages",
+          baseUrl,
           keptLogin: Option.some(Redacted.make(`kept-login-of-${id}`)),
           fallback: Option.none(),
         };
@@ -248,11 +251,14 @@ describe("ReadMachine laws", () => {
           })),
         ]).toEqual([
           caller._tag === "Owner" ? Option.none() : Option.some(caller.hubKey),
-          opened.map(({ id, kind, protocol, provider }) => ({
-            id,
-            kind,
-            protocol,
-            provider,
+          opened.map((pool) => ({
+            id: pool.id,
+            kind: pool.kind,
+            protocol:
+              pool.kind === "observed"
+                ? Option.none()
+                : Option.some(pool.protocol),
+            provider: pool.provider,
           })),
         ]);
       }),

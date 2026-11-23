@@ -2,8 +2,8 @@
 status: active
 scope: apps/hub
 owner: limineol
-last_verified: 2026-11-19
-review_by: 2027-02-19
+last_verified: 2026-11-23
+review_by: 2027-02-23
 supersedes: []
 code:
   - apps/hub/src/import.ts
@@ -40,7 +40,7 @@ From the hub image (`docker compose run --rm hub bun run import …`) or a check
 | `[pools]` | `<source pool> = "<pool>"` | The pool map: every source pool, to a pool of the hub's configuration |
 | `[machines]` | `<source machine> = "<machine>"` | Optional: a machine tag the source wrote that is not the name the machine has now |
 
-**Start.** Read the arguments, both files and the secrets; read the source's `system.columns` for the tables below and refuse a missing table or column, or one of another type; read the source's pools (`metadata.account`, else `provider`, over every request in the range) and refuse any the pool map does not name; refuse a target pool the configuration does not have; when the import file names a names file, open the hub store without migrating it, and refuse it unless it exists and its steps are exactly this hub's (`docs/specs/hub-store/spec.md`); run the request log repository's `prepare`. Any failure here is exit 2, before any day is read.
+**Start.** Read the arguments, both files and the secrets; read the source's `system.columns` for the tables below and refuse a missing table or column, or one of another type; read the source's pools (`metadata.account`, else `provider`, over every request in the range) and refuse any the pool map does not name; refuse a target pool the configuration does not have, and one that is an observed pool, which only reported requests bill (ADR-0029); when the import file names a names file, open the hub store without migrating it, and refuse it unless it exists and its steps are exactly this hub's (`docs/specs/hub-store/spec.md`); run the request log repository's `prepare`. Any failure here is exit 2, before any day is read.
 
 **Exit codes.** 0 when every day was added or already held and every name set or already named; 1 when a day failed; 2 when it could not start. A dry run exits 1 instead of 2 for source pools the map does not name, after listing them with their counts, so that the map can be written from it.
 

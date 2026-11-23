@@ -2,8 +2,8 @@
 status: active
 scope: apps/hub
 owner: limineol
-last_verified: 2026-11-17
-review_by: 2027-02-17
+last_verified: 2026-11-23
+review_by: 2027-02-23
 supersedes: []
 code:
   - apps/hub/src/modules/relay/02-application/interfaces/protocol.ts
@@ -124,11 +124,11 @@ OpenCode and Pi, with a provider whose base URL is `{hub}/pools/<pool>` and whos
 
 ## Prices
 
-The hub ships price lists in `apps/hub/src/modules/request-log/04-infrastructure/prices/prices.json`. `bun run prices:update` writes it from [models.dev](https://models.dev) (MIT; its licence is `LICENSE.models-dev` beside the file) and from `curated.json`, the rates models.dev lacks, each entry naming the provider's page and row its numbers come from: the long cache-write rates (Anthropic's 1-hour writes, OpenAI's 12-hour writes) and the rates of a fast mode (Anthropic's fast mode, and OpenAI's Fast, which Codex asks for as the `priority` service tier). An update is a reviewed diff of the two files. The lists are `anthropic`, `openai`, `zai` and `opencode-go`.
+The hub ships price lists in `apps/hub/src/modules/request-log/04-infrastructure/prices/prices.json`. `bun run prices:update` writes it from [models.dev](https://models.dev) (MIT; its licence is `LICENSE.models-dev` beside the file) and from `curated.json`, the rates models.dev lacks, each entry naming the provider's page and row its numbers come from: the long cache-write rates (Anthropic's 1-hour writes, OpenAI's 12-hour writes) and the rates of a fast mode (Anthropic's fast mode, and OpenAI's Fast, which Codex asks for as the `priority` service tier). An update is a reviewed diff of the two files. The lists are `anthropic`, `google`, `openai`, `zai` and `opencode-go`, each made from models.dev's provider of the same name; `google` is for observed pools whose provider is `google` (ADR-0029).
 
 A list gives, for each model, its price (`docs/specs/cost/spec.md`): the rates of the five classes in picodollars per token, and models.dev's context tiers as the price's tiers, each over the number of prompt tokens models.dev gives. A model can also have a price for a service tier, by the word the request log records in `service_tier` (`fast`, `priority`). A model also has the name models.dev gives it, which the hub shows as its built-in display name (`docs/specs/display-names/spec.md`); prices never depend on it. And it has the facts models.dev gives of it, each unknown where models.dev does not say: its context limit and its output limit, in tokens (models.dev's `limit.context` and `limit.output`, a whole number above zero, else unknown), and whether it takes image input (`modalities.input` holds `image`; unknown without `modalities.input`). `curated.json` may state a fact models.dev does not give, never one it does. The hub answers them to machines (`GET /api/machine`, `docs/specs/api/spec.md`); prices never depend on them.
 
-- A pool names its price list with `prices`. The default is `anthropic` for `anthropic-messages`, `openai` for `chatgpt-codex`, and none for `openai-chat`. A name the hub does not ship is a configuration error.
+- A pool names its price list with `prices`. The default is `anthropic` for `anthropic-messages`, `openai` for `chatgpt-codex`, and none for `openai-chat`; for an observed pool, which speaks no protocol, it is `google` for the provider `google` and none for any other. A name the hub does not ship is a configuration error.
 - A request's price is looked up by the model that served it, then by the model asked for. An Anthropic model id is also tried without a trailing date (`-YYYYMMDD`). The first id found wins.
 - When the model has a price for the service tier the request ran in, that is the price; otherwise the model's own price applies.
 - A pool's own price for a model, in the configuration (ADR-0009), wins over its list, whatever the service tier.

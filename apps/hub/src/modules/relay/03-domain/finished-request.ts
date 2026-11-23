@@ -17,7 +17,7 @@ import * as Reading from "./reading.ts";
 export interface Start {
   readonly id: Request.RequestId;
   readonly startedAt: DateTime.Utc;
-  readonly pool: Pool.Pool;
+  readonly pool: Pool.ForwardedPool;
   readonly protocol: ProtocolName;
   readonly hubKey: HubKeyName;
   readonly description: Description.Description;

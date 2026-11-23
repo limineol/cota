@@ -86,7 +86,8 @@ const ModelPriceEntry = Schema.Struct({
 type ModelPriceEntry = typeof ModelPriceEntry.Type;
 
 const PoolEntry = Schema.Struct({
-  protocol: ProtocolName,
+  observed: Schema.optionalKey(Schema.Boolean),
+  protocol: Schema.optionalKey(ProtocolName),
   provider: Schema.optionalKey(Schema.NonEmptyString),
   base_url: Schema.optionalKey(HttpUrl),
   key: Schema.optionalKey(SecretSource),
@@ -127,6 +128,14 @@ const hubKeyProblems = (
       : [],
   );
 
+const neverObserved = [
+  "protocol",
+  "base_url",
+  "key",
+  "kept_login",
+  "fallback",
+] as const;
+
 const poolProblems = (
   id: string,
   pool: PoolEntry,
@@ -158,6 +167,30 @@ const poolProblems = (
         });
       }
     });
+  }
+  if (pool.observed === true) {
+    if (pool.provider === undefined) {
+      problems.push({
+        path: at("provider"),
+        issue: "an observed pool names its provider",
+      });
+    }
+    for (const field of neverObserved) {
+      if (pool[field] !== undefined) {
+        problems.push({
+          path: at(field),
+          issue: `an observed pool is never forwarded to, so it has no ${field}`,
+        });
+      }
+    }
+    return problems;
+  }
+  if (pool.protocol === undefined) {
+    problems.push({
+      path: at("protocol"),
+      issue: "a pool that is not observed names its protocol",
+    });
+    return problems;
   }
   const keyed = isKeyed(pool);
   if (pool.protocol === "openai-chat" && pool.base_url === undefined) {
@@ -201,6 +234,11 @@ const poolProblems = (
       problems.push({
         path: at("fallback"),
         issue: `there is no pool "${pool.fallback}"`,
+      });
+    } else if (fallback.observed === true) {
+      problems.push({
+        path: at("fallback"),
+        issue: `the fallback pool "${pool.fallback}" is an observed pool; a fallback pool is a subscription pool`,
       });
     } else if (fallback.protocol !== pool.protocol) {
       problems.push({
@@ -452,6 +490,10 @@ const pricesOf = (protocol: ProtocolName): Option.Option<string> => {
   return Option.none();
 };
 
+const observedPricesOf = (provider: string): Option.Option<string> =>
+  provider === "google" ? Option.some("google") : Option.none();
+
+/** The pools of a configuration's entries; an entry its problems refuse makes none. */
 const poolsOf = Effect.fn("HubConfig.poolsOf")(function* <E>(
   entries: File["pools"],
   secret: (
@@ -462,17 +504,36 @@ const poolsOf = Effect.fn("HubConfig.poolsOf")(function* <E>(
   const pools: Array<readonly [PoolId, Pool]> = [];
   for (const [key, entry] of Object.entries(entries)) {
     const id = PoolId.make(key);
-    const provider = entry.provider ?? providerOf(id, entry.protocol);
-    const prices = Option.orElse(Option.fromUndefinedOr(entry.prices), () =>
-      pricesOf(entry.protocol),
-    );
     const ownPrices = ownPricesOf(entry.model_prices);
+    if (entry.observed === true) {
+      if (entry.provider === undefined) continue;
+      const provider = entry.provider;
+      pools.push([
+        id,
+        {
+          kind: "observed",
+          id,
+          provider,
+          prices: Option.orElse(Option.fromUndefinedOr(entry.prices), () =>
+            observedPricesOf(provider),
+          ),
+          ownPrices,
+        },
+      ]);
+      continue;
+    }
+    const protocol = entry.protocol;
+    if (protocol === undefined) continue;
+    const provider = entry.provider ?? providerOf(id, protocol);
+    const prices = Option.orElse(Option.fromUndefinedOr(entry.prices), () =>
+      pricesOf(protocol),
+    );
     const baseUrl = withoutTrailingSlash(
-      entry.base_url ?? defaultBaseUrlOf(entry.protocol),
+      entry.base_url ?? defaultBaseUrlOf(protocol),
     );
     if (
-      entry.protocol === "openai-chat" ||
-      (entry.protocol === "anthropic-messages" && isKeyed(entry))
+      protocol === "openai-chat" ||
+      (protocol === "anthropic-messages" && isKeyed(entry))
     ) {
       const key =
         entry.key === undefined
@@ -483,7 +544,7 @@ const poolsOf = Effect.fn("HubConfig.poolsOf")(function* <E>(
         {
           kind: "keyed",
           id,
-          protocol: entry.protocol,
+          protocol,
           provider,
           baseUrl,
           key,
@@ -502,7 +563,7 @@ const poolsOf = Effect.fn("HubConfig.poolsOf")(function* <E>(
       {
         kind: "subscription",
         id,
-        protocol: entry.protocol,
+        protocol,
         provider,
         baseUrl,
         keptLogin,

@@ -6451,9 +6451,38 @@
             "items": {
               "$ref": "#/components/schemas/MachinePool"
             }
+          },
+          "observedPools": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ObservedMachinePool"
+            }
           }
         },
-        "required": ["hubKey", "pools"],
+        "required": ["hubKey", "pools", "observedPools"],
+        "additionalProperties": false
+      },
+      "ObservedMachinePool": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "displayName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["id", "provider", "displayName"],
         "additionalProperties": false
       },
       "MachinePool": {
@@ -6464,11 +6493,18 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["subscription", "keyed"]
+            "enum": ["subscription", "keyed", "observed"]
           },
           "protocol": {
-            "type": "string",
-            "enum": ["anthropic-messages", "chatgpt-codex", "openai-chat"]
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": ["anthropic-messages", "chatgpt-codex", "openai-chat"]
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "provider": {
             "type": "string"
@@ -6848,11 +6884,18 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["subscription", "keyed"]
+            "enum": ["subscription", "keyed", "observed"]
           },
           "protocol": {
-            "type": "string",
-            "enum": ["anthropic-messages", "chatgpt-codex", "openai-chat"]
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": ["anthropic-messages", "chatgpt-codex", "openai-chat"]
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "provider": {
             "type": "string"

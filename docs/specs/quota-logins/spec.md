@@ -2,8 +2,8 @@
 status: active
 scope: apps/hub
 owner: limineol
-last_verified: 2026-11-19
-review_by: 2027-02-13
+last_verified: 2026-11-23
+review_by: 2027-02-23
 supersedes: []
 code:
   - apps/hub/src/modules/quota/01-presentation/pools.api.ts
@@ -33,7 +33,7 @@ It is the `quota` module: the port `QuotaLogins` (`02-application/interfaces/quo
 
 ## Which pools take one
 
-A subscription pool that speaks `anthropic-messages` takes a Claude login; a subscription pool that speaks `chatgpt-codex` takes a ChatGPT login. No other pool takes one: a keyed pool, whatever its protocol, and every `openai-chat` pool. A pool has at most one. The fallback pool's `kept_login` in the configuration is not a quota login and does not count: a fallback pool takes a quota login like any other subscription pool.
+A subscription pool that speaks `anthropic-messages` takes a Claude login; a subscription pool that speaks `chatgpt-codex` takes a ChatGPT login. No other pool takes one: a keyed pool, whatever its protocol, every `openai-chat` pool, and an observed pool (ADR-0029). A pool has at most one. The fallback pool's `kept_login` in the configuration is not a quota login and does not count: a fallback pool takes a quota login like any other subscription pool.
 
 ## The table
 
@@ -67,7 +67,7 @@ The tokens are stored as they came, not encrypted (ADR-0017). The store file is 
 `subscriptionType` and `rateLimitTier` are each a plan fact or `null`; `endsAt` any ISO 8601 instant. A body that does not decode is the 400 of `ProblemDetails`, whose detail never repeats a token, as the sign-in's never repeats a password: a contract test sends a token too long and one with a space, and checks the answer holds neither.
 
 1. A pool the configuration does not have: 404 `urn:cota:no-such-pool`.
-2. A pool that takes no quota login, or takes the other provider's: 400 `urn:cota:quota-login-not-taken`, whose detail says which (`The pool "zai" is a keyed pool: only a subscription pool takes a quota login.`, `The pool "codex" takes a ChatGPT login, not a Claude one.`). Nothing is stored.
+2. A pool that takes no quota login, or takes the other provider's: 400 `urn:cota:quota-login-not-taken`, whose detail says which (`The pool "zai" is a keyed pool: only a subscription pool takes a quota login.`, `The pool "gemini" is an observed pool: only a subscription pool takes a quota login.`, `The pool "codex" takes a ChatGPT login, not a Claude one.`). Nothing is stored.
 3. Otherwise the row is replaced whole: the tokens and facts given, `given_at` now, a new `generation`, `refreshed_at` and `expired_at` null. A Claude login ends at its `endsAt`. A ChatGPT login ends at its access token's `exp`: when the token is a JWT whose payload is a JSON object with a numeric `exp`, in Unix seconds, read without verifying the token, as Codex does; else 8 days after now, as Codex assumes without one. The pool's reading state is forgotten (`docs/specs/quota-readers/spec.md`), so the next ask reads with the new login.
 4. Answer 200 with the pool's `QuotaLogin` (below). A store that fails: 503 `urn:cota:hub-store-unavailable`.
 

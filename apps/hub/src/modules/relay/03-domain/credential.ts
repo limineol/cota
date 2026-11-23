@@ -20,7 +20,7 @@ export type Credential =
  * from the answer's head, what its refusal sets off.
  */
 export interface Plan {
-  readonly pool: Pool.Pool;
+  readonly pool: Pool.ForwardedPool;
   readonly credential: Credential;
   readonly divertedFrom: Option.Option<PoolId>;
   readonly onRefusal: Option.Option<OnRefusal>;

@@ -102,8 +102,8 @@ export const QuotaLogin = Schema.Struct({
 
 export const Pool = Schema.Struct({
   id: Schema.String,
-  kind: Schema.Literals(["subscription", "keyed"]),
-  protocol: ProtocolName,
+  kind: Schema.Literals(["subscription", "keyed", "observed"]),
+  protocol: Schema.NullOr(ProtocolName),
   provider: Schema.String,
   plan: Schema.NullOr(Schema.String),
   windows: Schema.Array(Window),

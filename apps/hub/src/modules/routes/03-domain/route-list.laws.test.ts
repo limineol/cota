@@ -45,9 +45,10 @@ const fitsBySpec = (
 ) =>
   Option.match(HashMap.get(pools, pool), {
     onNone: () => "gone" as const,
-    onSome: ({ protocol }) =>
-      protocol ===
-      (client === "claude-code" ? "anthropic-messages" : "chatgpt-codex")
+    onSome: (found) =>
+      found.kind !== "observed" &&
+      found.protocol ===
+        (client === "claude-code" ? "anthropic-messages" : "chatgpt-codex")
         ? ("fits" as const)
         : ("other" as const),
   });

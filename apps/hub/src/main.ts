@@ -22,7 +22,11 @@ const announce = (config: HubConfig.HubConfig) =>
   Layer.effectDiscard(
     HttpServer.addressFormattedWith((address) => {
       const pools = [...HashMap.values(config.pools)]
-        .map(({ id, protocol }) => `${id} (${protocol})`)
+        .map((pool) =>
+          pool.kind === "observed"
+            ? `${pool.id} (observed)`
+            : `${pool.id} (${pool.protocol})`,
+        )
         .sort()
         .join(", ");
       return Effect.logInfo(

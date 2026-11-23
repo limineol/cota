@@ -197,6 +197,11 @@ export const APoolThatNoLongerFits: Story = {
         /^zai does not speak Claude Code's protocol any more: launches no route matches stop/,
       ),
     ).toBeVisible();
+    await expect(
+      within(table).getByText(
+        /^gemini is an observed pool, which speaks no protocol: launches of the projects this route matches stop/,
+      ),
+    ).toBeVisible();
   },
 };
 

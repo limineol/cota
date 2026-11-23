@@ -49,9 +49,10 @@ const fitsBySpec = (
 ) =>
   Option.exists(
     HashMap.get(pools, pool),
-    ({ protocol }) =>
-      protocol ===
-      (client === "claude-code" ? "anthropic-messages" : "chatgpt-codex"),
+    (found) =>
+      found.kind !== "observed" &&
+      found.protocol ===
+        (client === "claude-code" ? "anthropic-messages" : "chatgpt-codex"),
   );
 
 const sentList = Arbitrary.all({

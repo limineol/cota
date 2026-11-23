@@ -183,7 +183,8 @@ export class QuotaLoginNotTaken extends Schema.TaggedError<
   { readonly brand: unique symbol }
 >()("QuotaLoginNotTaken", {
   pool: Schema.String,
-  /** The provider whose login the pool takes; none for a keyed pool. */
+  kind: Schema.Literals(["subscription", "keyed", "observed"]),
+  /** The provider whose login the pool takes; none for a keyed or observed pool. */
   takes: Schema.Option(Provider),
   given: Provider,
 }) {}

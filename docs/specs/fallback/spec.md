@@ -2,8 +2,8 @@
 status: active
 scope: apps/hub
 owner: limineol
-last_verified: 2026-11-12
-review_by: 2027-02-11
+last_verified: 2026-11-23
+review_by: 2027-02-23
 supersedes: []
 code:
   - apps/hub/src/modules/relay/03-domain/fallback.ts
@@ -78,6 +78,7 @@ For each request to a subscription pool that carries a login and names a model, 
 - **Recognising a refusal** belongs to each protocol (`docs/specs/protocols/spec.md`). Anthropic's is a 429 whose `anthropic-ratelimit-unified-status` is `rejected`, with the reset in `anthropic-ratelimit-unified-reset`.
 - **Chains.** If the fallback pool refuses a diverted request, the client gets that refusal.
 - **Checking the policy.** A policy that names a pool as its own fallback pool is the owner's mistake, and the hub's configuration rejects it (ADR-0009). The decision's laws hold for it all the same.
+- **Observed pools.** An observed pool has no fallback pool and is none: the configuration refuses a `fallback` on one and a `fallback` naming one, so the policy never holds one, and no request to one reaches the relay (ADR-0029).
 - **Diverting before a refusal.** A provider that keeps serving past the allowance, because the pool has paid extra usage, never refuses, so nothing is diverted. Diverting on a full quota window instead is a possible later rule; it would be a new law, not a change to these.
 - **Surviving a restart.** What is parked is memory. After a restart the next request is refused once more and parked again; the client does not see it.
 

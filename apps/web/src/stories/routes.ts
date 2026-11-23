@@ -65,13 +65,17 @@ export const noRoutes: ReadonlyArray<Fixture> = routes(
   [neverStored("claude-code"), neverStored("codex")],
 );
 
-/** A route whose pool the configuration no longer has, and a default pool that speaks another protocol. */
+/** A route whose pool the configuration no longer has, one to an observed pool, and a default pool that speaks another protocol. */
 export const unfitRoutes: ReadonlyArray<Fixture> = routes(
   [],
   [
     listOf(
       "claude-code",
-      [route("acme/*", "studio"), route("legacy/*", "retired", false)],
+      [
+        route("acme/*", "studio"),
+        route("legacy/*", "retired", false),
+        route("gem/*", "gemini", false),
+      ],
       { pool: "zai", fits: false },
       5,
     ),

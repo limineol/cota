@@ -296,6 +296,7 @@ layer(Harness.layer())("the quota logins of the pools group", (it) => {
           ["codex", claudeBody],
           ["solo", chatGpt],
           ["claude", chatGpt],
+          ["gemini", claudeBody],
         ] as const) {
           refused.push(yield* asJson(yield* put(pool, body, owner)));
         }
@@ -334,11 +335,15 @@ layer(Harness.layer())("the quota logins of the pools group", (it) => {
           problem('The pool "codex" takes a ChatGPT login, not a Claude one.'),
           problem('The pool "solo" takes a Claude login, not a ChatGPT one.'),
           problem('The pool "claude" takes a Claude login, not a ChatGPT one.'),
+          problem(
+            'The pool "gemini" is an observed pool: only a subscription pool takes a quota login.',
+          ),
         ]);
         expect(states).toEqual({
           claude: "none",
           codex: "none",
           console: null,
+          gemini: null,
           gone: null,
           open: null,
           personal: "none",

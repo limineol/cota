@@ -172,8 +172,12 @@ const noLogin = (provider: "anthropic" | "chatgpt") =>
 const pool = (
   id: string,
   shape: {
-    readonly kind: "subscription" | "keyed";
-    readonly protocol: "anthropic-messages" | "chatgpt-codex" | "openai-chat";
+    readonly kind: "subscription" | "keyed" | "observed";
+    readonly protocol:
+      | "anthropic-messages"
+      | "chatgpt-codex"
+      | "openai-chat"
+      | null;
     readonly provider: string;
     readonly plan: string | null;
     readonly quotaLogin:
@@ -207,7 +211,7 @@ const solo = pool("solo", {
   quotaLogin: loginKept("anthropic", 3 * hour),
 });
 
-/** Every state a quota login can be in, beside two keyed pools that take none. */
+/** Every state a quota login can be in, beside two keyed pools and an observed pool that take none. */
 export const poolsOfEveryState = [
   solo,
   pool("studio", {
@@ -249,6 +253,13 @@ export const poolsOfEveryState = [
     kind: "keyed",
     protocol: "openai-chat",
     provider: "lmstudio",
+    plan: null,
+    quotaLogin: null,
+  }),
+  pool("gemini", {
+    kind: "observed",
+    protocol: null,
+    provider: "google",
     plan: null,
     quotaLogin: null,
   }),

@@ -8,7 +8,6 @@ import {
 } from "effect";
 import type { HttpClient } from "effect/http";
 import { Instant } from "#modules/quota/03-domain/instant.ts";
-import type * as Pool from "#shared/03-domain/pool.entity.ts";
 import { readingOf } from "./reading.ts";
 import * as UsageEndpoint from "./usage-endpoint.ts";
 
@@ -59,12 +58,12 @@ export const urlOf = (baseUrl: string): string => `${baseUrl}/usage`;
 /** Reads an OpenCode Go pool's windows with its held key (`docs/specs/quota-readers/spec.md`, OpenCode Go). */
 export const read = (
   http: HttpClient.HttpClient,
-  pool: Pool.Pool,
+  baseUrl: string,
   key: Redacted.Redacted<string>,
 ) =>
   UsageEndpoint.read(http, {
     provider: "OpenCode Go",
-    url: urlOf(pool.baseUrl),
+    url: urlOf(baseUrl),
     credential: key,
     answer: Answer,
     reading: readingFrom,

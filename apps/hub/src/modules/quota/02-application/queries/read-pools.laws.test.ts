@@ -175,7 +175,7 @@ const expectedOf = (
   at: number,
 ): ReadonlyArray<Expected> => {
   const kept = new Map<number, Expected>();
-  for (const rule of table[pool.protocol]) {
+  for (const rule of pool.kind === "observed" ? [] : table[pool.protocol]) {
     const latest = latestOf(
       log
         .map(({ request }) => request)
@@ -218,10 +218,12 @@ const givenBy = (
   log.flatMap(({ request }) =>
     request.pool === pool.id &&
     millis(request.startedAt) === millis(window.observedAt)
-      ? table[pool.protocol].flatMap((rule) => {
-          const given = windowIn(rule, request);
-          return given === undefined ? [] : [given];
-        })
+      ? (pool.kind === "observed" ? [] : table[pool.protocol]).flatMap(
+          (rule) => {
+            const given = windowIn(rule, request);
+            return given === undefined ? [] : [given];
+          },
+        )
       : [],
   );
 

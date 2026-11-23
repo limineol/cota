@@ -134,14 +134,12 @@ export const layer: Layer.Layer<Hub> = Layer.effect(
         if (machine.hubKey === null) return yield* new HubFailed({});
         return {
           hubKey: machine.hubKey,
-          pools: machine.pools.map(
-            ({ id, kind, protocol, displayName, models }) => ({
-              id,
-              kind,
-              protocol,
-              displayName,
-              models,
-            }),
+          // Only the owner is answered an observed pool, so a hub key never is.
+          pools: machine.pools.flatMap(
+            ({ id, kind, protocol, displayName, models }) =>
+              kind === "observed" || protocol === null
+                ? []
+                : [{ id, kind, protocol, displayName, models }],
           ),
         };
       }),

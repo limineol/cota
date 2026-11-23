@@ -2,8 +2,8 @@
 status: active
 scope: apps/hub
 owner: limineol
-last_verified: 2026-11-14
-review_by: 2027-02-13
+last_verified: 2026-11-23
+review_by: 2027-02-23
 supersedes: []
 code:
   - apps/hub/src/modules/quota/02-application/interfaces/quota-reader.ts
@@ -30,7 +30,7 @@ It is the `quota` module: which pool has which reader (`03-domain/readers.ts`); 
 | A keyed pool whose provider is `opencode-go` and that holds a key | OpenCode Go | the held key | 60 seconds |
 | A subscription pool that speaks `anthropic-messages` | Anthropic | its Claude quota login | 120 seconds |
 | A subscription pool that speaks `chatgpt-codex` | ChatGPT | its ChatGPT quota login | 120 seconds |
-| Any other pool | none | | |
+| Any other pool, an observed pool among them (ADR-0029) | none | | |
 
 The provider is the pool's `provider` in the configuration, whose default for an `openai-chat` pool is the pool's id (ADR-0009). A pool with a reader is read only while it has its credential: a subscription pool without a quota login, or whose quota login is expired, is not read and has no quota reading.
 

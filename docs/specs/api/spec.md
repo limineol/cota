@@ -2,8 +2,8 @@
 status: active
 scope: apps/hub
 owner: limineol
-last_verified: 2026-11-19
-review_by: 2027-02-18
+last_verified: 2026-11-23
+review_by: 2027-02-23
 supersedes: []
 code:
   - apps/hub/src/api.ts
@@ -370,8 +370,8 @@ Every pool of the configuration, in order of id, with its quota windows (W7). As
 | Field | Type | Holds |
 | --- | --- | --- |
 | `id` | string | The pool's id. |
-| `kind` | `"subscription"` or `"keyed"` | |
-| `protocol` | `"anthropic-messages"`, `"chatgpt-codex"` or `"openai-chat"` | |
+| `kind` | `"subscription"`, `"keyed"` or `"observed"` | An observed pool (ADR-0029) has no windows, no plan, no reading and no quota login. |
+| `protocol` | `"anthropic-messages"`, `"chatgpt-codex"`, `"openai-chat"` or `null` | `null` for an observed pool, which speaks no protocol. |
 | `provider` | string | The pool's provider, from the configuration. |
 | `plan` | string or `null` | The plan's name (`docs/specs/quota-sources/spec.md`, The plan). |
 | `windows` | `Window[]` | The plan's first, then by scope; within a scope, shortest first. |
@@ -444,7 +444,8 @@ The overview's pool cards need no endpoint of their own. A card is a pool of `GE
         "tiers": []
       }
     }]
-  }]
+  }],
+  "observedPools": [{ "id": "gemini", "provider": "google", "displayName": null }]
 }
 ```
 
@@ -453,7 +454,8 @@ The overview's pool cards need no endpoint of their own. A card is a pool of `GE
 | Field | Type | Holds |
 | --- | --- | --- |
 | `hubKey` | `{ name, scope }` or `null` | The hub key the caller presented, its name and scope (`subscription`, `keyed` or `reader`); `null` for the owner. |
-| `pools` | `MachinePool[]` | The pools the caller opens, in order of id: every pool for the owner, the pools whose kind is its scope for a hub key, so none for a reader key. |
+| `pools` | `MachinePool[]` | The pools the caller opens, in order of id: every pool for the owner, an observed one among them, the pools whose kind is its scope for a hub key, so none for a reader key. |
+| `observedPools` | `ObservedMachinePool[]` | Every observed pool, in order of id, to every caller: a machine checks the pool it reports to (ADR-0029). |
 
 `MachinePool`:
 
@@ -461,7 +463,9 @@ The overview's pool cards need no endpoint of their own. A card is a pool of `GE
 | --- | --- | --- |
 | `id`, `kind`, `protocol`, `provider` | | As `GET /api/pools` has them. |
 | `displayName` | string or `null` | The owner's name for the pool (`docs/specs/display-names/spec.md`); pools have no built-in names. |
-| `models` | `MachineModel[]` | For a keyed pool, the models of its price list and of its own prices (ADR-0009), in order of id; empty for a subscription pool, whose client lists its own. |
+| `models` | `MachineModel[]` | For a keyed pool, the models of its price list and of its own prices (ADR-0009), in order of id; empty for a subscription pool, whose client lists its own, and for an observed pool. |
+
+`ObservedMachinePool` is `{ id, provider, displayName }`, as `MachinePool` has them.
 
 `MachineModel`:
 

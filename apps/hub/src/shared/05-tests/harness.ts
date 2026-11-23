@@ -177,6 +177,10 @@ base_url = "${providerUrl}/codex"
 protocol = "anthropic-messages"
 base_url = "${providerUrl}/console"
 key = { env = "CONSOLE_KEY" }
+
+[pools.gemini]
+observed = true
+provider = "google"
 `;
 
 export type Sabotage = "none" | "slow" | "fail" | "hang";

@@ -13,11 +13,12 @@ type HeldKeyReader = "zai" | "opencode-go";
 
 type HeldKey = Option.Option.Value<Pool.KeyedPool["key"]>;
 
-/** The quota reader a pool is read with, the credential it reads with, and how long a good quota reading stands. */
+/** The quota reader a pool is read with, the credential it reads with (with a held key, the base URL it reads at), and how long a good quota reading stands. */
 export type Reader =
   | {
       readonly name: HeldKeyReader;
       readonly key: HeldKey;
+      readonly baseUrl: string;
       readonly period: Duration.Duration;
     }
   | {
@@ -35,7 +36,7 @@ const heldKeyReaders: ReadonlyMap<string, HeldKeyReader> = new Map([
  * The reader of a keyed pool whose provider is `zai` or `opencode-go` and
  * that holds a key, with that key; of a subscription pool, with its quota
  * login while it has one of the provider it takes that is not expired; none
- * for any other pool.
+ * for any other pool, an observed pool among them.
  */
 export const readerOf = (
   pool: Pool.Pool,
@@ -51,7 +52,13 @@ export const readerOf = (
       ),
     );
   }
+  if (pool.kind === "observed") return Option.none();
   const name = heldKeyReaders.get(pool.provider);
   if (name === undefined || Option.isNone(pool.key)) return Option.none();
-  return Option.some({ name, key: pool.key.value, period: heldKeyPeriod });
+  return Option.some({
+    name,
+    key: pool.key.value,
+    baseUrl: pool.baseUrl,
+    period: heldKeyPeriod,
+  });
 };
