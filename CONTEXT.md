@@ -609,7 +609,7 @@ _Avoid_: dropped (the writer drops a request), set aside (the writer sets one as
 ## Reported requests
 
 **Reported request**:
-A request the request log holds because a machine read it from its client's record and reported it, not because the hub forwarded it: one model call, with its usage, model, times, session, machine and project where the record names one, and the conversation items new since the call before it, kept in the record's form. The hub makes its id from the hub key that reported it and the record's own id for the call. It is marked reported for ever, by its `protocol`, which names a record form, and it never moves admission, a refusal, a parked login, a divert or a quota window: those are decided from what the hub saw itself.
+A request the request log holds because a machine read it from its client's record and reported it, not because the hub forwarded it: one model call, with its usage, model, times, session, machine and project where the record names one, and the conversation items new since the call before it, kept in the record's form. The hub makes its id from its client, the record's own id for the call and the call's start, so a call is one request whoever reports it. It is marked reported for ever, by its `protocol`, which names a record form, and it never moves admission, a refusal, a parked login, a divert or a quota window: those are decided from what the hub saw itself.
 _Avoid_: synced request, observed request, imported request (an import's), relayed request, call alone
 
 **Client record**:

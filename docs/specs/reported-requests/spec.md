@@ -72,19 +72,19 @@ The whole report is checked before anything is stored. A body that does not deco
 - a call's call before, where the report holds it, is of another session, or the `startedAt` its `after` gives is not that call's;
 - a call has no `output`.
 
-Then the call before of each call is found: earlier in the report, else held in the log under the id this reporter would have made for `after`'s call key and start (The id), in the call's own session: a request held under that id in another session is not its call before. A call whose `after` is neither is `report-out-of-order` (409), naming it: its call before was never stored, which a machine whose cursor moved only on stored answers can only reach with lost or copied state.
+Then the call before of each call is found: earlier in the report, else held in the log under the id made for `after`'s call key and start (The id), in the call's own session: a request held under that id in another session is not its call before. A call whose `after` is neither is `report-out-of-order` (409), naming it: the log does not hold its call before. A machine whose cursor moved only on stored answers reaches this only when its state is ahead of the log: the state came from a machine of another hub, or the log was put back to an earlier time. Reporting the folder again from its first call is then right (`docs/specs/request-reporter/spec.md`, `cota requests report`): what is held is left out, and nothing is stored twice.
 
 Text is made well-formed as every text the request log writes is (`docs/specs/request-log/spec.md`, Well-formed text): each lone surrogate in a string field becomes U+FFFD; an item's content keeps it as its escape.
 
 ## The id
 
-A reported request's id is a UUID version 7 (as every id of the request log, stamped with `started_at`): its 48-bit time is `startedAt` in milliseconds, its version and variant bits those of version 7, and its 74 other bits the first 74 bits of the SHA-256 of
+A reported request's id is a UUID version 7 (as every id of the request log, stamped with `started_at`): its 48-bit time is `startedAt` in milliseconds, its version and variant bits those of version 7, and its 74 other bits the first 74 bits of the SHA-256 of the UTF-8 of
 
 ```
-cota-report:<reporter>:<client>:<call key>
+cota-report:["<client>","<call key>"]
 ```
 
-where `<reporter>` is `key:<the hub key's name>`, or `owner`. So the same call, reported again by the same reporter with the same start, always has the same id. A call's start is part of what it is: the reader takes it from the step's own times, which a record that only grows never changes, and a call key reported with another start would be another request, which the request reporter never sends (`docs/specs/request-reporter/spec.md`, A model call, in the record). Another reporter's calls, whatever their keys, never have an id this reporter's could; and an id made by an import (`cota-import:…`, `docs/specs/import/spec.md`) never equals one. A hub key renamed in the configuration reports under a new name, and its calls reported again would have new ids (ADR-0029, Consequences).
+that is `cota-report:` followed by the JSON of the list of the client and the call key, written without spaces, so that no client and call key give the text of another pair. So the same call, reported again with the same start, always has the same id, whoever reports it: the reporter is not part of it. A call is one request, and its row says who reported it first (`hub_key`, `machine`); the same call reported by another hub key, renamed, replaced or of a machine its data folder was copied to, is held. A call's start is part of what it is: the reader takes it from the step's own times, which a record that only grows never changes, and a call key reported with another start would be another request, which the request reporter never sends (`docs/specs/request-reporter/spec.md`, A model call, in the record). An id made by an import (`cota-import:…`, `docs/specs/import/spec.md`) never equals one, and no report can choose its ids, so none names a forwarded request's. A hub key that knew another machine's call key and start could report that call first, and the first report is kept: any hub key may report, for now (ADR-0029, Trust).
 
 ## What the log already holds
 
@@ -227,8 +227,8 @@ No pool may name an observed pool as its `fallback` (`the fallback pool "<id>" i
 | Id | Law | Held by |
 | --- | --- | --- |
 | L7 | **Only as itself.** For any report and any body, the stored requests' `hub_key` is the caller's hub key's name (empty for the owner) and their `machine` the caller's `x-cota-machine`, whatever the body holds. | property, contract |
-| L8 | **One call, one id.** A reported request's id is a function of its reporter, client, call key and start alone: equal for equal inputs, a UUID version 7 stamped with the start, and different for two reporters whatever their call keys. | property |
-| L9 | **Delivered again, stored once.** For any sequence of reports, each delivered one or more times, in part, with others, or after a delivery stored in part, the log holds each call once, with the rows it would hold had each call been delivered once. | property, clickhouse |
+| L8 | **One call, one id.** A reported request's id is a function of its client, call key and start alone: equal for equal inputs whoever reports them, a UUID version 7 stamped with the start, and different for two clients or two call keys whatever their texts. | property |
+| L9 | **Delivered again, stored once.** For any sequence of reports, each delivered one or more times, by one reporter or several, in part, with others, or after a delivery stored in part, the log holds each call once, with the rows it would hold had each call been delivered once. | property, clickhouse |
 | L10 | **Stored before answered.** A report answered 200 has every one of its calls held in the log at the moment of the answer. | property, clickhouse |
 | L11 | **Refused is nothing stored.** A report answered with any problem but `request-log-unavailable` and `hub-store-unavailable` changes nothing in the log or the hub store. | property, contract |
 | L12 | **The call before, and what is new.** For any conversation reported in any cut of reports, each call's `input` part is the digests of every item of the calls before it and its own `input`, in order, and its `output` its own; each item is stored once per session. | property, clickhouse |
@@ -244,6 +244,6 @@ L8, L12, L13 and L16 are property tests of the rules in `03-domain` over generat
 
 - **Reports from machines the owner did not give a hub key.** A report is a hub key's or the owner's.
 - **Splitting a declined report.** A report ClickHouse will not keep fails whole, and the reporter's run says so; the writer's splitting is for traffic the hub cannot ask again.
-- **Changing a reported request.** A call reported again with other values, its key and its start the same, is held, and keeps the first.
+- **Changing a reported request.** A call reported again with other values, or by another reporter, its key and its start the same, is held, and keeps the first.
 - **Reading Antigravity's quota**, and a quota login for an observed pool (ADR-0029, Left out).
 - **A report in another form than the client's.** The hub never converts items into a protocol.
