@@ -11,18 +11,27 @@ import {
 } from "#shared/transcript/transcript.tsx";
 import { plural } from "#shared/words.ts";
 import type { RequestRecord } from "./queries.ts";
-import { imported } from "./words.ts";
 
 /** Where the body the hub rebuilds for a request is read, which opens as JSON in a tab of its own. */
 export const bodyPath = (request: string) =>
   `/api/requests/${encodeURIComponent(request)}/body`;
 
+/** What the body the hub rebuilds is, by the request's origin, as the middle of a sentence. */
+export const bodyWords = (request: RequestRecord) => {
+  switch (request.origin) {
+    case "imported":
+      return "the body as Bifrost logged it";
+    case "reported":
+      return "the steps as the client recorded them";
+    case "forwarded":
+      return "the body as the hub forwarded it";
+  }
+};
+
 /** The link to where a cut text is whole: the body the hub rebuilds. */
 const bodyLinkOf = (request: RequestRecord): ReactNode => (
   <a href={bodyPath(request.id)} target="_blank" rel="noreferrer">
-    {imported(request)
-      ? "the body as Bifrost logged it"
-      : "the body as the hub forwarded it"}
+    {bodyWords(request)}
   </a>
 );
 

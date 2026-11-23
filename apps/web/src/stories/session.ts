@@ -1,6 +1,11 @@
 import { answer, at, type Fixture, never, problem } from "./fake-api.ts";
 import { displayNames, owner } from "./fixtures.ts";
-import { eightPools, now, poolsAnswer } from "./overview.ts";
+import {
+  eightPools,
+  now,
+  poolsAnswer,
+  withAnObservedPool,
+} from "./overview.ts";
 
 const second = 1000;
 const minute = 60 * second;
@@ -535,11 +540,15 @@ const longRow = rowOf({
   firstPrompt: prompt,
 });
 
+type Transcript = NonNullable<
+  Parameters<typeof answer<"sessions", "session">>[2]["transcript"]
+>;
+
 const detailOf = (
   row: ReturnType<typeof rowOf>,
   summaries: ReadonlyArray<Summary>,
   segments: ReturnType<typeof segmentsOf>,
-  transcript: ReturnType<typeof longTranscript> | null,
+  transcript: Transcript | null,
   requestsCut = 0,
 ) =>
   answer("sessions", "session", {
@@ -914,4 +923,145 @@ export const missingSession: ReadonlyArray<Fixture> = [
     type: "urn:cota:no-such-session",
     status: 404,
   }),
+];
+
+const reportedId = "0193a4c2-0007-7000-8000-5e5510000000";
+
+/** The steps of an Antigravity conversation as the record form renders them: a tool call and its result, a step of a kind the renderer does not know, a compaction's summary, and what came after it. */
+const reportedEntries = () => {
+  const make = entries();
+  return [
+    make.user([
+      text(
+        "Summarise the notes in docs/ into one page, and list what is still open.",
+      ),
+    ]),
+    make.reasoning("The notes are spread over several files; list them first."),
+    make.call("call-1", "list_dir", { DirectoryPath: "/home/dev/notes/docs" }),
+    make.result(
+      "call-1",
+      null,
+      "architecture.md\nopen-questions.md\nroadmap.md\nmeetings/",
+    ),
+    make.call("call-2", "view_file", {
+      AbsolutePath: "/home/dev/notes/docs/open-questions.md",
+    }),
+    make.result(
+      "call-2",
+      null,
+      "# Open questions\n\n- Who keeps the archive once a day is over?\n- When is the next release?",
+    ),
+    make.other(
+      JSON.stringify({
+        idx: 9,
+        step_type: 91,
+        status: 3,
+        step_payload: [
+          { field: 1, varint: "91" },
+          { field: 97, text: "https://example.com/release-notes" },
+        ],
+      }),
+    ),
+    make.assistant(
+      "The conversation so far: the user asked for a one-page summary of docs/ and what is still open. Read: the list of docs, open-questions.md. Open: the archive's owner and the next release's date.",
+    ),
+    make.user([text("Keep it under 300 words.")]),
+    make.call("call-3", "write_to_file", {
+      TargetFile: "/home/dev/notes/SUMMARY.md",
+      CodeContent: "# Notes, on one page\n\n…",
+    }),
+    make.result("call-3", null, "Created file /home/dev/notes/SUMMARY.md"),
+    make.assistant(
+      "SUMMARY.md has the page, in 280 words, with the two open questions at its end.",
+      0,
+      "output",
+    ),
+  ];
+};
+
+const reportedPlan: ReadonlyArray<Planned> = [
+  { role: "main", segment: 0, promptSize: 11_800, outcome: "ok" },
+  { role: "main", segment: 0, promptSize: 19_400, outcome: "ok" },
+  { role: "main", segment: 0, promptSize: 27_900, outcome: "ok" },
+  { role: "main", segment: 1, promptSize: 8_600, outcome: "ok" },
+  { role: "main", segment: 1, promptSize: 13_200, outcome: "ok" },
+  { role: "main", segment: 1, promptSize: null, outcome: "error" },
+];
+
+/** A reported Antigravity session: every request read from the client's record, its last call reported unfinished. */
+const reported = summariesOf(
+  7,
+  reportedPlan,
+  now - 26 * minute,
+  now - 3 * minute,
+).map((each, n) => {
+  const unfinished = each.outcome === "error";
+  return {
+    ...each,
+    origin: "reported" as Origin,
+    operation: "generate",
+    purpose: "",
+    model: "gemini-3-flash-preview",
+    servedModel: "",
+    stopReason: unfinished ? "" : "STOP",
+    upstreamStatus: 0,
+    errorType: unfinished ? "cota_reported_unfinished" : "",
+    promptSize: unfinished ? 15_100 : each.promptSize,
+    outputTokens: unfinished ? 212 : each.outputTokens,
+    costUsd: unfinished ? money(0.0061) : each.costUsd,
+    durationMs: 2_400 + n * 1_310,
+    firstByteMs: null,
+    tools: 0,
+  };
+});
+
+const reportedSegments = segmentsOf(reported, ["start", "size"]);
+
+const fromTheRecord = usageOf(reported);
+
+/** The reported session's id. */
+export const reportedSession = reportedId;
+
+/** A session an Antigravity record reported: a tool call, a compaction that began a new segment, a step the renderer does not know, and an unfinished call reported as an error. */
+export const reportedSessionAnswers: ReadonlyArray<Fixture> = [
+  owner,
+  displayNames,
+  poolsAnswer(withAnObservedPool),
+  at(
+    detailOf(
+      {
+        ...rowOf({
+          id: reportedId,
+          summaries: reported,
+          pools: ["gemini"],
+          title: null,
+          firstPrompt:
+            "Summarise the notes in docs/ into one page, and list what is still open.",
+        }),
+        usage: {
+          ...fromTheRecord,
+          cacheRead:
+            fromTheRecord.cacheRead +
+            fromTheRecord.cacheWriteShort +
+            fromTheRecord.cacheWriteLong,
+          cacheWriteShort: 0,
+          cacheWriteLong: 0,
+          reasoning: 0,
+        },
+        projects: ["notes"],
+        machines: ["laptop"],
+        clients: ["antigravity"],
+        providers: ["google"],
+      },
+      reported,
+      reportedSegments,
+      {
+        request: reportedSegments.at(-1)?.tip ?? requestId(7, 5),
+        protocol: "antigravity-steps",
+        entries: reportedEntries(),
+        cutCharacters: 0,
+      },
+    ),
+    sessionPath(reportedId),
+  ),
 ];

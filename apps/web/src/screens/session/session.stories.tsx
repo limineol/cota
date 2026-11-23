@@ -15,6 +15,8 @@ import {
   longSession,
   longSessionAnswers,
   missingSession,
+  reportedSession,
+  reportedSessionAnswers,
   requestSession,
   requestSessionAnswers,
   shortSession,
@@ -367,6 +369,44 @@ export const AToolCallOpens: Story = {
     await expect(
       canvas.getByText(/src\/cart\/cart\.ts:7: return/),
     ).toBeVisible();
+  },
+};
+
+export const AReportedSession: Story = {
+  ...page(pathOf(reportedSession), reportedSessionAnswers),
+  play: async ({ canvas }) => {
+    await expect(
+      await canvas.findByText(
+        /^Reported by its machine from Antigravity's own record: what the client wrote down, not what it sent\./,
+      ),
+    ).toBeVisible();
+    await expect(canvas.getAllByText("Reported")).toHaveLength(2);
+    await expect(
+      canvas.getByText(
+        /After a compaction the record still holds every step, so a segment's transcript shows them all, though the model was sent less\./,
+      ),
+    ).toBeVisible();
+    await expect(canvas.getByText("Segment 2 of 2")).toBeVisible();
+    await expect(
+      canvas.getByText(
+        /the next began when the prompt fell below half its size/,
+      ),
+    ).toBeVisible();
+    await expect(
+      canvas.getByText("An item the dashboard cannot read"),
+    ).toBeVisible();
+  },
+};
+
+export const AReportedSessionsRequests: Story = {
+  ...page(pathOf(reportedSession), reportedSessionAnswers),
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(
+      await canvas.findByRole("link", { name: /^Requests/ }),
+    );
+    const table = await requestsTable(canvas);
+    await expect(within(table).getAllByRole("link")).toHaveLength(6);
+    await expect(within(table).getByText("error")).toBeVisible();
   },
 };
 

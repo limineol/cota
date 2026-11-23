@@ -1,5 +1,6 @@
 import { Button } from "@cota/ui/components/button";
 import { Empty, EmptyDescription, EmptyTitle } from "@cota/ui/components/empty";
+import { Note } from "@cota/ui/components/note";
 import {
   Segment,
   SegmentHead,
@@ -11,6 +12,7 @@ import { TranscriptSkeleton } from "@cota/ui/components/transcript";
 import { type ReactNode, useState } from "react";
 import { tokens } from "#shared/domain/quantities.ts";
 import { Problem } from "#shared/problem.tsx";
+import { ReportedMark } from "#shared/reported.tsx";
 import {
   type Entry,
   type Expansion,
@@ -154,8 +156,19 @@ export function Conversation({
     );
   }
 
+  const tip = answer.requests.find(({ id }) => id === transcript.request);
   return (
     <section aria-label="Conversation" className="flex min-w-0 flex-col gap-6">
+      {tip?.origin === "reported" ? (
+        <div className="flex items-baseline gap-2">
+          <ReportedMark />
+          <Note>
+            The steps as the client recorded them. After a compaction the record
+            still holds every step, so a segment's transcript shows them all,
+            though the model was sent less.
+          </Note>
+        </div>
+      ) : null}
       {segments.slice(0, -1).map((segment, index) => (
         <EarlierSegment
           key={segment.index}

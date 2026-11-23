@@ -7,6 +7,7 @@ import {
   failed,
   loading,
   overviewOfPools,
+  reportedThrough,
   threePools,
   withAnObservedPool,
 } from "#stories/overview.ts";
@@ -106,7 +107,43 @@ export const AnObservedPool: Story = {
   ...page("/", overviewOfPools(withAnObservedPool)),
   play: async ({ canvas }) => {
     await expect(await canvas.findByText("Observed")).toBeVisible();
-    await expect(canvas.getByText("No quota windows")).toBeVisible();
+    await expect(await canvas.findByText("Reported through")).toBeVisible();
+    await expect(canvas.getByText(/^laptop · Antigravity$/)).toBeVisible();
+    await expect(canvas.queryByText("Late")).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByText("No quota windows"),
+    ).not.toBeInTheDocument();
+  },
+};
+
+export const ReportedThroughLate: Story = {
+  ...page("/", overviewOfPools(withAnObservedPool, reportedThrough.late)),
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByText("Late")).toBeVisible();
+    await expect(canvas.getByText("3h 12m ago")).toBeVisible();
+  },
+};
+
+export const NothingReportedYet: Story = {
+  ...page("/", overviewOfPools(withAnObservedPool, reportedThrough.never)),
+  play: async ({ canvas }) => {
+    await expect(
+      await canvas.findByText("Nothing has reported to it yet"),
+    ).toBeVisible();
+  },
+};
+
+export const ReportedThroughLoading: Story = page(
+  "/",
+  overviewOfPools(withAnObservedPool, reportedThrough.loading),
+);
+
+export const ReportedThroughFailed: Story = {
+  ...page("/", overviewOfPools(withAnObservedPool, reportedThrough.failed)),
+  play: async ({ canvas }) => {
+    await expect(
+      await canvas.findByText("Reported through could not be read"),
+    ).toBeVisible();
   },
 };
 
@@ -120,6 +157,29 @@ export const AnObservedPoolInFull: Story = {
       await canvas.findByText(/^An observed pool has no quota windows/),
     ).toBeVisible();
     await expect(canvas.getByText("Observed · google")).toBeVisible();
+    await expect(await canvas.findByText("Reported through")).toBeVisible();
+  },
+};
+
+export const AnObservedPoolInFullLate: Story = {
+  ...page(
+    "/?pool=gemini",
+    overviewOfPools(withAnObservedPool, reportedThrough.late),
+  ),
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByText("Late")).toBeVisible();
+  },
+};
+
+export const AnObservedPoolInFullNeverReported: Story = {
+  ...page(
+    "/?pool=gemini",
+    overviewOfPools(withAnObservedPool, reportedThrough.never),
+  ),
+  play: async ({ canvas }) => {
+    await expect(
+      await canvas.findByText(/^No machine has reported to this pool yet/),
+    ).toBeVisible();
   },
 };
 

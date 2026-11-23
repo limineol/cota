@@ -715,9 +715,50 @@ export const breakdowns = (
   where(breakdown(models.slice(0, 3)), byKind("model", "500")),
 ];
 
-/** Every answer the overview reads, for these pools. */
+interface ReporterShape {
+  readonly machine: string;
+  readonly throughAgo: number;
+  readonly late: boolean;
+}
+
+const reporterOf = ({ machine, throughAgo, late }: ReporterShape) => ({
+  machine,
+  client: "antigravity" as const,
+  pool: "gemini",
+  through: iso(now - throughAgo),
+  reportedAt: iso(late ? now - throughAgo : now - 20_000),
+  reportedBy: machine,
+  late,
+});
+
+const reportersAnswer = (reporters: ReadonlyArray<ReporterShape>) =>
+  answer("reports", "reportedThrough", {
+    reporters: reporters.map(reporterOf),
+  });
+
+/** How far each machine has reported to the observed pool, in each state the overview draws. */
+export const reportedThrough = {
+  current: reportersAnswer([
+    { machine: "laptop", throughAgo: 50_000, late: false },
+    { machine: "tower", throughAgo: 2 * minute, late: false },
+  ]),
+  late: reportersAnswer([
+    { machine: "laptop", throughAgo: 3 * hour + 12 * minute, late: true },
+    { machine: "tower", throughAgo: 2 * minute, late: false },
+  ]),
+  never: reportersAnswer([]),
+  failed: problem("reports", "reportedThrough", {
+    type: "urn:cota:hub-store-unavailable",
+    status: 503,
+    detail: "The hub store could not be read.",
+  }),
+  loading: never("reports", "reportedThrough"),
+} as const;
+
+/** Every answer the overview reads, for these pools, with how far each machine has reported to an observed one. */
 export const overviewOfPools = (
   pools: ReadonlyArray<PoolShape>,
+  reported: Fixture = reportedThrough.current,
 ): ReadonlyArray<Fixture> => {
   const shown = seriesKeys.filter((key) =>
     pools.some((pool) => pool.id === key),
@@ -746,6 +787,7 @@ export const overviewOfPools = (
     where(series(shown, "3h", now - logBegins), fromLogBeginning),
     series(shown),
     ...breakdowns(),
+    reported,
   ];
 };
 

@@ -1,6 +1,11 @@
 import { answer, at, type Fixture, never, problem } from "./fake-api.ts";
 import { displayNames, owner } from "./fixtures.ts";
-import { eightPools, now, poolsAnswer } from "./overview.ts";
+import {
+  eightPools,
+  now,
+  poolsAnswer,
+  withAnObservedPool,
+} from "./overview.ts";
 import { entries, text } from "./session.ts";
 
 const minute = 60_000;
@@ -389,6 +394,121 @@ export const importedAnswers: ReadonlyArray<Fixture> = [
         rateLimits: {},
         clientHeaders: {},
       }),
+    ),
+  ),
+];
+
+/** What a reported request holds: the record's model, usage, times, session and project, and nothing only a hub in the path knows (`docs/specs/reported-requests/spec.md`, The columns of a reported request). */
+const reportedRecordOf = (n: number, changes: Partial<Logged> = {}) =>
+  recordOf(n, {
+    firstByteMs: null,
+    durationMs: 6_310,
+    session: "4be1c9a0-5d7e-4f0b-9a3c-2e8d6f1b7c45",
+    sessionSource: "",
+    machine: "laptop",
+    project: "notes",
+    client: "antigravity",
+    clientVersion: "1.4.0",
+    userAgent: "",
+    hubKey: "laptop",
+    pool: "gemini",
+    loginFingerprint: "",
+    provider: "google",
+    protocol: "antigravity-steps",
+    origin: "reported",
+    operation: "generate",
+    purpose: "",
+    model: "gemini-3-flash-preview",
+    stream: false,
+    upstreamStatus: 0,
+    stopReason: "STOP",
+    inputTokens: 1_380,
+    cacheReadTokens: 11_820,
+    cacheWriteShortTokens: 0,
+    cacheWriteLongTokens: 0,
+    outputTokens: 412,
+    reasoningTokens: 0,
+    serviceTier: "",
+    costUsd: "0.004812000000",
+    providerRequestId: "",
+    rateLimits: {},
+    clientHeaders: {},
+    usage: {
+      promptTokenCount: 13_200,
+      cachedContentTokenCount: 11_820,
+      candidatesTokenCount: 412,
+    },
+    requestBytes: 0,
+    responseBytes: 0,
+    promptSize: 13_200,
+    ...changes,
+  });
+
+const reportedParts = () => {
+  const make = entries();
+  return {
+    input: [
+      make.user([text("Keep it under 300 words.")]),
+      make.call("call-3", "write_to_file", {
+        TargetFile: "/home/dev/notes/SUMMARY.md",
+        CodeContent: "# Notes, on one page",
+      }),
+      make.result("call-3", null, "Created file /home/dev/notes/SUMMARY.md"),
+    ],
+    output: [
+      make.assistant(
+        "SUMMARY.md has the page, in 280 words, with the two open questions at its end.",
+        0,
+        "output",
+      ),
+    ],
+  };
+};
+
+const reportedShared: ReadonlyArray<Fixture> = [
+  owner,
+  displayNames,
+  poolsAnswer(withAnObservedPool),
+];
+
+export const reportedRequest = id(9);
+
+/** A request a machine reported from Antigravity's record: no system prompt, tools, params, status, first byte or headers. */
+export const reportedAnswers: ReadonlyArray<Fixture> = [
+  ...reportedShared,
+  inspector(
+    inspectedOf(reportedRecordOf(9), {
+      segment: 1,
+      params: {},
+      tools: [],
+      system: [],
+      ...reportedParts(),
+    }),
+  ),
+];
+
+export const unfinishedRequest = id(10);
+
+/** A reported call whose step was still unfinished when its machine reported it, which is reported as an error. */
+export const unfinishedAnswers: ReadonlyArray<Fixture> = [
+  ...reportedShared,
+  inspector(
+    inspectedOf(
+      reportedRecordOf(10, {
+        outcome: "error",
+        errorType: "cota_reported_unfinished",
+        stopReason: "",
+        outputTokens: 212,
+        costUsd: "0.006100000000",
+      }),
+      {
+        segment: 1,
+        params: {},
+        tools: [],
+        system: [],
+        input: reportedParts().input,
+        output: [],
+      },
     ),
   ),
 ];

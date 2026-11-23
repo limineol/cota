@@ -2,10 +2,23 @@ import { Stat, StatLabel, StatNote, StatValue } from "@cota/ui/components/stat";
 import { tokens } from "#shared/domain/quantities.ts";
 import { costText, dollarsOf, durationOf } from "#shared/words.ts";
 import type { RequestRecord } from "./queries.ts";
+import { notInTheRecord, reported as wasReported } from "./words.ts";
 
 const unreported = "not reported";
 
 function Status({ request }: { readonly request: RequestRecord }) {
+  if (wasReported(request)) {
+    return (
+      <>
+        <StatValue>none</StatValue>
+        <StatNote>
+          {request.stopReason === ""
+            ? notInTheRecord
+            : `${notInTheRecord}; stopped: ${request.stopReason}`}
+        </StatNote>
+      </>
+    );
+  }
   if (request.upstreamStatus === 0) {
     return (
       <>
@@ -30,6 +43,9 @@ function Status({ request }: { readonly request: RequestRecord }) {
 
 export function Figures({ request }: { readonly request: RequestRecord }) {
   const reported = request.usageReported;
+  const noUsage = wasReported(request)
+    ? "the client's record had no usage"
+    : "the provider gave no usage";
   const cacheWrites =
     request.cacheWriteShortTokens + request.cacheWriteLongTokens;
   return (
@@ -41,9 +57,11 @@ export function Figures({ request }: { readonly request: RequestRecord }) {
         <StatLabel>Duration</StatLabel>
         <StatValue>{durationOf(request.durationMs)}</StatValue>
         <StatNote>
-          {request.firstByteMs === null
-            ? "no byte came back"
-            : `first byte after ${durationOf(request.firstByteMs)}`}
+          {wasReported(request)
+            ? `as the client recorded it; first byte ${notInTheRecord}`
+            : request.firstByteMs === null
+              ? "no byte came back"
+              : `first byte after ${durationOf(request.firstByteMs)}`}
         </StatNote>
       </Stat>
       <Stat variant="tile">
@@ -55,8 +73,10 @@ export function Figures({ request }: { readonly request: RequestRecord }) {
         </StatValue>
         <StatNote>
           {reported
-            ? `${tokens(request.inputTokens)} uncached, ${tokens(request.cacheReadTokens)} cache reads, ${tokens(cacheWrites)} cache writes`
-            : "the provider gave no usage"}
+            ? wasReported(request) && cacheWrites === 0
+              ? `${tokens(request.inputTokens)} uncached, ${tokens(request.cacheReadTokens)} cache reads`
+              : `${tokens(request.inputTokens)} uncached, ${tokens(request.cacheReadTokens)} cache reads, ${tokens(cacheWrites)} cache writes`
+            : noUsage}
         </StatNote>
       </Stat>
       <Stat variant="tile">
@@ -66,8 +86,10 @@ export function Figures({ request }: { readonly request: RequestRecord }) {
         </StatValue>
         <StatNote>
           {reported
-            ? `${tokens(request.reasoningTokens)} of reasoning in it`
-            : "the provider gave no usage"}
+            ? wasReported(request) && request.reasoningTokens === 0
+              ? `reasoning ${notInTheRecord}`
+              : `${tokens(request.reasoningTokens)} of reasoning in it`
+            : noUsage}
         </StatNote>
       </Stat>
       <Stat variant="tile">

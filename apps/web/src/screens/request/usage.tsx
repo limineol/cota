@@ -13,25 +13,43 @@ import {
 import { cost } from "#shared/domain/quantities.ts";
 import { counted, dollarsOf } from "#shared/words.ts";
 import type { RequestRecord } from "./queries.ts";
+import { notInTheRecord, reported as wasReported } from "./words.ts";
 
 const classes: ReadonlyArray<{
   readonly name: string;
   readonly tokens: (request: RequestRecord) => number;
+  /** Whether a client's record gives the class; one it does not is 0 in a reported request. */
+  readonly inARecord: boolean;
 }> = [
-  { name: "Input, uncached", tokens: (request) => request.inputTokens },
-  { name: "Cache read", tokens: (request) => request.cacheReadTokens },
+  {
+    name: "Input, uncached",
+    tokens: (request) => request.inputTokens,
+    inARecord: true,
+  },
+  {
+    name: "Cache read",
+    tokens: (request) => request.cacheReadTokens,
+    inARecord: true,
+  },
   {
     name: "Cache write, the provider's default lifetime",
     tokens: (request) => request.cacheWriteShortTokens,
+    inARecord: false,
   },
   {
     name: "Cache write, a longer lifetime",
     tokens: (request) => request.cacheWriteLongTokens,
+    inARecord: false,
   },
-  { name: "Output", tokens: (request) => request.outputTokens },
+  {
+    name: "Output",
+    tokens: (request) => request.outputTokens,
+    inARecord: true,
+  },
   {
     name: "Of the output, reasoning",
     tokens: (request) => request.reasoningTokens,
+    inARecord: false,
   },
 ];
 
@@ -59,6 +77,7 @@ function Priced({ request }: { readonly request: RequestRecord }) {
 
 export function UsagePanel({ request }: { readonly request: RequestRecord }) {
   const reported = request.usageReported;
+  const fromARecord = wasReported(request);
   return (
     <div className="flex min-w-0 flex-col gap-7">
       <section
@@ -76,13 +95,17 @@ export function UsagePanel({ request }: { readonly request: RequestRecord }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {classes.map(({ name, tokens }) => (
+            {classes.map(({ name, tokens, inARecord }) => (
               <TableRow key={name}>
                 <TableCell>
                   <TableLabel>{name}</TableLabel>
                 </TableCell>
                 <TableCell numeric>
-                  {reported ? counted(tokens(request)) : "not reported"}
+                  {!reported
+                    ? "not reported"
+                    : fromARecord && !inARecord && tokens(request) === 0
+                      ? notInTheRecord
+                      : counted(tokens(request))}
                 </TableCell>
               </TableRow>
             ))}
@@ -107,14 +130,19 @@ export function UsagePanel({ request }: { readonly request: RequestRecord }) {
         className="flex flex-col gap-2.5"
       >
         <Subheading level={2} id="usage-reported">
-          As the provider reported it
+          {fromARecord
+            ? "As the client's record holds it"
+            : "As the provider reported it"}
         </Subheading>
         {request.usage === null ? (
           <Note>
-            The provider reported no usage for this request
-            {request.readingComplete
-              ? "."
-              : ", and its answer could not be read to the end."}
+            {fromARecord
+              ? "The client's record had no usage for this call."
+              : `The provider reported no usage for this request${
+                  request.readingComplete
+                    ? "."
+                    : ", and its answer could not be read to the end."
+                }`}
           </Note>
         ) : (
           <JsonView value={request.usage} />

@@ -21,6 +21,7 @@ import type { ReactElement, ReactNode } from "react";
 import { ago, span, tokens } from "#shared/domain/quantities.ts";
 import { marks, type Tolerance } from "#shared/domain/snippet.ts";
 import { Name, useNameOf } from "#shared/names.tsx";
+import { onlyReported, ReportedMark } from "#shared/reported.tsx";
 import type { Sort } from "#shared/sessions-search.ts";
 import {
   costText,
@@ -209,6 +210,7 @@ export function SessionItem({
             {row.errors > 0 ? (
               <TableFlag>{plural(row.errors, "error")}</TableFlag>
             ) : null}
+            {onlyReported(row.origins) ? <ReportedMark /> : null}
           </span>
           {row.title !== null && row.firstPrompt !== null ? (
             <TableSecondary className="hidden @2xl/panel:block">
