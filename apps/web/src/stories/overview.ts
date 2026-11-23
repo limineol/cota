@@ -612,6 +612,7 @@ const seriesPoints = (
   keys: ReadonlyArray<string>,
   bucket: BucketName,
   length: number,
+  busiest = 40,
 ) => {
   const step = bucketLength[bucket];
   const first = Math.ceil(Math.max(now - length, logBegins) / step) * step;
@@ -622,7 +623,7 @@ const seriesPoints = (
     const busy = Math.max(0, Math.sin(((hourOfDay - 7) / 15) * Math.PI));
     for (const [index, key] of keys.entries()) {
       const wave = 0.6 + 0.4 * Math.sin(at / (37 * minute) + index * 1.7);
-      const requests = Math.round(busy * wave * (40 - index * 7));
+      const requests = Math.round(busy * wave * (busiest - index * 7));
       if (requests <= 0) continue;
       const tokens = requests * (38_000 - index * 4000);
       points.push({
@@ -643,11 +644,12 @@ export const series = (
   keys: ReadonlyArray<string> = seriesKeys,
   bucket: BucketName = "15m",
   length = day,
+  busiest = 40,
 ) =>
   answer("traffic", "series", {
     bucket,
     keys: [...keys],
-    points: seriesPoints(keys, bucket, length),
+    points: seriesPoints(keys, bucket, length, busiest),
   });
 
 const projectRows: ReadonlyArray<RowShape> = [
@@ -715,6 +717,124 @@ export const breakdowns = (
   where(breakdown(models.slice(0, 3)), byKind("model", "500")),
 ];
 
+/** The observed pool's own traffic, every request of it reported: its last request is no later than the latest reported through. */
+const observedBusiest = 5;
+
+const observedDay = seriesPoints(["gemini"], "15m", day, observedBusiest);
+
+const observedTokens = observedDay.reduce(
+  (sum, point) => sum + point.requests * 38_000,
+  0,
+);
+
+const observedTotals = totalsOf({
+  requests: observedDay.reduce((sum, point) => sum + point.requests, 0),
+  sessions: 7,
+  errors: observedDay.reduce((sum, point) => sum + point.errors, 0),
+  tokens: observedTokens,
+  dollars: observedTokens * 0.0000022,
+});
+
+const ofTheObservedPool = (q: URLSearchParams) =>
+  q.getAll("pool").includes("gemini");
+
+const observedRows = {
+  today: {
+    key: "gemini",
+    requests: 64,
+    tokens: 2_430_000,
+    dollars: 5.35,
+    lastAgo: 2 * minute + 10_000,
+  },
+  month: {
+    key: "gemini",
+    requests: 2_960,
+    tokens: 112_500_000,
+    dollars: 247.5,
+    lastAgo: 2 * minute + 10_000,
+  },
+  active: {
+    key: "gemini",
+    requests: 3,
+    sessions: 1,
+    tokens: 114_000,
+    dollars: 0.25,
+    lastAgo: 2 * minute + 10_000,
+  },
+} as const;
+
+const observedProjects: ReadonlyArray<RowShape> = [
+  { key: "notes", requests: 1_710, tokens: 66_200_000, dollars: 145.6 },
+  { key: "cota", requests: 902, tokens: 33_900_000, dollars: 74.6 },
+  { key: "blog", requests: 348, tokens: 12_400_000, dollars: 27.3 },
+];
+
+const observedModels: ReadonlyArray<RowShape> = [
+  {
+    key: "gemini-3-pro-preview",
+    requests: 1_840,
+    tokens: 78_100_000,
+    dollars: 171.8,
+    errors: 4,
+  },
+  {
+    key: "gemini-3-flash-preview",
+    requests: 1_120,
+    tokens: 34_400_000,
+    dollars: 75.7,
+  },
+];
+
+/** Every pool's traffic over time with the observed pool's beside it. */
+const seriesWithTheObserved = (
+  keys: ReadonlyArray<string>,
+  bucket: BucketName,
+  length: number,
+) =>
+  answer("traffic", "series", {
+    bucket,
+    keys: [...keys, "gemini"],
+    points: [
+      ...seriesPoints(keys, bucket, length),
+      ...seriesPoints(["gemini"], bucket, length, observedBusiest),
+    ],
+  });
+
+/** What the overview reads of the observed pool alone, answered before the fixtures that answer for any pool. */
+const observedPoolTraffic: ReadonlyArray<Fixture> = [
+  where(
+    overviewOf(
+      day,
+      observedTotals,
+      totalsOf({
+        requests: 141,
+        sessions: 6,
+        errors: 0,
+        tokens: 5_300_000,
+        dollars: 11.66,
+      }),
+    ),
+    (q) => ofTheObservedPool(q) && lengthOf(q) === day,
+  ),
+  where(
+    series(["gemini"], "15m", day, observedBusiest),
+    (q) => ofTheObservedPool(q) && lengthOf(q) === day,
+  ),
+  ...(
+    [
+      ["project", "50", observedProjects],
+      ["model", "50", observedModels],
+      ["project", "500", observedProjects],
+      ["model", "500", observedModels],
+    ] as const
+  ).map(([kind, limit, rows]) =>
+    where(
+      breakdown(rows),
+      (q) => ofTheObservedPool(q) && byKind(kind, limit)(q),
+    ),
+  ),
+];
+
 interface ReporterShape {
   readonly machine: string;
   readonly throughAgo: number;
@@ -755,23 +875,34 @@ export const reportedThrough = {
   loading: never("reports", "reportedThrough"),
 } as const;
 
-/** Every answer the overview reads, for these pools, with how far each machine has reported to an observed one. */
+/** Every answer the overview reads, for these pools, with how far each machine has reported to an observed one; `reportedTo` false is an observed pool nothing has reported to, so it has no traffic. */
 export const overviewOfPools = (
   pools: ReadonlyArray<PoolShape>,
   reported: Fixture = reportedThrough.current,
+  reportedTo = true,
 ): ReadonlyArray<Fixture> => {
   const shown = seriesKeys.filter((key) =>
     pools.some((pool) => pool.id === key),
   );
+  const observed = reportedTo && pools.some((pool) => pool.id === gemini.id);
+  const byPools = observed ? seriesWithTheObserved : series;
+  const withObserved = (
+    rows: ReadonlyArray<RowShape>,
+    row: RowShape,
+  ): ReadonlyArray<RowShape> => [
+    ...rows.filter((each) => pools.some((pool) => pool.id === each.key)),
+    ...(observed ? [row] : []),
+  ];
   return [
     owner,
     displayNames,
     poolsAnswer(pools),
     ...poolFigures(
-      todayRows.filter((each) => pools.some((pool) => pool.id === each.key)),
-      monthRows.filter((each) => pools.some((pool) => pool.id === each.key)),
-      activeRows.filter((each) => pools.some((pool) => pool.id === each.key)),
+      withObserved(todayRows, observedRows.today),
+      withObserved(monthRows, observedRows.month),
+      withObserved(activeRows, observedRows.active),
     ),
+    ...(observed ? observedPoolTraffic : []),
     lastFifteenMinutes(),
     onePoolDay,
     lastDay,
@@ -782,10 +913,10 @@ export const overviewOfPools = (
       where(series([key]), (q) => q.getAll("pool").includes(key)),
     ),
     where(series([]), (q) => q.has("pool")),
-    where(series(shown, "3h", week), lasting(week)),
-    where(series(shown, "6h", month), lasting(month)),
-    where(series(shown, "3h", now - logBegins), fromLogBeginning),
-    series(shown),
+    where(byPools(shown, "3h", week), lasting(week)),
+    where(byPools(shown, "6h", month), lasting(month)),
+    where(byPools(shown, "3h", now - logBegins), fromLogBeginning),
+    byPools(shown, "15m", day),
     ...breakdowns(),
     reported,
   ];

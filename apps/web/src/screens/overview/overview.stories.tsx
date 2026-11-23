@@ -113,6 +113,9 @@ export const AnObservedPool: Story = {
     await expect(
       canvas.queryByText("No quota windows"),
     ).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByText(/^No requests since/),
+    ).not.toBeInTheDocument();
   },
 };
 
@@ -125,7 +128,10 @@ export const ReportedThroughLate: Story = {
 };
 
 export const NothingReportedYet: Story = {
-  ...page("/", overviewOfPools(withAnObservedPool, reportedThrough.never)),
+  ...page(
+    "/",
+    overviewOfPools(withAnObservedPool, reportedThrough.never, false),
+  ),
   play: async ({ canvas }) => {
     await expect(
       await canvas.findByText("Nothing has reported to it yet"),
@@ -158,6 +164,9 @@ export const AnObservedPoolInFull: Story = {
     ).toBeVisible();
     await expect(canvas.getByText("Observed · google")).toBeVisible();
     await expect(await canvas.findByText("Reported through")).toBeVisible();
+    await expect(await canvas.findByText("gemini-3-pro-preview")).toBeVisible();
+    await expect(canvas.getByText("notes")).toBeVisible();
+    await expect(canvas.queryByText("acme/shop")).not.toBeInTheDocument();
   },
 };
 
@@ -174,12 +183,13 @@ export const AnObservedPoolInFullLate: Story = {
 export const AnObservedPoolInFullNeverReported: Story = {
   ...page(
     "/?pool=gemini",
-    overviewOfPools(withAnObservedPool, reportedThrough.never),
+    overviewOfPools(withAnObservedPool, reportedThrough.never, false),
   ),
   play: async ({ canvas }) => {
     await expect(
       await canvas.findByText(/^No machine has reported to this pool yet/),
     ).toBeVisible();
+    await expect(await canvas.findByText(/^No requests since/)).toBeVisible();
   },
 };
 
