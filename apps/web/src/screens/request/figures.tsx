@@ -73,9 +73,7 @@ export function Figures({ request }: { readonly request: RequestRecord }) {
         </StatValue>
         <StatNote>
           {reported
-            ? wasReported(request) && cacheWrites === 0
-              ? `${tokens(request.inputTokens)} uncached, ${tokens(request.cacheReadTokens)} cache reads`
-              : `${tokens(request.inputTokens)} uncached, ${tokens(request.cacheReadTokens)} cache reads, ${tokens(cacheWrites)} cache writes`
+            ? `${tokens(request.inputTokens)} uncached, ${tokens(request.cacheReadTokens)} cache reads, ${tokens(cacheWrites)} cache writes`
             : noUsage}
         </StatNote>
       </Stat>
@@ -86,9 +84,7 @@ export function Figures({ request }: { readonly request: RequestRecord }) {
         </StatValue>
         <StatNote>
           {reported
-            ? wasReported(request) && request.reasoningTokens === 0
-              ? `reasoning ${notInTheRecord}`
-              : `${tokens(request.reasoningTokens)} of reasoning in it`
+            ? `${tokens(request.reasoningTokens)} of reasoning in it`
             : noUsage}
         </StatNote>
       </Stat>

@@ -2,7 +2,6 @@ import { Stat, StatLabel, StatNote, StatValue } from "@cota/ui/components/stat";
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight } from "lucide-react";
 import { ago, span, tokens } from "#shared/domain/quantities.ts";
-import { onlyReported } from "#shared/reported.tsx";
 import {
   costText,
   counted,
@@ -45,8 +44,6 @@ export function Figures({
   const started = millis(row.startedAt);
   const ended = millis(row.endedAt);
   const { usage } = row;
-  const fromRecords = onlyReported(row.origins);
-  const cacheWrites = usage.cacheWriteShort + usage.cacheWriteLong;
   const refused = answer.requests.filter(
     (each) => each.outcome === "refused",
   ).length;
@@ -125,10 +122,8 @@ export function Figures({
         <StatValue>{atLeast(inputIn(usage), row.usageUnreported)}</StatValue>
         <StatNote>
           every request's prompt: {tokens(usage.input)} uncached,{" "}
-          {tokens(usage.cacheRead)} cache reads
-          {fromRecords && cacheWrites === 0
-            ? ""
-            : `, ${tokens(cacheWrites)} cache writes`}
+          {tokens(usage.cacheRead)} cache reads,{" "}
+          {tokens(usage.cacheWriteShort + usage.cacheWriteLong)} cache writes
           {unreported}
         </StatNote>
       </Stat>
@@ -136,9 +131,7 @@ export function Figures({
         <StatLabel>Output tokens</StatLabel>
         <StatValue>{atLeast(usage.output, row.usageUnreported)}</StatValue>
         <StatNote>
-          {fromRecords && usage.reasoning === 0
-            ? "every answer; reasoning is not in the client's record"
-            : `every answer, ${tokens(usage.reasoning)} of reasoning in it`}
+          every answer, {tokens(usage.reasoning)} of reasoning in it
         </StatNote>
       </Stat>
       <Stat variant="tile">

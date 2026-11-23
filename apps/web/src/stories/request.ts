@@ -427,7 +427,7 @@ const reportedRecordOf = (n: number, changes: Partial<Logged> = {}) =>
     cacheWriteShortTokens: 0,
     cacheWriteLongTokens: 0,
     outputTokens: 412,
-    reasoningTokens: 0,
+    reasoningTokens: 268,
     serviceTier: "",
     costUsd: "0.004812000000",
     providerRequestId: "",
@@ -436,7 +436,8 @@ const reportedRecordOf = (n: number, changes: Partial<Logged> = {}) =>
     usage: {
       promptTokenCount: 13_200,
       cachedContentTokenCount: 11_820,
-      candidatesTokenCount: 412,
+      candidatesTokenCount: 144,
+      thoughtsTokenCount: 268,
     },
     requestBytes: 0,
     responseBytes: 0,

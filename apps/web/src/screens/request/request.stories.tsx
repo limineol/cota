@@ -221,6 +221,10 @@ export const AReportedRequest: Story = {
     await expect(
       canvas.getByText("not in the client's record; stopped: STOP"),
     ).toBeVisible();
+    await expect(
+      canvas.getByText("1.4K uncached, 11.8K cache reads, 0 cache writes"),
+    ).toBeVisible();
+    await expect(canvas.getByText("268 of reasoning in it")).toBeVisible();
     const tools = canvas.getByRole("link", { name: "Tools" });
     await expect(tools).toHaveTextContent(/^Tools$/);
   },

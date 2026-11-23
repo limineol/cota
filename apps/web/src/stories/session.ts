@@ -1046,7 +1046,6 @@ export const reportedSessionAnswers: ReadonlyArray<Fixture> = [
             fromTheRecord.cacheWriteLong,
           cacheWriteShort: 0,
           cacheWriteLong: 0,
-          reasoning: 0,
         },
         projects: ["notes"],
         machines: ["laptop"],

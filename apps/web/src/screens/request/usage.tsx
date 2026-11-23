@@ -13,43 +13,26 @@ import {
 import { cost } from "#shared/domain/quantities.ts";
 import { counted, dollarsOf } from "#shared/words.ts";
 import type { RequestRecord } from "./queries.ts";
-import { notInTheRecord, reported as wasReported } from "./words.ts";
+import { reported as wasReported } from "./words.ts";
 
 const classes: ReadonlyArray<{
   readonly name: string;
   readonly tokens: (request: RequestRecord) => number;
-  /** Whether a client's record gives the class; one it does not is 0 in a reported request. */
-  readonly inARecord: boolean;
 }> = [
-  {
-    name: "Input, uncached",
-    tokens: (request) => request.inputTokens,
-    inARecord: true,
-  },
-  {
-    name: "Cache read",
-    tokens: (request) => request.cacheReadTokens,
-    inARecord: true,
-  },
+  { name: "Input, uncached", tokens: (request) => request.inputTokens },
+  { name: "Cache read", tokens: (request) => request.cacheReadTokens },
   {
     name: "Cache write, the provider's default lifetime",
     tokens: (request) => request.cacheWriteShortTokens,
-    inARecord: false,
   },
   {
     name: "Cache write, a longer lifetime",
     tokens: (request) => request.cacheWriteLongTokens,
-    inARecord: false,
   },
-  {
-    name: "Output",
-    tokens: (request) => request.outputTokens,
-    inARecord: true,
-  },
+  { name: "Output", tokens: (request) => request.outputTokens },
   {
     name: "Of the output, reasoning",
     tokens: (request) => request.reasoningTokens,
-    inARecord: false,
   },
 ];
 
@@ -95,17 +78,13 @@ export function UsagePanel({ request }: { readonly request: RequestRecord }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {classes.map(({ name, tokens, inARecord }) => (
+            {classes.map(({ name, tokens }) => (
               <TableRow key={name}>
                 <TableCell>
                   <TableLabel>{name}</TableLabel>
                 </TableCell>
                 <TableCell numeric>
-                  {!reported
-                    ? "not reported"
-                    : fromARecord && !inARecord && tokens(request) === 0
-                      ? notInTheRecord
-                      : counted(tokens(request))}
+                  {reported ? counted(tokens(request)) : "not reported"}
                 </TableCell>
               </TableRow>
             ))}
