@@ -2351,7 +2351,7 @@ export const layer = (policy: Policy): Layer.Layer<Fallback> =>
     file: recordRequest,
     find: "          onNone: () => Effect.succeedNone,",
     replace:
-      "          onNone: () => Cost.of({ input: 0, cacheRead: 0, cacheWriteShort: 0, cacheWriteLong: 0, output: 0 }, prices.of(request)),",
+      "          onNone: () => Cost.of({ input: 0, cacheRead: 0, cacheWriteShort: 0, cacheWriteLong: 0, output: 0 }, prices.of({ ...request, ...request.origin })),",
     killedBy:
       "writes the cost of a request with usage exactly, and none without usage or without a price",
   },
@@ -4607,7 +4607,7 @@ export const layer = (policy: Policy): Layer.Layer<Fallback> =>
     file: quotaLoginDomain,
     find: 'if (pool.kind !== "subscription") return Option.none();',
     replace:
-      'if (pool.kind !== "subscription" && pool.protocol !== "anthropic-messages") return Option.none();',
+      'if (pool.kind === "observed" || (pool.kind !== "subscription" && pool.protocol !== "anthropic-messages")) return Option.none();',
     killedBy: g9,
   },
   {
@@ -4623,7 +4623,8 @@ export const layer = (policy: Policy): Layer.Layer<Fallback> =>
     law: "G2",
     file: `${quotaModule}/04-infrastructure/readers/readers.ts`,
     find: "? Anthropic.read(http, options.anthropic, login)",
-    replace: "? Anthropic.read(http, `${pool.baseUrl}/api/oauth/usage`, login)",
+    replace:
+      '? Anthropic.read(http, `${_pool.kind === "observed" ? "" : _pool.baseUrl}/api/oauth/usage`, login)',
     killedBy: g2,
   },
   {
