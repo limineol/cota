@@ -80,8 +80,8 @@ export interface Report {
   readonly calls: ReadonlyArray<Call>;
 }
 
-/** Who sent a report: its reporter, and the `x-cota-machine` it gave, as sent. */
-export interface Sender {
+/** A report's caller, as the hub decided it, and the `x-cota-machine` it gave, as given. */
+export interface Caller {
   readonly reporter: Reporter;
   readonly machine: string;
 }
@@ -162,9 +162,9 @@ const millis = DateTime.toEpochMillis;
  */
 export const check = Effect.fn("Report.check")(function* (
   report: Report,
-  sender: Sender,
+  caller: Caller,
 ) {
-  const machine = Title.keptOf(sender.machine);
+  const machine = Title.keptOf(caller.machine);
   if (machine === "") {
     return yield* refused(
       "The report names no machine: send its name in x-cota-machine.",
@@ -257,7 +257,7 @@ export const check = Effect.fn("Report.check")(function* (
     const done: Checked = {
       place,
       call,
-      id: idOf(sender.reporter, report.client, call.call, call.startedAt),
+      id: idOf(caller.reporter, report.client, call.call, call.startedAt),
       input: steps.slice(0, call.input.length),
       output: only,
     };

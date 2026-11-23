@@ -42,10 +42,10 @@ const atNow = TestClock.setTime(DateTime.toEpochMillis(Reports.now));
 const idOf = (reporter: Report.Reporter, call: Report.Call) =>
   Report.idOf(reporter, "antigravity", call.call, call.startedAt);
 
-const senderOf = (
+const callerOf = (
   reporter: Report.Reporter,
   machine = "studio",
-): Report.Sender => ({ reporter, machine });
+): Report.Caller => ({ reporter, machine });
 
 const byText =
   <A>(textOf: (value: A) => string) =>
@@ -89,7 +89,7 @@ const delivered = (
       const answer = yield* Effect.result(
         world.reportRequests.execute(
           Reports.reportOf(calls),
-          senderOf(reporter),
+          callerOf(reporter),
         ),
       );
       world.memory.faults.splice(0);
@@ -329,7 +329,7 @@ describe("reported requests laws", () => {
         const world = yield* Reports.started();
         for (const report of plan.reports) {
           yield* world.reportRequests
-            .execute(Reports.reportOf(report), senderOf(reporter, header))
+            .execute(Reports.reportOf(report), callerOf(reporter, header))
             .pipe(Effect.orDie);
         }
         const stored = world.memory.requests.map(({ request }) => {
@@ -380,12 +380,12 @@ const defective = (
   at: number,
   world: World,
   reporter: Report.Reporter,
-): { readonly report: Report.Report; readonly sender: Report.Sender } => {
+): { readonly report: Report.Report; readonly caller: Report.Caller } => {
   const place = Math.min(at, calls.length - 1);
   const call = calls[place];
   const report = Reports.reportOf(calls, Option.some(Reports.now));
-  const sender = senderOf(reporter);
-  if (call === undefined) return { report, sender };
+  const caller = callerOf(reporter);
+  if (call === undefined) return { report, caller };
   const changed = (changes: Partial<Report.Call>) => ({
     report: {
       ...report,
@@ -393,7 +393,7 @@ const defective = (
         index === place ? { ...each, ...changes } : each,
       ),
     },
-    sender,
+    caller,
   });
   const lastIdx = Math.max(
     ...[...call.input, ...call.output].map((step) => Number(step.idx)),
@@ -402,7 +402,7 @@ const defective = (
     case "call key twice":
       return {
         report: { ...report, calls: [...calls, call] },
-        sender,
+        caller,
       };
     case "finished before started":
       return changed({ finishedAt: minutes(call.startedAt, -1) });
@@ -471,20 +471,20 @@ const defective = (
         after: Option.some({ call: "never-sent", startedAt: call.startedAt }),
       });
     case "pool not observed":
-      return { report: { ...report, pool: PoolId.make("claude") }, sender };
+      return { report: { ...report, pool: PoolId.make("claude") }, caller };
     case "no such pool":
-      return { report: { ...report, pool: PoolId.make("nowhere") }, sender };
+      return { report: { ...report, pool: PoolId.make("nowhere") }, caller };
     case "no machine":
-      return { report, sender: senderOf(reporter, " \t ") };
+      return { report, caller: callerOf(reporter, " \t ") };
     case "through ahead":
       return {
         report: { ...report, through: Option.some(minutes(Reports.now, 6)) },
-        sender,
+        caller,
       };
     case "values the log cannot hold": {
       const id = idOf(reporter, call);
       world.memory.holds = ({ request }) => request.id !== id;
-      return { report, sender };
+      return { report, caller };
     }
   }
 };
@@ -519,7 +519,7 @@ describe("a refused report", () => {
             defect === "values the log cannot hold" ? calls.length - 1 : at;
           const before = logOf(world.memory);
           const throughBefore = [...world.through.kept.values()];
-          const { report, sender } = defective(
+          const { report, caller } = defective(
             calls,
             defect,
             place,
@@ -527,7 +527,7 @@ describe("a refused report", () => {
             reporter,
           );
           const answer = yield* Effect.result(
-            world.reportRequests.execute(report, sender),
+            world.reportRequests.execute(report, caller),
           );
           expect(
             answer._tag === "Failure" && refusals.has(answer.failure._tag),
@@ -604,7 +604,7 @@ describe("reported through", () => {
                 ...Reports.reportOf([], Option.some(through)),
                 pool: each.pool,
               },
-              senderOf(each.reporter, each.machine),
+              callerOf(each.reporter, each.machine),
             )
             .pipe(Effect.orDie);
           const key = JSON.stringify([each.machine, "antigravity", each.pool]);

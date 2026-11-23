@@ -49,7 +49,7 @@ export class ReportRequests extends Context.Service<
      */
     readonly execute: (
       report: Report.Report,
-      sender: Report.Sender,
+      caller: Report.Caller,
     ) => Effect.Effect<
       Answer,
       Refusal | RequestLogUnavailable | HubStoreUnavailable
@@ -226,13 +226,13 @@ export const layer = (
       return ReportRequests.of({
         execute: Effect.fn("ReportRequests.execute")(function* (
           report: Report.Report,
-          sender: Report.Sender,
+          caller: Report.Caller,
         ) {
           const pool = yield* observedOf(report.pool);
-          const checked = yield* Report.check(report, sender);
+          const checked = yield* Report.check(report, caller);
           return yield* lock.withPermits(1)(
             Effect.gen(function* () {
-              const answer = yield* store(checked, pool, sender.reporter).pipe(
+              const answer = yield* store(checked, pool, caller.reporter).pipe(
                 Effect.catchTags({
                   RequestsRepositoryFailed: (error) =>
                     Effect.fail(unavailable(error)),
@@ -247,7 +247,7 @@ export const layer = (
                   pool: pool.id,
                   through: report.through.value,
                   reportedAt: yield* DateTime.now,
-                  reportedBy: Report.reportedByText(sender.reporter),
+                  reportedBy: Report.reportedByText(caller.reporter),
                 });
               }
               return answer;

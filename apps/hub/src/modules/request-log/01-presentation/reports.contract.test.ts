@@ -184,6 +184,51 @@ layer(Harness.layer())("POST /api/reported-requests", (it) => {
   );
 
   it.effect(
+    "reads a reported request back: its transcript by the record form's table, and its body as its steps through its input",
+    () =>
+      Effect.gen(function* () {
+        expect((yield* sent(reportOf("read-back"), keys.fleet)).status).toBe(
+          200,
+        );
+        const memory = yield* InMemoryRequests;
+        const second = memory.requests.find(
+          ({ request }) =>
+            request.session === "read-back" &&
+            request.startedAt.epochMilliseconds ===
+              Date.parse("2026-11-11T09:01:00.000Z"),
+        );
+        const reader = { "x-cota-key": Harness.secrets.readerHubKey };
+        const inspected = yield* Harness.problemOf(
+          yield* Harness.send(`/api/requests/${second?.request.id}`, {
+            headers: reader,
+          }),
+        );
+        expect(inspected).toMatchObject({
+          status: 200,
+          body: {
+            request: { protocol: "antigravity-steps", hubKey: "fleet" },
+          },
+        });
+        const body = yield* Harness.problemOf(
+          yield* Harness.send(`/api/requests/${second?.request.id}/body`, {
+            headers: reader,
+          }),
+        );
+        const [first, last] = callsOf("read-back");
+        expect(body).toMatchObject({
+          status: 200,
+          body: {
+            steps: [
+              ...(first?.input ?? []),
+              ...(first?.output ?? []),
+              ...(last?.input ?? []),
+            ],
+          },
+        });
+      }),
+  );
+
+  it.effect(
     "L11: a report answered with any problem but request-log-unavailable and hub-store-unavailable changes nothing in the log or the hub store",
     () =>
       Effect.gen(function* () {
