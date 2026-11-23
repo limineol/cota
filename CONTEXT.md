@@ -2,7 +2,7 @@
 status: active
 scope: repository
 owner: limineol
-last_verified: 2026-11-22
+last_verified: 2026-11-23
 review_by: 2027-02-15
 supersedes: []
 code:
@@ -341,6 +341,10 @@ _Avoid_: call (a model call is a client record's, which a reported request is ma
 **Forwarded request**:
 A request the hub forwarded: what it sent the provider and what came back, with what only a hub in the path can know (the time to the first byte, the provider's status, the quota headers, the client's kept headers, the login's fingerprint, a refusal's reset, a divert, the bytes). Every request was one until requests were reported.
 _Avoid_: relayed request, proxied request, live request, real request
+
+**Origin**:
+Which way a request came in: **forwarded**, with what only a hub in the path can know, or **reported**, with the record form its items are kept in and the hub key that reported it. An imported request is only ever a row of the request log, whose `protocol` names its source form.
+_Avoid_: source (an import source, a window source), kind (a pool has a kind), provenance
 
 **Operation**:
 What a request asks the provider to do: answer a conversation, count tokens, list models, search the web, make an image. Only an operation that answers a conversation has usage and a conversation.

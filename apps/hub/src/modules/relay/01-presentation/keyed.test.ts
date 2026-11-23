@@ -2,6 +2,7 @@ import { expect, layer } from "@effect/vitest";
 import { Effect, Option } from "effect";
 import { Prices } from "#modules/request-log/02-application/interfaces/prices.ts";
 import * as Cost from "#modules/request-log/03-domain/cost.ts";
+import * as StoredItems from "#modules/request-log/03-domain/stored-items.ts";
 import { Recorded } from "#modules/request-log/05-tests/fakes/record-request.fake.ts";
 import * as FakeProvider from "#shared/05-tests/fake-provider.ts";
 import * as Harness from "#shared/05-tests/harness.ts";
@@ -72,7 +73,7 @@ layer(Harness.layer())("a keyed pool that speaks anthropic-messages", (it) => {
           ],
         ]);
         expect(JSON.stringify(seen)).not.toContain(Harness.secrets.fleetHubKey);
-        expect((yield* nextRequest).hubKey).toBe("fleet");
+        expect((yield* nextRequest).origin.hubKey).toBe("fleet");
       }),
   );
 
@@ -88,7 +89,7 @@ layer(Harness.layer())("a keyed pool that speaks anthropic-messages", (it) => {
           ["console", [["x-api-key", Harness.secrets.consoleKey]]],
         ]);
         expect(JSON.stringify(seen)).not.toContain(Harness.secrets.fleetHubKey);
-        expect((yield* nextRequest).hubKey).toBe("fleet");
+        expect((yield* nextRequest).origin.hubKey).toBe("fleet");
       }),
   );
 
@@ -168,7 +169,7 @@ layer(Harness.layer())("a keyed pool that speaks anthropic-messages", (it) => {
         });
         expect(text).toBe(streamed.join(""));
         const request = yield* nextRequest;
-        expect(request).toMatchObject({
+        expect(StoredItems.storedOf(request)).toMatchObject({
           pool: "console",
           provider: "anthropic",
           protocol: "anthropic-messages",
@@ -189,7 +190,8 @@ layer(Harness.layer())("a keyed pool that speaks anthropic-messages", (it) => {
           output: 15,
         });
         const prices = yield* Prices;
-        expect(yield* Cost.of(usage.tokens, prices.of(request))).toEqual(
+        const asked = { ...request, ...request.origin };
+        expect(yield* Cost.of(usage.tokens, prices.of(asked))).toEqual(
           Option.some(400_000_000n),
         );
       }),

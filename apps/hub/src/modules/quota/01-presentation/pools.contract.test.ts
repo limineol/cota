@@ -16,7 +16,7 @@ const at = (iso: string) => DateTime.makeUnsafe(iso);
 const unixSeconds = (iso: string) =>
   String(DateTime.toEpochMillis(at(iso)) / 1000);
 
-const seeded = (fields: Partial<Request.Request>) => ({
+const seeded = (fields: Partial<Harness.RequestFields>) => ({
   request: Harness.requestOf({
     loginFingerprint: Option.some(LoginFingerprint.make("fingerprint")),
     ...fields,
@@ -83,7 +83,7 @@ const noLogin = (provider: "anthropic" | "chatgpt") => ({
 const quiet = (
   id: string,
   kind: "subscription" | "keyed",
-  protocol: Request.Request["protocol"],
+  protocol: Request.Forwarded["protocol"],
   provider: string,
 ) => ({
   id,
@@ -274,6 +274,17 @@ layer(Harness.layer())("the pools group", (it) => {
                 quotaLogin: noLogin("chatgpt"),
               },
               quiet("console", "keyed", "anthropic-messages", "anthropic"),
+              {
+                id: "gemini",
+                kind: "observed",
+                protocol: null,
+                provider: "google",
+                plan: null,
+                windows: [],
+                observedAt: null,
+                reading: null,
+                quotaLogin: null,
+              },
               quiet("gone", "keyed", "openai-chat", "gone"),
               quiet("open", "keyed", "openai-chat", "open"),
               {
@@ -562,11 +573,12 @@ layer(Harness.layer())("the pools group", (it) => {
           pools.flatMap(({ id, quotaLogin }) =>
             quotaLogin === null ? [id] : [],
           ),
-        ).toEqual(["console", "gone", "open", "work"]);
+        ).toEqual(["console", "gemini", "gone", "open", "work"]);
         expect(pools.map(({ id }) => id)).toEqual([
           "claude",
           "codex",
           "console",
+          "gemini",
           "gone",
           "open",
           "personal",

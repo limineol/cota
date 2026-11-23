@@ -45,6 +45,10 @@ kept_login = { env = "COTA_KEPT_LOGIN" }
 protocol = "openai-chat"
 base_url = "https://api.z.ai/api/coding/paas/v4"
 key = { env = "COTA_ZAI_KEY" }
+
+[pools.gemini]
+observed = true
+provider = "google"
 `,
 );
 
@@ -119,6 +123,16 @@ describe("bun run import", () => {
       stdout: "",
       stderr:
         "The pool map sends claude-max to elsewhere, which the hub's configuration does not have.\n",
+    });
+  });
+
+  it("refuses, and exits 2, a pool map that sends a source pool to an observed pool", async () => {
+    const file = write("observed-pool.toml", importFile('"gemini" = "gemini"'));
+    expect(await run([file])).toEqual({
+      code: 2,
+      stdout: "",
+      stderr:
+        "The pool map sends gemini to gemini, an observed pool, which only reported requests bill.\n",
     });
   });
 

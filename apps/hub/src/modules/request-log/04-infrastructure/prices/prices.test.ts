@@ -227,9 +227,10 @@ describe("priceOf", () => {
 });
 
 describe("the shipped price list", () => {
-  it("ships the lists for anthropic, openai, opencode-go and zai", () => {
+  it("ships the lists for anthropic, google, openai, opencode-go and zai", () => {
     expect(Prices.listNames).toEqual([
       "anthropic",
+      "google",
       "openai",
       "opencode-go",
       "zai",

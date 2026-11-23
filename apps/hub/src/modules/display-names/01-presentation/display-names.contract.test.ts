@@ -46,7 +46,13 @@ layer(Harness.layer())("the display-names group", (it) => {
     () =>
       Effect.gen(function* () {
         const names = yield* listed;
-        expect(names.slice(0, 4)).toEqual([
+        expect(names.slice(0, 5)).toEqual([
+          {
+            kind: "client",
+            key: "antigravity",
+            name: "Antigravity",
+            source: "built-in",
+          },
           {
             kind: "client",
             key: "claude-code",
@@ -76,8 +82,8 @@ layer(Harness.layer())("the display-names group", (it) => {
           { kind: "model", key: "glm-5", name: "GLM-5", source: "built-in" },
         ]);
         expect(names.map(({ kind }) => kind)).toEqual([
-          ...Array(4).fill("client"),
-          ...Array(names.length - 4).fill("model"),
+          ...Array(5).fill("client"),
+          ...Array(names.length - 5).fill("model"),
         ]);
       }),
   );

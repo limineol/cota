@@ -33,9 +33,13 @@ export const layer = (
     Effect.gen(function* () {
       const http = yield* HttpClient.HttpClient;
       return QuotaReader.of({
-        read: (pool, reader) => {
+        read: (_pool, reader) => {
           if ("key" in reader) {
-            return heldKeyReaders[reader.name](http, pool, reader.key);
+            return heldKeyReaders[reader.name](
+              http,
+              reader.baseUrl,
+              reader.key,
+            );
           }
           const login = reader.login;
           return login.provider === "anthropic"

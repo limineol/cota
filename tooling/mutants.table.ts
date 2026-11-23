@@ -29,12 +29,14 @@ export type Law =
   | "R4"
   | "R5"
   | "R6"
+  | "R7"
   | "L1"
   | "L2"
   | "L3"
   | "L4"
   | "L5"
   | "L6"
+  | "L15"
   | "S1"
   | "S2"
   | "M1"
@@ -666,6 +668,12 @@ const forwardRequest =
 const planCredential =
   "apps/hub/src/modules/relay/02-application/queries/plan-credential.query.ts";
 const config = "apps/hub/src/config/config.ts";
+const neverReported =
+  "R7: a forwarded request's client is never a reported client, whatever its tag and user agent";
+const observedRefusals =
+  "refuses what an observed pool cannot have, an observed pool without its provider, a pool that is neither observed nor names its protocol, and a fallback pool that is observed";
+const observedAtTheRelay =
+  "L15: no request admitted by the relay names an observed pool: every hub key in x-cota-key is answered 403 cota_hub_key_scope there, as the bearer token or in x-api-key 403 cota_hub_key_rejected, and nothing is forwarded or recorded";
 const anthropic =
   "apps/hub/src/modules/relay/04-infrastructure/protocols/anthropic-messages/anthropic-messages.ts";
 const codex =
@@ -1881,6 +1889,62 @@ export const layer = (policy: Policy): Layer.Layer<Fallback> =>
       "reports every rule between pools and hub keys, and every secret it cannot read, at once, each with its path",
   },
   {
+    name: "a forwarded request's tag may name a reported client",
+    law: "R7",
+    file: "apps/hub/src/shared/03-domain/client.ts",
+    find: '  if (tag !== "" && !isReported(tag)) return { client: tag, version };',
+    replace: '  if (tag !== "") return { client: tag, version };',
+    killedBy: neverReported,
+  },
+  {
+    name: "a forwarded request's user agent may name a reported client",
+    law: "R7",
+    file: "apps/hub/src/shared/03-domain/client.ts",
+    find: '    client: name === undefined || isReported(name) ? "unknown" : name,',
+    replace: '    client: name ?? "unknown",',
+    killedBy: neverReported,
+  },
+  {
+    name: "an observed pool may hold what only a forwarded pool has",
+    file: config,
+    find: "      if (pool[field] !== undefined) {",
+    replace: "      if (false) {",
+    killedBy: observedRefusals,
+  },
+  {
+    name: "an observed pool need not name its provider",
+    file: config,
+    find: "    if (pool.provider === undefined) {",
+    replace: "    if (false) {",
+    killedBy: observedRefusals,
+  },
+  {
+    name: "an observed pool may be a fallback pool",
+    file: config,
+    find: "    } else if (fallback.observed === true) {",
+    replace: "    } else if (false) {",
+    killedBy: observedRefusals,
+  },
+  {
+    name: "the admission policy opens an observed pool to keyed hub keys",
+    law: "L15",
+    file: config,
+    find: "  pools: HashMap.map(config.pools, ({ kind }) => kind),",
+    replace:
+      '  pools: HashMap.map(config.pools, ({ kind }) => (kind === "observed" ? "keyed" : kind)),',
+    killedBy: observedAtTheRelay,
+  },
+  {
+    name: "every hub key opens an observed pool",
+    law: "L15",
+    file: admission,
+    find: "export const opens = (scope: Scope, kind: Kind): boolean => scope === kind;",
+    replace:
+      'export const opens = (scope: Scope, kind: Kind): boolean => scope === kind || kind === "observed";',
+    killedBy:
+      "L15: no request admitted by the relay names an observed pool, whatever hub key it presents",
+  },
+  {
     name: "the copy holds the client back when its reader falls behind",
     law: "R5",
     file: tee,
@@ -2287,7 +2351,7 @@ export const layer = (policy: Policy): Layer.Layer<Fallback> =>
     file: recordRequest,
     find: "          onNone: () => Effect.succeedNone,",
     replace:
-      "          onNone: () => Cost.of({ input: 0, cacheRead: 0, cacheWriteShort: 0, cacheWriteLong: 0, output: 0 }, prices.of(request)),",
+      "          onNone: () => Cost.of({ input: 0, cacheRead: 0, cacheWriteShort: 0, cacheWriteLong: 0, output: 0 }, prices.of({ ...request, ...request.origin })),",
     killedBy:
       "writes the cost of a request with usage exactly, and none without usage or without a price",
   },
@@ -4543,7 +4607,7 @@ export const layer = (policy: Policy): Layer.Layer<Fallback> =>
     file: quotaLoginDomain,
     find: 'if (pool.kind !== "subscription") return Option.none();',
     replace:
-      'if (pool.kind !== "subscription" && pool.protocol !== "anthropic-messages") return Option.none();',
+      'if (pool.kind === "observed" || (pool.kind !== "subscription" && pool.protocol !== "anthropic-messages")) return Option.none();',
     killedBy: g9,
   },
   {
@@ -4559,7 +4623,8 @@ export const layer = (policy: Policy): Layer.Layer<Fallback> =>
     law: "G2",
     file: `${quotaModule}/04-infrastructure/readers/readers.ts`,
     find: "? Anthropic.read(http, options.anthropic, login)",
-    replace: "? Anthropic.read(http, `${pool.baseUrl}/api/oauth/usage`, login)",
+    replace:
+      '? Anthropic.read(http, `${_pool.kind === "observed" ? "" : _pool.baseUrl}/api/oauth/usage`, login)',
     killedBy: g2,
   },
   {

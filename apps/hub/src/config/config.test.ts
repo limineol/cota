@@ -14,6 +14,7 @@ import * as Sha256HubKeyHasher from "#modules/admission/04-infrastructure/sha256
 import type { Limits } from "#modules/relay/03-domain/limits.ts";
 import type * as Sql from "#modules/request-log/03-domain/sql.ts";
 import { PoolId } from "#shared/03-domain/ids.ts";
+import * as Pool from "#shared/03-domain/pool.entity.ts";
 import * as HubConfig from "./config.ts";
 
 const secrets = mkdtempSync(join(tmpdir(), "cota-config-"));
@@ -298,7 +299,10 @@ describe("parse", () => {
         const config = yield* parse(example);
         const pool = (id: string) =>
           Option.getOrThrow(
-            HashMap.findFirst(config.pools, (_, key) => key === id),
+            HashMap.findFirst(
+              Pool.forwarded(config.pools),
+              (_, key) => key === id,
+            ),
           )[1];
         expect(
           [pool("personal"), pool("work"), pool("chatgpt")].map(
@@ -797,6 +801,97 @@ protocol = "anthropic-messages"
   );
 
   it.effect(
+    "refuses what an observed pool cannot have, an observed pool without its provider, a pool that is neither observed nor names its protocol, and a fallback pool that is observed",
+    () =>
+      Effect.gen(function* () {
+        const problems = yield* problemsOf(
+          minimal(`
+[pools.forwarded]
+observed = true
+provider = "google"
+protocol = "anthropic-messages"
+base_url = "https://api.example.com"
+key = { env = "K" }
+kept_login = { env = "L" }
+fallback = "personal"
+
+[pools.nameless]
+observed = true
+
+[pools.neither]
+observed = false
+provider = "google"
+
+[pools.personal]
+protocol = "anthropic-messages"
+kept_login = { env = "COTA_PERSONAL_LOGIN" }
+fallback = "gemini"
+
+[pools.gemini]
+observed = true
+provider = "google"
+`),
+        );
+        expect(problems.split("\n")).toEqual([
+          "an observed pool is never forwarded to, so it has no protocol",
+          '  at ["pools"]["forwarded"]["protocol"]',
+          "an observed pool is never forwarded to, so it has no base_url",
+          '  at ["pools"]["forwarded"]["base_url"]',
+          "an observed pool is never forwarded to, so it has no key",
+          '  at ["pools"]["forwarded"]["key"]',
+          "an observed pool is never forwarded to, so it has no kept_login",
+          '  at ["pools"]["forwarded"]["kept_login"]',
+          "an observed pool is never forwarded to, so it has no fallback",
+          '  at ["pools"]["forwarded"]["fallback"]',
+          "an observed pool names its provider",
+          '  at ["pools"]["nameless"]["provider"]',
+          "a pool that is not observed names its protocol",
+          '  at ["pools"]["neither"]["protocol"]',
+          'the fallback pool "gemini" is an observed pool; a fallback pool is a subscription pool',
+          '  at ["pools"]["personal"]["fallback"]',
+        ]);
+      }),
+  );
+
+  it.effect(
+    "reads an observed pool with its provider, the google price list for the provider google and none for another",
+    () =>
+      Effect.gen(function* () {
+        const config = yield* parse(
+          minimal(`
+[pools.gemini]
+observed = true
+provider = "google"
+
+[pools.elsewhere]
+observed = true
+provider = "elsewhere"
+`),
+        );
+        expect(
+          [...HashMap.values(config.pools)].sort((one, other) =>
+            one.id < other.id ? -1 : 1,
+          ),
+        ).toEqual([
+          {
+            kind: "observed",
+            id: "elsewhere",
+            provider: "elsewhere",
+            prices: Option.none(),
+            ownPrices: {},
+          },
+          {
+            kind: "observed",
+            id: "gemini",
+            provider: "google",
+            prices: Option.some("google"),
+            ownPrices: {},
+          },
+        ]);
+      }),
+  );
+
+  it.effect(
     "reports every secret it cannot read, and hub keys that share a secret, at once",
     () =>
       Effect.gen(function* () {
@@ -929,7 +1024,7 @@ tiers = [{ over = 200, input = 2, output = 3 }, { over = 100, input = 3, output 
 `),
         );
         expect(rules.split("\n")).toEqual([
-          'there is no price list "nowhere"; the hub ships anthropic, openai, opencode-go, zai',
+          'there is no price list "nowhere"; the hub ships anthropic, google, openai, opencode-go, zai',
           '  at ["pools"]["local"]["prices"]',
           "tiers are listed with rising thresholds",
           '  at ["pools"]["local"]["model_prices"]["tiered"]["tiers"][1]["over"]',

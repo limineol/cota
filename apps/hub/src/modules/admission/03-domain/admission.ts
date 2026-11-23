@@ -4,10 +4,10 @@ import { HubKeyDigest, HubKeyName, PoolId } from "#shared/03-domain/ids.ts";
 
 export { HubKey, Scope } from "#shared/03-domain/hub-key.ts";
 
-export const Kind = Schema.Literals(["subscription", "keyed"]);
+export const Kind = Schema.Literals(["subscription", "keyed", "observed"]);
 export type Kind = typeof Kind.Type;
 
-/** Whether a hub key of a scope opens a pool of a kind: exactly when they are the same word, so a reader key opens none. */
+/** Whether a hub key of a scope opens a pool of a kind: exactly when they are the same word, so a reader key opens none and no key opens an observed pool. */
 export const opens = (scope: Scope, kind: Kind): boolean => scope === kind;
 
 export const Policy = Schema.Struct({

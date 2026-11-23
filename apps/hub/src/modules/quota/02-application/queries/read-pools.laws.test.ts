@@ -74,7 +74,7 @@ const hour = 60 * 60_000;
 /** The quota sources spec's table of header windows, written out again. */
 const table: Readonly<
   Record<
-    Request.Request["protocol"],
+    Request.Forwarded["protocol"],
     ReadonlyArray<{
       readonly percentage: string;
       readonly times: number;
@@ -131,16 +131,16 @@ interface Expected {
 /** The window one request's headers give under a rule, as the spec states it. */
 const windowIn = (
   rule: Rule,
-  request: Request.Request,
+  request: Request.ForwardedRequest,
 ): Expected | undefined => {
-  const raw = request.rateLimits[rule.percentage];
+  const raw = request.origin.rateLimits[rule.percentage];
   const value = numberOf(raw);
-  const lengthMs = rule.lengthMs(request.rateLimits);
+  const lengthMs = rule.lengthMs(request.origin.rateLimits);
   if (value === undefined || lengthMs === undefined || !(lengthMs > 0)) {
     return undefined;
   }
   const percentage = rule.times === 100 ? Number(`${raw?.trim()}e2`) : value;
-  const reset = numberOf(request.rateLimits[rule.reset]);
+  const reset = numberOf(request.origin.rateLimits[rule.reset]);
   return {
     lengthMs,
     used: Math.min(100, Math.max(0, percentage)),
@@ -157,8 +157,8 @@ const isCurrent = (window: Expected, at: number) =>
 
 const millis = DateTime.toEpochMillis;
 
-const latestOf = (requests: ReadonlyArray<Request.Request>) =>
-  requests.reduce<Request.Request | undefined>(
+const latestOf = (requests: ReadonlyArray<Request.ForwardedRequest>) =>
+  requests.reduce<Request.ForwardedRequest | undefined>(
     (best, each) =>
       best === undefined ||
       (millis(each.startedAt) - millis(best.startedAt) ||
@@ -175,14 +175,14 @@ const expectedOf = (
   at: number,
 ): ReadonlyArray<Expected> => {
   const kept = new Map<number, Expected>();
-  for (const rule of table[pool.protocol]) {
+  for (const rule of pool.kind === "observed" ? [] : table[pool.protocol]) {
     const latest = latestOf(
       log
         .map(({ request }) => request)
         .filter(
           (request) =>
             request.pool === pool.id &&
-            Object.hasOwn(request.rateLimits, rule.percentage) &&
+            Object.hasOwn(request.origin.rateLimits, rule.percentage) &&
             DateTime.toEpochMillis(request.startedAt) >= at - 7 * 24 * hour,
         ),
     );
@@ -218,10 +218,12 @@ const givenBy = (
   log.flatMap(({ request }) =>
     request.pool === pool.id &&
     millis(request.startedAt) === millis(window.observedAt)
-      ? table[pool.protocol].flatMap((rule) => {
-          const given = windowIn(rule, request);
-          return given === undefined ? [] : [given];
-        })
+      ? (pool.kind === "observed" ? [] : table[pool.protocol]).flatMap(
+          (rule) => {
+            const given = windowIn(rule, request);
+            return given === undefined ? [] : [given];
+          },
+        )
       : [],
   );
 

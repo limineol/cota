@@ -155,7 +155,7 @@ export interface Offered<P> {
  * pool it does not have (V46).
  */
 export const offeredPools = <
-  P extends { readonly id: string; readonly protocol: string },
+  P extends { readonly id: string; readonly protocol: string | null },
 >(
   client: RoutedClient,
   pools: ReadonlyArray<P>,

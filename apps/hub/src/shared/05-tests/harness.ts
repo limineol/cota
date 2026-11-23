@@ -177,6 +177,10 @@ base_url = "${providerUrl}/codex"
 protocol = "anthropic-messages"
 base_url = "${providerUrl}/console"
 key = { env = "CONSOLE_KEY" }
+
+[pools.gemini]
+observed = true
+provider = "google"
 `;
 
 export type Sabotage = "none" | "slow" | "fail" | "hang";
@@ -626,7 +630,9 @@ export const sendRaw = (request: string) =>
 export const recorded = (expected: number) =>
   Effect.gen(function* () {
     const recorded = yield* RequestLog.Recorded;
-    const requests: Array<Request.Request> = [...(yield* recorded.drain)];
+    const requests: Array<Request.ForwardedRequest> = [
+      ...(yield* recorded.drain),
+    ];
     for (let step = 0; step < 100 && requests.length < expected; step++) {
       yield* TestClock.adjust("1 second");
       yield* Effect.promise(() => Bun.sleep(5));
@@ -716,48 +722,75 @@ export const anthropicConversation = (
 ): Option.Option<Conversation.Conversation> =>
   Conversation.read(anthropicRules, body, output);
 
+/** A forwarded request's fields, its origin's beside the rest, as a test writes them. */
+export type RequestFields = Omit<Request.Request, "origin"> &
+  Omit<Request.Forwarded, "_tag">;
+
 /** An Anthropic request answered without usage, and its fields. */
-export const requestOf = (
-  fields: Partial<Request.Request> = {},
-): Request.Request => ({
+export const requestOf = ({
+  protocol = "anthropic-messages",
+  hubKey = HubKeyName.make("clients"),
+  firstByteMs = Option.none(),
+  sessionSource = "",
+  userAgent = "",
+  divertedFrom = Option.none(),
+  follows = Option.none(),
+  loginFingerprint = Option.none(),
+  refusalReset = Option.none(),
+  purpose = "",
+  servedModel = "",
+  stream = false,
+  upstreamStatus = 200,
+  serviceTier = "",
+  rateLimits = {},
+  clientHeaders = {},
+  errorBody = "",
+  requestBytes = 0,
+  responseBytes = 0,
+  readingComplete = true,
+  ...fields
+}: Partial<RequestFields> = {}): Request.ForwardedRequest => ({
   id: Request.RequestId.make(Bun.randomUUIDv7()),
   startedAt: start,
-  firstByteMs: Option.none(),
   durationMs: 0,
   session: "",
-  sessionSource: "",
   machine: "",
   project: "",
   client: "",
   clientVersion: "",
-  userAgent: "",
-  hubKey: HubKeyName.make("clients"),
   pool: PoolId.make("solo"),
-  divertedFrom: Option.none(),
-  follows: Option.none(),
-  loginFingerprint: Option.none(),
-  refusalReset: Option.none(),
   provider: "anthropic",
-  protocol: "anthropic-messages",
   operation: "messages",
-  purpose: "",
   model: "",
-  servedModel: "",
-  stream: false,
   outcome: "ok",
-  upstreamStatus: 200,
   errorType: "",
   errorMessage: "",
   stopReason: "",
   usage: Option.none(),
-  serviceTier: "",
   providerRequestId: "",
-  rateLimits: {},
-  clientHeaders: {},
   conversation: Option.none(),
-  errorBody: "",
-  requestBytes: 0,
-  responseBytes: 0,
-  readingComplete: true,
   ...fields,
+  origin: {
+    _tag: "forwarded",
+    protocol,
+    hubKey,
+    firstByteMs,
+    sessionSource,
+    userAgent,
+    divertedFrom,
+    follows,
+    loginFingerprint,
+    refusalReset,
+    purpose,
+    servedModel,
+    stream,
+    upstreamStatus,
+    serviceTier,
+    rateLimits,
+    clientHeaders,
+    errorBody,
+    requestBytes,
+    responseBytes,
+    readingComplete,
+  },
 });

@@ -51,6 +51,7 @@ export const layer = (
           if (!Option.contains(takes, given.provider)) {
             return yield* new QuotaLogin.QuotaLoginNotTaken({
               pool: id,
+              kind: pool.kind,
               takes,
               given: given.provider,
             });

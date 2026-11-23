@@ -75,7 +75,7 @@ const jsonOf = (bytes: Uint8Array): Option.Option<unknown> =>
   );
 
 export interface Options {
-  readonly pools: HashMap.HashMap<PoolId, Pool.Pool>;
+  readonly pools: HashMap.HashMap<PoolId, Pool.ForwardedPool>;
   readonly limits: Limits;
 }
 

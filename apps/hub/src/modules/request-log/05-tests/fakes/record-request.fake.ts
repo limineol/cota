@@ -14,8 +14,8 @@ import * as InMemorySessionTitles from "./in-memory-session-titles.ts";
 export class Recorded extends Context.Service<
   Recorded,
   {
-    readonly take: Effect.Effect<Request.Request>;
-    readonly drain: Effect.Effect<ReadonlyArray<Request.Request>>;
+    readonly take: Effect.Effect<Request.ForwardedRequest>;
+    readonly drain: Effect.Effect<ReadonlyArray<Request.ForwardedRequest>>;
   }
 >()("@cota/hub/request-log/Recorded") {}
 
@@ -26,10 +26,10 @@ const recordRequest: Layer.Layer<
 > = Layer.effectContext(
   Effect.gen(function* () {
     const repository = yield* RequestsRepository;
-    const queue = yield* Queue.unbounded<Request.Request>();
+    const queue = yield* Queue.unbounded<Request.ForwardedRequest>();
 
     const store = Effect.fn("RecordRequestFake.store")(function* (
-      finished: Request.Request,
+      finished: Request.ForwardedRequest,
     ) {
       const request = StoredItems.wellFormed(finished);
       const known = yield* repository.known([request.session]);

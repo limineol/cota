@@ -140,10 +140,12 @@ export const layer = (
             [
               readQuotaHeaders.execute(
                 ordered.flatMap((pool) =>
-                  QuotaHeaders.namesOf(pool.protocol).map((name) => ({
-                    pool: pool.id,
-                    name,
-                  })),
+                  pool.kind === "observed"
+                    ? []
+                    : QuotaHeaders.namesOf(pool.protocol).map((name) => ({
+                        pool: pool.id,
+                        name,
+                      })),
                 ),
                 DateTime.subtractDuration(now, Sources.headersFor),
               ),
@@ -177,14 +179,17 @@ export const layer = (
                   reading: Option.flatMap(reading, ({ last }) =>
                     Option.map(last, ({ reading }) => reading),
                   ),
-                  headers: QuotaHeaders.observe(
-                    pool.protocol,
-                    new Map(
-                      latest
-                        .filter((each) => each.pool === pool.id)
-                        .map((each) => [each.name, each]),
-                    ),
-                  ),
+                  headers:
+                    pool.kind === "observed"
+                      ? { windows: [], plan: Option.none() }
+                      : QuotaHeaders.observe(
+                          pool.protocol,
+                          new Map(
+                            latest
+                              .filter((each) => each.pool === pool.id)
+                              .map((each) => [each.name, each]),
+                          ),
+                        ),
                   loginPlan: Option.flatMap(login, (login) =>
                     login.provider === "anthropic"
                       ? Plan.claude(login.subscriptionType, login.rateLimitTier)

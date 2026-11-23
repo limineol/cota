@@ -47,15 +47,22 @@ export const MachineModel = Schema.Struct({
 export const MachinePool = Schema.Struct({
   id: Schema.String,
   kind: Kind,
-  protocol: ProtocolName,
+  protocol: Schema.NullOr(ProtocolName),
   provider: Schema.String,
   displayName: Schema.NullOr(Schema.String),
   models: Schema.Array(MachineModel),
 }).annotate({ identifier: "MachinePool" });
 
+export const ObservedMachinePool = Schema.Struct({
+  id: Schema.String,
+  provider: Schema.String,
+  displayName: Schema.NullOr(Schema.String),
+}).annotate({ identifier: "ObservedMachinePool" });
+
 export const Machine = Schema.Struct({
   hubKey: Schema.NullOr(Schema.Struct({ name: Schema.String, scope: Scope })),
   pools: Schema.Array(MachinePool),
+  observedPools: Schema.Array(ObservedMachinePool),
 }).annotate({ identifier: "Machine" });
 
 const read = HttpApiEndpoint.get("read", "/machine", {

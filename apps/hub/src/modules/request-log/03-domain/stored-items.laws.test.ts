@@ -198,46 +198,49 @@ const requestOf = (
   protocol: ProtocolName,
   conversation: Option.Option<Conversation.Conversation>,
   at: number,
-): Request.Request => ({
+): Request.ForwardedRequest => ({
   id: Request.RequestId.make(Bun.randomUUIDv7("hex", at)),
   startedAt: DateTime.makeUnsafe(at),
-  firstByteMs: Option.none(),
   durationMs: 0,
   session,
-  sessionSource: "",
   machine: "",
   project: "",
   client: "",
   clientVersion: "",
-  userAgent: "",
-  hubKey: HubKeyName.make("clients"),
   pool: PoolId.make("solo"),
-  divertedFrom: Option.none(),
-  follows: Option.none(),
-  loginFingerprint: Option.none(),
-  refusalReset: Option.none(),
   provider: "",
-  protocol,
   operation: "messages",
-  purpose: "",
   model: "",
-  servedModel: "",
-  stream: false,
   outcome: "ok",
-  upstreamStatus: 200,
   errorType: "",
   errorMessage: "",
   stopReason: "",
   usage: Option.none(),
-  serviceTier: "",
   providerRequestId: "",
-  rateLimits: {},
-  clientHeaders: {},
   conversation,
-  errorBody: "",
-  requestBytes: 0,
-  responseBytes: 0,
-  readingComplete: true,
+  origin: {
+    _tag: "forwarded",
+    protocol,
+    hubKey: HubKeyName.make("clients"),
+    firstByteMs: Option.none(),
+    sessionSource: "",
+    userAgent: "",
+    divertedFrom: Option.none(),
+    follows: Option.none(),
+    loginFingerprint: Option.none(),
+    refusalReset: Option.none(),
+    purpose: "",
+    servedModel: "",
+    stream: false,
+    upstreamStatus: 200,
+    serviceTier: "",
+    rateLimits: {},
+    clientHeaders: {},
+    errorBody: "",
+    requestBytes: 0,
+    responseBytes: 0,
+    readingComplete: true,
+  },
 });
 
 const shuffled = (value: Schema.Json, seed: number): Schema.Json => {
@@ -483,26 +486,23 @@ layer(RequestLog.layer)("request log laws", (it) => {
             { role: text(5), content: [{ type: text(6), text: text(7) }] },
           ],
         });
-        const sent: Request.Request = {
-          ...requestOf(
-            `${fresh("l4")}${text(8)}`,
-            "anthropic-messages",
-            Conversation.read(anthropic, body, [
-              { role: "assistant", content: [{ type: "text", text: text(9) }] },
-            ]),
-            1_794_441_600_000,
-          ),
-          sessionSource: text(10),
+        const base = requestOf(
+          `${fresh("l4")}${text(8)}`,
+          "anthropic-messages",
+          Conversation.read(anthropic, body, [
+            { role: "assistant", content: [{ type: "text", text: text(9) }] },
+          ]),
+          1_794_441_600_000,
+        );
+        const sent: Request.ForwardedRequest = {
+          ...base,
           machine: text(11),
           project: text(20),
           client: text(21),
           clientVersion: text(22),
-          userAgent: text(23),
           provider: text(24),
           operation: text(25),
-          purpose: text(12),
           model: text(0),
-          servedModel: text(13),
           errorType: text(14),
           errorMessage: text(15),
           stopReason: text(16),
@@ -519,17 +519,27 @@ layer(RequestLog.layer)("request log laws", (it) => {
                 reported: text(17),
               })
             : Option.none(),
-          serviceTier: text(26),
           providerRequestId: text(27),
-          rateLimits: { [text(18)]: text(19) },
-          clientHeaders: { [text(28)]: text(29) },
-          errorBody: text(17),
+          origin: {
+            ...base.origin,
+            sessionSource: text(10),
+            userAgent: text(23),
+            purpose: text(12),
+            servedModel: text(13),
+            serviceTier: text(26),
+            rateLimits: { [text(18)]: text(19) },
+            clientHeaders: { [text(28)]: text(29) },
+            errorBody: text(17),
+          },
         };
         yield* recordRequest.execute(sent);
         yield* recorded.drain;
 
-        const rowsOf = (request: Request.Request) => ({
-          request: RequestMapper.requestRowOf({ request, cost: Option.none() }),
+        const rowsOf = (request: Request.ForwardedRequest) => ({
+          request: RequestMapper.requestRowOf({
+            request: StoredItems.storedOf(request),
+            cost: Option.none(),
+          }),
           items: StoredItems.newItems(new Set(), request).map(
             ItemMapper.itemRowOf,
           ),
@@ -542,7 +552,10 @@ layer(RequestLog.layer)("request log laws", (it) => {
         );
         if (stored === undefined) return expect(stored).toBeDefined();
         const written = {
-          request: RequestMapper.requestRowOf(stored),
+          request: RequestMapper.requestRowOf({
+            request: StoredItems.storedOf(stored.request),
+            cost: stored.cost,
+          }),
           items: memory.items
             .filter(({ requestId }) => requestId === sent.id)
             .map(ItemMapper.itemRowOf),

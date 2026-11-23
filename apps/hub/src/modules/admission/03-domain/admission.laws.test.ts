@@ -98,6 +98,23 @@ describe("admission laws", () => {
   );
 
   it.effect.prop(
+    "L15: no request admitted by the relay names an observed pool, whatever hub key it presents",
+    { policy, request },
+    ({ policy, request }) =>
+      Effect.gen(function* () {
+        const decision = yield* decideUnder(policy, request);
+        return !(
+          decision._tag === "Admitted" &&
+          Equal.equals(
+            HashMap.get(policy.pools, request.pool),
+            Option.some("observed"),
+          )
+        );
+      }),
+    runs,
+  );
+
+  it.effect.prop(
     "A2: a request is admitted only to a pool whose kind is its hub key's scope",
     { policy, request },
     ({ policy, request }) =>

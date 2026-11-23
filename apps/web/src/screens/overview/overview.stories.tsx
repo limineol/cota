@@ -8,6 +8,7 @@ import {
   loading,
   overviewOfPools,
   threePools,
+  withAnObservedPool,
 } from "#stories/overview.ts";
 import { page } from "#stories/page.tsx";
 
@@ -100,6 +101,27 @@ export const NoWindows: Story = page(
   "/?pool=opencode",
   overviewOfPools(eightPools),
 );
+
+export const AnObservedPool: Story = {
+  ...page("/", overviewOfPools(withAnObservedPool)),
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByText("Observed")).toBeVisible();
+    await expect(canvas.getByText("No quota windows")).toBeVisible();
+  },
+};
+
+export const AnObservedPoolInFull: Story = {
+  ...page("/?pool=gemini", overviewOfPools(withAnObservedPool)),
+  play: async ({ canvas }) => {
+    await expect(
+      await canvas.findByRole("heading", { level: 2, name: "gemini" }),
+    ).toBeVisible();
+    await expect(
+      await canvas.findByText(/^An observed pool has no quota windows/),
+    ).toBeVisible();
+    await expect(canvas.getByText("Observed · google")).toBeVisible();
+  },
+};
 
 export const AllTimeOfAnEmptyLog: Story = {
   ...page("/?range=all", emptyLog),

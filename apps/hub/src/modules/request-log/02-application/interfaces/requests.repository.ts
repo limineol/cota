@@ -23,7 +23,7 @@ export class RequestsRepositoryDeclined extends Schema.TaggedError<
 }
 
 export interface PricedRequest {
-  readonly request: Request.Request;
+  readonly request: Request.ForwardedRequest;
   readonly cost: Option.Option<Cost.Cost>;
 }
 

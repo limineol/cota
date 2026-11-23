@@ -74,6 +74,12 @@ export interface NoWindows {
 
 /** Why a pool shows no quota windows, from what the hub says of its quota reading and quota login. */
 export const noWindows = (pool: Pool): NoWindows => {
+  if (pool.kind === "observed") {
+    return {
+      short: "No quota windows",
+      long: "An observed pool has no quota windows: the hub forwards nothing for it and reads no quota for it.",
+    };
+  }
   if (pool.reading?.failure) {
     return {
       short: "Quota unavailable",
@@ -124,4 +130,5 @@ export const readingProblem = (pool: Pool): string | null => {
 export const kindName: Record<Pool["kind"], string> = {
   subscription: "Subscription",
   keyed: "Keyed",
+  observed: "Observed",
 };

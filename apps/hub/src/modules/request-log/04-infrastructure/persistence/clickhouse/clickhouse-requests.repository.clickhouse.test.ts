@@ -23,6 +23,7 @@ import {
   RequestsRepository,
 } from "#modules/request-log/02-application/interfaces/requests.repository.ts";
 import * as RebuildConversation from "#modules/request-log/02-application/queries/rebuild-conversation.query.ts";
+import * as StoredItems from "#modules/request-log/03-domain/stored-items.ts";
 import * as PriceLists from "#modules/request-log/04-infrastructure/prices/prices.ts";
 import * as Scratch from "#modules/request-log/05-tests/scratch.ts";
 import { LoginFingerprint, PoolId } from "#shared/03-domain/ids.ts";
@@ -161,7 +162,12 @@ const rowsStored = (stored: ReadonlyArray<Batch>) => ({
     requestItems.map(RequestItemsMapper.requestItemsRowOf),
   ),
   requests: stored.flatMap(({ requests }) =>
-    requests.map(RequestMapper.requestRowOf),
+    requests.map(({ request, cost }) =>
+      RequestMapper.requestRowOf({
+        request: StoredItems.storedOf(request),
+        cost,
+      }),
+    ),
   ),
 });
 
@@ -215,7 +221,7 @@ const perRequest = (table: string, column: string) =>
   );
 
 /** One for each request given, as `perRequest` counts them. */
-const onceEach = (requests: ReadonlyArray<Request.Request>) =>
+const onceEach = (requests: ReadonlyArray<Request.ForwardedRequest>) =>
   Object.fromEntries(requests.map(({ id }) => [id, 1]));
 
 const odd =
@@ -224,7 +230,7 @@ const oddWellFormed =
   "it's a \\ session\twith\nodd 'chars', ✓, \u0000 and halves of pairs, \ufffd and \ufffd";
 
 /** A request with every field the request log keeps set, and set oddly. */
-const everyField = (): Request.Request => {
+const everyField = (): Request.ForwardedRequest => {
   const said = { role: "user", content: [{ type: "text", text: odd }] };
   return Harness.requestOf({
     firstByteMs: Option.some(12),

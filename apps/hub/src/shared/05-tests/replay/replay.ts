@@ -178,7 +178,7 @@ export interface Replay extends Loaded {
   readonly answerHeaders: ReadonlyArray<readonly [string, string]>;
   readonly answeredAs: string;
   readonly reached: number;
-  readonly logged: Request.Request;
+  readonly logged: Request.ForwardedRequest;
 }
 
 /**
@@ -243,29 +243,32 @@ const orNull = <A>(option: Option.Option<A>): A | null =>
  * run (its id and times) or is the replay's own choice (the hub key, the pool
  * and its provider), and with each item's content left to the laws.
  */
-export const expectationOf = (request: Request.Request): Schema.Json => ({
+export const expectationOf = ({
+  origin,
+  ...request
+}: Request.ForwardedRequest): Schema.Json => ({
   session:
     request.session === `request:${request.id}`
       ? "request:<id>"
       : request.session,
-  sessionSource: request.sessionSource,
+  sessionSource: origin.sessionSource,
   machine: request.machine,
   project: request.project,
   client: request.client,
   clientVersion: request.clientVersion,
-  userAgent: request.userAgent,
-  divertedFrom: orNull(request.divertedFrom),
-  follows: Option.isSome(request.follows) ? "<request>" : null,
-  loginFingerprint: orNull(request.loginFingerprint),
-  refusalReset: orNull(Option.map(request.refusalReset, DateTime.formatIso)),
-  protocol: request.protocol,
+  userAgent: origin.userAgent,
+  divertedFrom: orNull(origin.divertedFrom),
+  follows: Option.isSome(origin.follows) ? "<request>" : null,
+  loginFingerprint: orNull(origin.loginFingerprint),
+  refusalReset: orNull(Option.map(origin.refusalReset, DateTime.formatIso)),
+  protocol: origin.protocol,
   operation: request.operation,
-  purpose: request.purpose,
+  purpose: origin.purpose,
   model: request.model,
-  servedModel: request.servedModel,
-  stream: request.stream,
+  servedModel: origin.servedModel,
+  stream: origin.stream,
   outcome: request.outcome,
-  upstreamStatus: request.upstreamStatus,
+  upstreamStatus: origin.upstreamStatus,
   errorType: request.errorType,
   errorMessage: request.errorMessage,
   stopReason: request.stopReason,
@@ -276,10 +279,10 @@ export const expectationOf = (request: Request.Request): Schema.Json => ({
       reported,
     })),
   ),
-  serviceTier: request.serviceTier,
+  serviceTier: origin.serviceTier,
   providerRequestId: request.providerRequestId,
-  rateLimits: request.rateLimits,
-  clientHeaders: request.clientHeaders,
+  rateLimits: origin.rateLimits,
+  clientHeaders: origin.clientHeaders,
   conversation: orNull(
     Option.map(request.conversation, (conversation) => ({
       params: conversation.params,
@@ -294,8 +297,8 @@ export const expectationOf = (request: Request.Request): Schema.Json => ({
       output: conversation.output.map(itemView),
     })),
   ),
-  errorBody: request.errorBody,
-  requestBytes: request.requestBytes,
-  responseBytes: request.responseBytes,
-  readingComplete: request.readingComplete,
+  errorBody: origin.errorBody,
+  requestBytes: origin.requestBytes,
+  responseBytes: origin.responseBytes,
+  readingComplete: origin.readingComplete,
 });

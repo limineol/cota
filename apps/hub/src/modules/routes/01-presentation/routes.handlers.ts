@@ -93,10 +93,10 @@ const goneDetail = (gone: RouteList.RoutePoolGone): string => {
     onSome: (position) =>
       `Route ${position} of ${gone.client} (${Option.getOrElse(gone.pattern, () => "")})`,
   });
-  const why = Option.match(gone.protocol, {
-    onNone: () => "is not in the configuration",
-    onSome: () => `does not speak ${RouteList.protocolOf(gone.client)}`,
-  });
+  const why =
+    gone.reason === "no-such-pool"
+      ? "is not in the configuration"
+      : `does not speak ${RouteList.protocolOf(gone.client)}`;
   return `${which} names the pool ${gone.pool}, which ${why}.`;
 };
 
@@ -184,7 +184,11 @@ export const build = (
               PoolNotForClient: ({ client, pool, protocol }) =>
                 Effect.fail(
                   new RoutesApi.PoolNotForClientProblem({
-                    detail: `The pool ${pool} speaks ${protocol}, and ${client} speaks ${RouteList.protocolOf(client)}.`,
+                    detail: `The pool ${pool} ${Option.match(protocol, {
+                      onNone: () =>
+                        "is an observed pool, which speaks no protocol",
+                      onSome: (protocol) => `speaks ${protocol}`,
+                    })}, and ${client} speaks ${RouteList.protocolOf(client)}.`,
                   }),
                 ),
             }),

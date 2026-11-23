@@ -43,11 +43,18 @@ export const neverStored = (client: RoutedClient): RouteList => ({
   changedAt: Option.none(),
 });
 
-/** Whether a pool fits a client: the configuration has it, and it speaks the client's protocol. */
+/**
+ * Whether a pool fits a client: the configuration has it, and it speaks the
+ * client's protocol. An observed pool speaks none, so it fits no client.
+ */
 export type Fit =
-  | { readonly _tag: "Fits"; readonly pool: Pool.Pool }
+  | { readonly _tag: "Fits"; readonly pool: Pool.ForwardedPool }
   | { readonly _tag: "Gone" }
-  | { readonly _tag: "OtherProtocol"; readonly protocol: ProtocolName };
+  | {
+      readonly _tag: "OtherProtocol";
+      /** None for an observed pool. */
+      readonly protocol: Option.Option<ProtocolName>;
+    };
 
 export const fitOf = (
   pools: HashMap.HashMap<PoolId, Pool.Pool>,
@@ -56,8 +63,14 @@ export const fitOf = (
 ): Fit => {
   const pool = HashMap.get(pools, id);
   if (Option.isNone(pool)) return { _tag: "Gone" };
+  if (pool.value.kind === "observed") {
+    return { _tag: "OtherProtocol", protocol: Option.none() };
+  }
   if (pool.value.protocol !== protocolOf(client)) {
-    return { _tag: "OtherProtocol", protocol: pool.value.protocol };
+    return {
+      _tag: "OtherProtocol",
+      protocol: Option.some(pool.value.protocol),
+    };
   }
   return { _tag: "Fits", pool: pool.value };
 };
@@ -200,7 +213,7 @@ export type By =
 
 /** The pool one launch bills, and why. */
 export interface Answered {
-  readonly pool: Pool.Pool;
+  readonly pool: Pool.ForwardedPool;
   readonly by: By;
 }
 
@@ -219,7 +232,7 @@ export class RoutePoolGone extends Schema.TaggedError<
   position: Schema.Option(Schema.Int),
   pattern: Schema.Option(Schema.String),
   pool: PoolId,
-  protocol: Schema.Option(ProtocolName),
+  reason: Schema.Literals(["no-such-pool", "pool-not-for-client"]),
 }) {}
 
 /** An override names a pool the configuration does not have. */
@@ -235,7 +248,8 @@ export class PoolNotForClient extends Schema.TaggedError<
 >()("PoolNotForClient", {
   client: RoutedClient,
   pool: PoolId,
-  protocol: ProtocolName,
+  /** None for an observed pool, which speaks no protocol. */
+  protocol: Schema.Option(ProtocolName),
 }) {}
 
 export type Unanswered =
@@ -296,10 +310,7 @@ export const answer = (
           ? Option.some(ProjectPattern.textOf(matched.route.pattern))
           : Option.none(),
       pool,
-      protocol:
-        fit._tag === "OtherProtocol"
-          ? Option.some(fit.protocol)
-          : Option.none(),
+      reason: fit._tag === "Gone" ? "no-such-pool" : "pool-not-for-client",
     }),
   );
 };

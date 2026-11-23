@@ -140,7 +140,7 @@ const repositoryOver = (clickHouse: Layer.Layer<ClickHouse.ClickHouse>) =>
     Effect.provide(ClickHouseRequests.layer.pipe(Layer.provide(clickHouse))),
   );
 
-const batchOf = (requests: ReadonlyArray<Request.Request>): Batch => ({
+const batchOf = (requests: ReadonlyArray<Request.ForwardedRequest>): Batch => ({
   items: requests.flatMap((request) =>
     StoredItems.newItems(new Set(), request),
   ),

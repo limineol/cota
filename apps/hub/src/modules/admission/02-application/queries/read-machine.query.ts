@@ -21,16 +21,25 @@ export interface MachineModel extends PoolModel {
 export interface MachinePool {
   readonly id: PoolId;
   readonly kind: Admission.Kind;
-  readonly protocol: ProtocolName;
+  /** None for an observed pool, which speaks no protocol. */
+  readonly protocol: Option.Option<ProtocolName>;
   readonly provider: string;
   readonly displayName: Option.Option<string>;
   readonly models: ReadonlyArray<MachineModel>;
 }
 
-/** What a caller is, and the pools it opens. */
+/** An observed pool, as a machine checks the pool it reports to. */
+export interface ObservedMachinePool {
+  readonly id: PoolId;
+  readonly provider: string;
+  readonly displayName: Option.Option<string>;
+}
+
+/** What a caller is, the pools it opens, and the observed pools. */
 export interface Machine {
   readonly hubKey: Option.Option<Admission.HubKey>;
   readonly pools: ReadonlyArray<MachinePool>;
+  readonly observedPools: ReadonlyArray<ObservedMachinePool>;
 }
 
 export class ReadMachine extends Context.Service<
@@ -40,7 +49,8 @@ export class ReadMachine extends Context.Service<
      * The caller's hub key, none for the owner, and the pools it opens in
      * order of id: every pool for the owner, those whose kind is its scope
      * for a hub key, so none for a reader key (A7). A keyed pool has the
-     * models of its prices (A8), a subscription pool none.
+     * models of its prices (A8), a subscription or observed pool none.
+     * Every caller is given the observed pools, in order of id.
      */
     readonly execute: (
       caller: Caller,
@@ -83,7 +93,10 @@ export const layer = (
             machinePools.push({
               id: pool.id,
               kind: pool.kind,
-              protocol: pool.protocol,
+              protocol:
+                pool.kind === "observed"
+                  ? Option.none()
+                  : Option.some(pool.protocol),
               provider: pool.provider,
               displayName: nameOf("pool", pool.id),
               models: models.map((model) => ({
@@ -101,6 +114,13 @@ export const layer = (
                 ? Option.none()
                 : Option.some(caller.hubKey),
             pools: machinePools,
+            observedPools: ordered
+              .filter((pool) => pool.kind === "observed")
+              .map((pool) => ({
+                id: pool.id,
+                provider: pool.provider,
+                displayName: nameOf("pool", pool.id),
+              })),
           };
         }),
       });

@@ -14,6 +14,7 @@ import * as RequestLog from "#modules/request-log/module.ts";
 import * as Routes from "#modules/routes/module.ts";
 import * as SignIn from "#modules/sign-in/module.ts";
 import * as JsonBody from "#shared/01-presentation/json-body.middleware.ts";
+import * as Pool from "#shared/03-domain/pool.entity.ts";
 import type * as HubStore from "#shared/04-infrastructure/hub-store/hub-store.ts";
 import * as Shutdown from "#shared/04-infrastructure/shutdown.ts";
 
@@ -75,7 +76,7 @@ export const layer = (config: HubConfig.HubConfig, options: Options = {}) =>
         Layer.mergeAll(
           Relay.layer(
             {
-              pools: config.pools,
+              pools: Pool.forwarded(config.pools),
               limits: config.limits,
               fallback: HubConfig.fallbackPolicy(config),
             },

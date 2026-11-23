@@ -23,7 +23,7 @@ const nowMs = DateTime.toEpochMillis(now);
 export const step = 30 * 60_000;
 
 /** A pool of every kind and protocol. */
-export const pools: ReadonlyArray<Pool.Pool> = [
+export const pools: ReadonlyArray<Pool.ForwardedPool> = [
   ...(
     [
       ["claude", "anthropic-messages"],
@@ -31,7 +31,7 @@ export const pools: ReadonlyArray<Pool.Pool> = [
       ["codex", "chatgpt-codex"],
     ] as const
   ).map(
-    ([id, protocol]): Pool.Pool => ({
+    ([id, protocol]): Pool.ForwardedPool => ({
       kind: "subscription",
       id: PoolId.make(id),
       protocol,
@@ -49,7 +49,7 @@ export const pools: ReadonlyArray<Pool.Pool> = [
       ["zai", "openai-chat"],
     ] as const
   ).map(
-    ([id, protocol]): Pool.Pool => ({
+    ([id, protocol]): Pool.ForwardedPool => ({
       kind: "keyed",
       id: PoolId.make(id),
       protocol,

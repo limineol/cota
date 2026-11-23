@@ -399,9 +399,9 @@ const exchangeOf = (
  * records, and the answer's own fields.
  */
 const divertedAfter = (
-  request: Request.Request,
+  request: Request.ForwardedRequest,
   previous: Request.RequestId | undefined,
-): Partial<Request.Request> => ({
+): Partial<Request.Forwarded> => ({
   follows: Option.fromUndefinedOr(previous),
   divertedFrom: Option.some(PoolId.make("claude")),
   loginFingerprint: Option.some(LoginFingerprint.make("fingerprint-1")),
@@ -409,7 +409,6 @@ const divertedAfter = (
   sessionSource: "x-claude-code-session-id",
   userAgent: "claude-cli/2.1.322 (external, cli)",
   servedModel: "claude-opus-5-5-20261101",
-  stopReason: "end_turn",
   stream: true,
   rateLimits: { "anthropic-ratelimit-unified-status": "allowed" },
   errorBody: '{"type":"error"}',
@@ -444,13 +443,17 @@ export const sessionLog = (maxLength: number) =>
           request: {
             ...request,
             session: each.session,
-            protocol: each.protocol,
-            purpose: each.purpose,
-            clientHeaders: each.subagent ? { [header]: "agent-7" } : {},
-            ...(each.diverted ? divertedAfter(request, previous) : {}),
+            ...(each.diverted ? { stopReason: "end_turn" } : {}),
             conversation: each.conversation
               ? Conversation.read(rulesOf(each.protocol), body, output)
               : Option.none(),
+            origin: {
+              ...request.origin,
+              protocol: each.protocol,
+              purpose: each.purpose,
+              clientHeaders: each.subagent ? { [header]: "agent-7" } : {},
+              ...(each.diverted ? divertedAfter(request, previous) : {}),
+            },
           },
           cost,
         };

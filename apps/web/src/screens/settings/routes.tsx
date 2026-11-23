@@ -241,8 +241,11 @@ function RoutesPanel({
       what === "route"
         ? "launches of the projects this route matches stop until it is changed."
         : "launches no route matches stop until it is changed.";
-    return pool === undefined
-      ? `The configuration no longer has the pool ${id}: ${stops}`
+    if (pool === undefined) {
+      return `The configuration no longer has the pool ${id}: ${stops}`;
+    }
+    return pool.kind === "observed"
+      ? `${nameOf("pool", id)} is an observed pool, which speaks no protocol: ${stops}`
       : `${nameOf("pool", id)} does not speak ${clientName}'s protocol any more: ${stops}`;
   };
 

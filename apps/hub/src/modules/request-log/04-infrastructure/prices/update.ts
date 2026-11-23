@@ -91,6 +91,7 @@ const Curated = Schema.Struct({
 
 const providers: Readonly<Record<string, string>> = {
   anthropic: "anthropic",
+  google: "google",
   openai: "openai",
   "opencode-go": "opencode-go",
   zai: "zai",

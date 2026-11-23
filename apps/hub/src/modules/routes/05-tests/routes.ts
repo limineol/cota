@@ -76,12 +76,25 @@ export const poolOf = (
         ownPrices: {},
       };
 
-/** A configuration that has some of `p1` to `p4`, each of any protocol, so that some pools are gone and some of another protocol. */
+const observedOf = (id: PoolId): Pool.Pool => ({
+  kind: "observed",
+  id,
+  provider: "provider",
+  prices: Option.none(),
+  ownPrices: {},
+});
+
+/** A configuration that has some of `p1` to `p4`, each of any protocol or observed, so that some pools are gone and some of another protocol or none. */
 export const pools = Arbitrary.array(
   Arbitrary.all({
     present: Arbitrary.schema(Schema.Boolean),
     protocol: Arbitrary.schema(
-      Schema.Literals(["anthropic-messages", "chatgpt-codex", "openai-chat"]),
+      Schema.Literals([
+        "anthropic-messages",
+        "chatgpt-codex",
+        "openai-chat",
+        "observed",
+      ]),
     ),
     keyed: Arbitrary.schema(Schema.Boolean),
   }),
@@ -92,7 +105,14 @@ export const pools = Arbitrary.array(
       choices.flatMap(({ present, protocol, keyed }, index) => {
         const id = poolIds[index];
         return present && id !== undefined
-          ? [[id, poolOf(id, protocol, keyed)] as const]
+          ? [
+              [
+                id,
+                protocol === "observed"
+                  ? observedOf(id)
+                  : poolOf(id, protocol, keyed),
+              ] as const,
+            ]
           : [];
       }),
     ),

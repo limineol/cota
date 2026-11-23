@@ -2,8 +2,8 @@
 status: active
 scope: apps/hub
 owner: limineol
-last_verified: 2026-11-19
-review_by: 2027-02-19
+last_verified: 2026-11-23
+review_by: 2027-02-23
 supersedes: []
 code:
   - apps/hub/src/modules/request-log/02-application
@@ -11,6 +11,7 @@ code:
   - apps/hub/src/modules/request-log/03-domain/traffic.ts
   - apps/hub/src/modules/request-log/03-domain/stored-protocol.ts
   - apps/hub/src/shared/03-domain/conversation.ts
+  - apps/hub/src/shared/03-domain/request.entity.ts
   - apps/hub/src/modules/request-log/04-infrastructure/persistence
 ---
 
@@ -20,7 +21,7 @@ The request log is the record of every request the hub forwarded and of every co
 
 ## A request
 
-The relay gives each **request** to the request log's `RecordRequest` command once, when it is finished (`docs/specs/relay/spec.md`). The ClickHouse repository writes it as a row of `requests` and, when it carried a conversation, its items. The tables below are that repository's (`04-infrastructure/persistence/clickhouse/schema.ts`); the module's command and query know only the repository port (see The repository).
+The relay gives each **request** to the request log's `RecordRequest` command once, when it is finished (`docs/specs/relay/spec.md`). In the hub a request is the `Request` entity (`shared/03-domain/request.entity.ts`), whose fields every request has sit beside its **origin**: `forwarded`, with what only a hub in the path can know (the protocol, the hub key that admitted it, the time to the first byte, the session's source, the user agent, a divert, a refusal's reset, the purpose, the served model, the provider's status, the service tier, the quota headers, the kept headers, the error body and the bytes), or `reported`, with its record form and the hub key that reported it (ADR-0029, `docs/specs/reported-requests/spec.md`). `RecordRequest` takes a forwarded request only. Its columns are the request's fields with its origin's beside them, each in the column of its name (`StoredItems.storedOf`, `03-domain/stored-items.ts`). The ClickHouse repository writes it as a row of `requests` and, when it carried a conversation, its items. The tables below are that repository's (`04-infrastructure/persistence/clickhouse/schema.ts`); the module's command and query know only the repository port (see The repository).
 
 ### `requests`
 
@@ -35,7 +36,7 @@ One row per request. Text columns are empty, not null, when there is nothing to 
 | `session` | `String` | The client's session id, or `request:<id>` when it sent none. |
 | `session_source` | `LowCardinality(String)` | Where the session id was read from (a header's name, or `body`); empty when the hub made the key. |
 | `machine`, `project` | `LowCardinality(String)` | The tags. |
-| `client` | `LowCardinality(String)` | The `x-cota-client` tag, else read from the user agent: `claude-code`, `codex`, `opencode`, `pi`, else the agent's first product name in lower case, else `unknown`. |
+| `client` | `LowCardinality(String)` | The `x-cota-client` tag, else read from the user agent: `claude-code`, `codex`, `opencode`, `pi`, else the agent's first product name in lower case, else `unknown`. A forwarded request never claims a reported client: a tag naming one is passed over, and a user agent naming one gives `unknown` (`docs/specs/relay/spec.md`, R7). |
 | `client_version` | `LowCardinality(String)` | The version in the user agent's first product. |
 | `user_agent` | `String` | As sent. |
 | `hub_key` | `LowCardinality(String)` | The name of the hub key that admitted the request. |

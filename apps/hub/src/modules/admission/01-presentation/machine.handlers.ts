@@ -26,7 +26,7 @@ const machineOf = (machine: Machine): typeof MachineApi.Machine.Type => ({
   pools: machine.pools.map((pool) => ({
     id: pool.id,
     kind: pool.kind,
-    protocol: pool.protocol,
+    protocol: Option.getOrNull(pool.protocol),
     provider: pool.provider,
     displayName: Option.getOrNull(pool.displayName),
     models: pool.models.map((model) => ({
@@ -43,6 +43,11 @@ const machineOf = (machine: Machine): typeof MachineApi.Machine.Type => ({
         })),
       },
     })),
+  })),
+  observedPools: machine.observedPools.map((pool) => ({
+    id: pool.id,
+    provider: pool.provider,
+    displayName: Option.getOrNull(pool.displayName),
   })),
 });
 

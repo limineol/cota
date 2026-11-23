@@ -238,7 +238,21 @@ const spare = {
   },
 } as const;
 
+/** An observed pool: the hub forwards nothing for it, so it has no protocol, windows, reading or quota login. */
+const gemini = {
+  id: "gemini",
+  kind: "observed",
+  protocol: null,
+  provider: "google",
+  plan: null,
+  windows: [],
+  observedAt: null,
+  reading: null,
+  quotaLogin: null,
+} as const;
+
 type PoolShape =
+  | typeof gemini
   | typeof personal
   | typeof work
   | typeof codex
@@ -262,6 +276,12 @@ export const eightPools: ReadonlyArray<PoolShape> = [
 export const threePools: ReadonlyArray<PoolShape> = [personal, work, local];
 
 export const atTheLimit: ReadonlyArray<PoolShape> = [work, codex];
+
+export const withAnObservedPool: ReadonlyArray<PoolShape> = [
+  gemini,
+  personal,
+  work,
+];
 
 export const poolsAnswer = (pools: ReadonlyArray<PoolShape>) =>
   answer("pools", "list", { pools: [...pools] });

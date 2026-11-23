@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { DateTime, Option } from "effect";
+import * as StoredItems from "#modules/request-log/03-domain/stored-items.ts";
 import { LoginFingerprint, PoolId } from "#shared/03-domain/ids.ts";
 import * as Request from "#shared/03-domain/request.entity.ts";
 import * as Harness from "#shared/05-tests/harness.ts";
@@ -61,7 +62,7 @@ describe("the requests row", () => {
 
     expect(
       RequestMapper.requestRowOf({
-        request,
+        request: StoredItems.storedOf(request),
         cost: Option.some(1_500_000_000_001n),
       }),
     ).toEqual({
@@ -116,7 +117,7 @@ describe("the requests row", () => {
 
   it("writes a request without usage with zero tokens, no usage and no cost, and what it lacks as empty or null", () => {
     const row = RequestMapper.requestRowOf({
-      request: Harness.requestOf({ id }),
+      request: StoredItems.storedOf(Harness.requestOf({ id })),
       cost: Option.none(),
     });
     expect([

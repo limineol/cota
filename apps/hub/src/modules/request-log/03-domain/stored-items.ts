@@ -18,17 +18,22 @@ export interface RequestItems {
 }
 
 /**
- * A request as the request log keeps it, read back or imported: its items are
- * in the protocol or the source form it names, and an imported one was
- * admitted by no hub key.
+ * A request as the request log keeps it, its columns, read back or imported:
+ * its items are in the protocol or the source form it names, and an imported
+ * one was admitted by no hub key.
  */
-export type StoredRequest = Omit<
-  Request.Request,
-  "conversation" | "protocol" | "hubKey"
-> & {
-  readonly protocol: StoredProtocol;
-  readonly hubKey: HubKeyName | "";
-};
+export type StoredRequest = Omit<Request.Request, "conversation" | "origin"> &
+  Omit<Request.Forwarded, "_tag" | "protocol" | "hubKey"> & {
+    readonly protocol: StoredProtocol;
+    readonly hubKey: HubKeyName | "";
+  };
+
+/** A forwarded request's columns: its origin's fields beside the rest, without its conversation. */
+export const storedOf = ({
+  conversation: _,
+  origin: { _tag, ...forwarded },
+  ...request
+}: Request.ForwardedRequest): StoredRequest => ({ ...request, ...forwarded });
 
 export interface StoredItem extends Conversation.Item {
   readonly session: string;
@@ -64,20 +69,18 @@ const wellFormedItem = (item: Conversation.Item): Conversation.Item => ({
  * becomes U+FFFD, except in its items' content, layout, overlay and params,
  * JSON in which a lone surrogate is its escape, so that the body comes back.
  */
-export const wellFormed = (request: Request.Request): Request.Request => ({
+export const wellFormed = (
+  request: Request.ForwardedRequest,
+): Request.ForwardedRequest => ({
   ...request,
   session: request.session.toWellFormed(),
-  sessionSource: request.sessionSource.toWellFormed(),
   machine: request.machine.toWellFormed(),
   project: request.project.toWellFormed(),
   client: request.client.toWellFormed(),
   clientVersion: request.clientVersion.toWellFormed(),
-  userAgent: request.userAgent.toWellFormed(),
   provider: request.provider.toWellFormed(),
   operation: request.operation.toWellFormed(),
-  purpose: request.purpose.toWellFormed(),
   model: request.model.toWellFormed(),
-  servedModel: request.servedModel.toWellFormed(),
   errorType: request.errorType.toWellFormed(),
   errorMessage: request.errorMessage.toWellFormed(),
   stopReason: request.stopReason.toWellFormed(),
@@ -85,10 +88,7 @@ export const wellFormed = (request: Request.Request): Request.Request => ({
     ...usage,
     reported: usage.reported.toWellFormed(),
   })),
-  serviceTier: request.serviceTier.toWellFormed(),
   providerRequestId: request.providerRequestId.toWellFormed(),
-  rateLimits: wellFormedTexts(request.rateLimits),
-  clientHeaders: wellFormedTexts(request.clientHeaders),
   conversation: Option.map(request.conversation, (conversation) => ({
     ...conversation,
     system: conversation.system.map(wellFormedItem),
@@ -96,7 +96,17 @@ export const wellFormed = (request: Request.Request): Request.Request => ({
     input: conversation.input.map(wellFormedItem),
     output: conversation.output.map(wellFormedItem),
   })),
-  errorBody: request.errorBody.toWellFormed(),
+  origin: {
+    ...request.origin,
+    sessionSource: request.origin.sessionSource.toWellFormed(),
+    userAgent: request.origin.userAgent.toWellFormed(),
+    purpose: request.origin.purpose.toWellFormed(),
+    servedModel: request.origin.servedModel.toWellFormed(),
+    serviceTier: request.origin.serviceTier.toWellFormed(),
+    rateLimits: wellFormedTexts(request.origin.rateLimits),
+    clientHeaders: wellFormedTexts(request.origin.clientHeaders),
+    errorBody: request.origin.errorBody.toWellFormed(),
+  },
 });
 
 /** A request without a conversation has no items. */
@@ -124,7 +134,7 @@ const parts = ["system", "tools", "input", "output"] as const;
  */
 export const newItems = (
   known: ReadonlySet<Conversation.Digest>,
-  request: Request.Request,
+  request: Request.ForwardedRequest,
 ): ReadonlyArray<StoredItem> => {
   if (Option.isNone(request.conversation)) return [];
   const conversation = request.conversation.value;
@@ -137,7 +147,7 @@ export const newItems = (
       stored.push({
         ...item,
         session: request.session,
-        protocol: request.protocol,
+        protocol: request.origin.protocol,
         firstSeen: request.startedAt,
         requestId: request.id,
         part,

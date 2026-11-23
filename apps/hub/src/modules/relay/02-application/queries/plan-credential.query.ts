@@ -18,7 +18,7 @@ export class PlanCredential extends Context.Service<
      * pool's kept login while `Fallback` diverts the login.
      */
     readonly execute: (
-      pool: Pool.Pool,
+      pool: Pool.ForwardedPool,
       protocol: Protocol.Protocol,
       login: Option.Option<LoginFingerprint>,
       model: Option.Option<ModelId>,
@@ -27,7 +27,7 @@ export class PlanCredential extends Context.Service<
 >()("@cota/hub/relay/PlanCredential") {}
 
 export const layer = (
-  pools: HashMap.HashMap<PoolId, Pool.Pool>,
+  pools: HashMap.HashMap<PoolId, Pool.ForwardedPool>,
 ): Layer.Layer<PlanCredential, never, Fallback.Fallback> =>
   Layer.effect(
     PlanCredential,
@@ -55,7 +55,7 @@ export const layer = (
 
       return PlanCredential.of({
         execute: Effect.fn("PlanCredential.execute")(function* (
-          pool: Pool.Pool,
+          pool: Pool.ForwardedPool,
           protocol: Protocol.Protocol,
           login: Option.Option<LoginFingerprint>,
           model: Option.Option<ModelId>,

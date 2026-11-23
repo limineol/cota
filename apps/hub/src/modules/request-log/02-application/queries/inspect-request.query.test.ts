@@ -20,7 +20,7 @@ const start = Date.UTC(2026, 10, 1);
 
 const requestAt = (
   second: number,
-  fields: Partial<PricedRequest["request"]> = {},
+  fields: Partial<Harness.RequestFields> = {},
 ): PricedRequest => ({
   request: Harness.requestOf({
     session: "long",

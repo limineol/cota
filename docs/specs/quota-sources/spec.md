@@ -2,8 +2,8 @@
 status: active
 scope: apps/hub
 owner: limineol
-last_verified: 2026-11-14
-review_by: 2027-02-13
+last_verified: 2026-11-23
+review_by: 2027-02-23
 supersedes: []
 code:
   - apps/hub/src/modules/quota/module.ts
@@ -41,7 +41,7 @@ A window is **current** at a time `now` when its reset is after `now`, or, when 
 
 ## The sources
 
-A pool's windows come from two sources: its quota reading and its quota headers. A window is answered only when one of them reports it: a pool whose provider reports no 5-hour window shows none.
+A pool's windows come from two sources: its quota reading and its quota headers. A window is answered only when one of them reports it: a pool whose provider reports no 5-hour window shows none. An observed pool has neither: no quota reader, and no forwarded answer whose headers could hold one, so it has no windows and no plan, and `ReadQuotaHeaders` is asked nothing for it (ADR-0029).
 
 ### A quota reading
 
@@ -110,7 +110,7 @@ It is a method of `RequestLogReader`, answered in plain code by the in-memory re
 | W6 | **The API agrees with the calculation.** Every window's standing in an answer of `GET /api/pools` is what `standing` gives for that window at the answer's time. | property |
 | W7 | **Every pool once.** `GET /api/pools` answers each pool of the configuration exactly once, in order of id, whatever the request log, the readings and the quota logins hold. | contract |
 
-W1 to W6 run the query (`read-pools.laws.test.ts`) over a pool of each kind and protocol and generated request logs whose requests carry generated quota headers (complete, partial, malformed, empty, as recorded: Anthropic's without their 5-hour headers and Codex's with no secondary window; refusals and failures among them, with and without a login), at generated instants of the test clock on a half-hour grid around the logs' end, so that resets and observations often meet the clock, on the in-memory request log reader; each law is checked against the spec's table and rules written out again in the test, never against the code's. The query's pools there have no quota reader, so W1, W2 and W4 also run the rules (`sources.laws.test.ts`) over generated quota readings and quota headers that often tie, with fixed examples of a tie and of a window that resets at the answer's time or was observed exactly its length before it. W2 is held by the window's type too (its percentage is a required field). W6 compares each window's standing in the query's answer, which the endpoint translates field by field, with `standing` run on the window at the same instant; a contract test holds that translation over literal answers in every pace. W7 is a contract test over the harness's configuration (subscription and keyed pools of every protocol) with generated request logs, pools outside the configuration among them, its Z.ai pool's usage endpoint answering a generated reading, each failure, or never, and its subscription pools each given no quota login, a kept one read from the constructed fixtures, or one whose refresh is refused; only its keyed pools answer no quota login. The read of the quota headers is held to the in-memory reader by H9 in the ClickHouse tier.
+W1 to W6 run the query (`read-pools.laws.test.ts`) over a pool of each kind and protocol and generated request logs whose requests carry generated quota headers (complete, partial, malformed, empty, as recorded: Anthropic's without their 5-hour headers and Codex's with no secondary window; refusals and failures among them, with and without a login), at generated instants of the test clock on a half-hour grid around the logs' end, so that resets and observations often meet the clock, on the in-memory request log reader; each law is checked against the spec's table and rules written out again in the test, never against the code's. The query's pools there have no quota reader, so W1, W2 and W4 also run the rules (`sources.laws.test.ts`) over generated quota readings and quota headers that often tie, with fixed examples of a tie and of a window that resets at the answer's time or was observed exactly its length before it. W2 is held by the window's type too (its percentage is a required field). W6 compares each window's standing in the query's answer, which the endpoint translates field by field, with `standing` run on the window at the same instant; a contract test holds that translation over literal answers in every pace. W7 is a contract test over the harness's configuration (subscription and keyed pools of every protocol, and an observed pool) with generated request logs, pools outside the configuration among them, its Z.ai pool's usage endpoint answering a generated reading, each failure, or never, and its subscription pools each given no quota login, a kept one read from the constructed fixtures, or one whose refresh is refused; only its keyed pools and its observed pool answer no quota login. The read of the quota headers is held to the in-memory reader by H9 in the ClickHouse tier.
 
 ## Not built, on purpose
 

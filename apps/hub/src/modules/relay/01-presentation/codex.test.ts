@@ -1,5 +1,6 @@
 import { expect, layer } from "@effect/vitest";
 import { Clock, DateTime, Effect, Option } from "effect";
+import * as StoredItems from "#modules/request-log/03-domain/stored-items.ts";
 import { Recorded } from "#modules/request-log/05-tests/fakes/record-request.fake.ts";
 import * as FakeProvider from "#shared/05-tests/fake-provider.ts";
 import * as Harness from "#shared/05-tests/harness.ts";
@@ -94,11 +95,11 @@ layer(Harness.layer())("ChatGPT pools", (it) => {
         yield* Harness.textOf(response);
         const request = yield* nextRequest;
         expect([
-          request.stream,
+          request.origin.stream,
           request.outcome,
           Option.isSome(request.usage),
           Option.map(request.conversation, ({ output }) => output.length),
-          request.readingComplete,
+          request.origin.readingComplete,
         ]).toEqual([true, "ok", true, Option.some(1), true]);
         yield* nothingMoreRecorded;
       }),
@@ -135,7 +136,7 @@ layer(Harness.layer())("ChatGPT pools", (it) => {
           request.outcome,
           request.errorType,
           request.stopReason,
-          request.readingComplete,
+          request.origin.readingComplete,
           Option.map(request.usage, ({ tokens }) => tokens.output),
           Option.map(request.conversation, ({ output }) => output.length),
         ]).toEqual([
@@ -183,7 +184,7 @@ layer(Harness.layer())("ChatGPT pools", (it) => {
           ["content-encoding", "zstd"],
         ]);
         const request = yield* nextRequest;
-        expect(request).toMatchObject({
+        expect(StoredItems.storedOf(request)).toMatchObject({
           protocol: "chatgpt-codex",
           operation: "responses",
           model: "gpt-5.5-codex",
@@ -250,7 +251,7 @@ layer(Harness.layer())("ChatGPT pools", (it) => {
           refusal.chunks?.join(""),
         ]);
         const request = yield* nextRequest;
-        expect(request).toMatchObject({
+        expect(StoredItems.storedOf(request)).toMatchObject({
           pool: "codex",
           outcome: "refused",
           refusalReset: Option.some(reset),

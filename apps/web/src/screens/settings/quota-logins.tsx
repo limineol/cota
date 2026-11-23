@@ -125,8 +125,8 @@ function QuotaLoginsList({ owner }: { readonly owner: boolean }) {
           <EmptyTitle>No pool of this hub takes a quota login.</EmptyTitle>
           <EmptyDescription>
             Only a Claude or ChatGPT subscription pool does. This hub's pools
-            are keyed pools, or speak OpenAI Chat Completions, and their windows
-            come from a held key or the quota headers.
+            are keyed pools, whose windows come from a held key or the quota
+            headers, or observed pools, which have no quota windows.
           </EmptyDescription>
         </Empty>
       );
