@@ -1,5 +1,8 @@
 import { Option, Schema } from "effect";
-import type { StoredProtocol } from "#modules/request-log/03-domain/stored-protocol.ts";
+import {
+  isRecordForm,
+  type StoredProtocol,
+} from "#modules/request-log/03-domain/stored-protocol.ts";
 import { fieldOf } from "#shared/03-domain/conversation.ts";
 import {
   byStart,
@@ -62,9 +65,10 @@ const byPurpose: Partial<
   "chatgpt-codex": { turn: "main" },
 };
 
-/** The role rules 1 to 4 give a request on its own, the client's word; none when only its session can say. */
+/** The role rules 1 to 5 give a request on its own, the record's or the client's word; none when only its session can say. */
 const ownRoleOf = (request: SessionRequest): Option.Option<RequestRole> => {
   if (Option.isNone(request.conversation)) return Option.some("utility");
+  if (isRecordForm(request.protocol)) return Option.some("main");
   const shape = request.conversation.value;
   if (asksForTitle(request.protocol, shape)) return Option.some("title");
   const header = subagentHeader[request.protocol];

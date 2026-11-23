@@ -97,7 +97,12 @@ const promptSize = pick([
 
 const generated = Arbitrary.all({
   minute: int(0, 12),
-  protocol: pick(["anthropic-messages", "chatgpt-codex", "openai-chat"]),
+  protocol: pick([
+    "anthropic-messages",
+    "chatgpt-codex",
+    "openai-chat",
+    "antigravity-steps",
+  ]),
   purpose: pick([
     "",
     "",

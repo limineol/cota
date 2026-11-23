@@ -181,8 +181,9 @@ Each conversation item of a reported Antigravity request is one **step** of its 
   "step_payload": [[2, 2, "Read the file"], [3, 0, "1"]] }
 ```
 
-- `idx`, `step_type` and `status` are the step's columns as the table has them (a number, or a text).
-- `metadata` and `step_payload` are the step's protocol buffers, **written out field by field without a schema**: a list of `[field number, wire type, value]`, in the order of the bytes, for wire types 0 (a varint, its value its decimal digits as a string), 1 and 5 (64 and 32 bits, their value their bytes in hex, as a string), and 2 (length-delimited: its bytes as a string when they are UTF-8, else `{ "base64": "<their bytes>" }`). Nothing is read into a field's bytes, so nothing is guessed and the bytes can be written back exactly. A step whose buffer is not one by these rules, or uses the deprecated groups, is not reported (`docs/specs/request-reporter/spec.md`).
+- `idx` is the step's index, a whole number from 0, which orders a conversation's steps; `step_type` and `status` are the step's columns as the table has them (a number, or a text).
+- `metadata` and `step_payload` are the step's protocol buffers, **written out field by field without a schema**: a list of `[field number, wire type, value]`, in the order of the bytes, the field number from 1 to 2^29 − 1, for wire types 0 (a varint, its value its decimal digits as a string, at most 2^64 − 1), 1 and 5 (64 and 32 bits, their value their bytes in lowercase hex, as a string), and 2 (length-delimited: its bytes as a string when they are UTF-8, else `{ "base64": "<their bytes>" }`, standard base64 with its padding). Nothing is read into a field's bytes, so nothing is guessed and the bytes can be written back exactly. A step whose buffer is not one by these rules, or uses the deprecated groups, is not reported (`docs/specs/request-reporter/spec.md`).
+- A step has these five keys and no other, and `{ "base64" }` that one: an item with another key, or a value not of these shapes, is not of the form (`AntigravitySteps.Step`, `03-domain/antigravity-steps.ts`).
 - Its `type` and `role` columns in `items` are empty: the item has neither as a string field.
 
 What the request log reads of the form, as it reads a source form's (`docs/specs/sessions/spec.md`, Source forms), from a **table of fields** read by trial (ADR-0029, fact 2) that the renderer keeps, and which can change without changing a stored item:
@@ -192,6 +193,19 @@ What the request log reads of the form, as it reads a source form's (`docs/specs
 - **Its request role**: a rule before the title rule, **a record's model call**: a request of a record form is `main`, since a record holds one conversation and the reader reports no sub-agent's. Its segments are cut by the size rule, which a compaction meets (ADR-0029, fact 4).
 - **Its first prompt**: the text of the last user's message step in the first main request's `input`.
 - **Its body**: `GET /api/requests/{id}/body` rebuilds `{ "steps": [ … ] }`, every step through the call's input as the client recorded it; the inspector says, as for an imported request, that it is not what the client sent.
+
+### The table of fields
+
+The table is `table` in `apps/hub/src/modules/request-log/03-domain/antigravity-steps.ts`, the one place that names a field: what the hub reads of a step, by its `step_type`. Each entry was read by trial on one throwaway conversation (ADR-0029, Context), so each is **seen in one conversation** and no more; 6d confirms it on another and may change it, and a change to it changes no stored item. A field it names is read as protocol buffers read a singular field, its last occurrence; a tool call's field 7 is repeated.
+
+| `step_type` | Is | Read |
+| --- | --- | --- |
+| 14 | A user's message | `step_payload` 19, a message: its 2, the text |
+| 15 | The model's output | `step_payload` 20, a message: its 1, the text; its 3, the thoughts; each 7, a tool call |
+| 132 | A tool's run, seen only for `read_file` | `metadata` 4, the tool call; `step_payload` 140, a message whose 2 is a message whose 1 is the result's text |
+| 23 | A compaction | `step_payload` 30, a message: its 5, the summary |
+
+A tool call is a message: its 1 the call's id, 2 the tool's name, 3 its arguments as JSON text. Seen and not read by the hub, for the reader to confirm: every step's `step_payload` repeats its `step_type` (1), its `status` (4) and its `metadata` (5); in `metadata`, 1 is when the step was made (seconds and nanoseconds), 6, 7, 8 and 32 other times of a model's step, 9 a model call's usage (read as 2 input not from cache, 5 input from cache, 3 output, and 9 and 10 output's two parts, whose sum was 3; 1 held the same number on every step, and is read as the model's, not as tokens), and 20 the conversation's ids (1 its trajectory, 2 the step's index, 4 the conversation's id, its database's name); `status` was 3 on every step. The usage is the request reporter's to read: a report gives each call's usage in the request log's classes.
 
 ## Observed pools
 

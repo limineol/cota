@@ -4,10 +4,11 @@ import * as Search from "#modules/request-log/03-domain/search.ts";
 import type { StoredProtocol } from "#modules/request-log/03-domain/stored-protocol.ts";
 import * as Transcript from "#modules/request-log/03-domain/transcript.ts";
 import * as AnthropicMessages from "./anthropic-messages.ts";
+import * as AntigravitySteps from "./antigravity-steps.ts";
 import * as ChatGptCodex from "./chatgpt-codex.ts";
 import * as OpenAiChat from "./openai-chat.ts";
 
-/** Every shipped protocol's renderer. */
+/** The renderer of every protocol, source form and record form. */
 export const renderers: Readonly<Record<StoredProtocol, Transcript.Renderer>> =
   {
     "anthropic-messages": AnthropicMessages.renderer,
@@ -15,6 +16,7 @@ export const renderers: Readonly<Record<StoredProtocol, Transcript.Renderer>> =
     "openai-chat": OpenAiChat.renderer,
     "bifrost-responses": ChatGptCodex.renderer,
     "bifrost-chat": OpenAiChat.renderer,
+    "antigravity-steps": AntigravitySteps.renderer,
   };
 
 export const layer: Layer.Layer<Transcripts> = Layer.succeed(

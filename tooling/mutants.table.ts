@@ -390,7 +390,7 @@ const t1 =
   "T1: every request of a session has exactly one request role, and it depends on that session's requests only";
 const t1LatestFirst = `${t1}, for two equal threads given latest first`;
 const t2 =
-  "T2: a request that rule 2, 3 or 4 decides has that role whatever the other requests of its session are";
+  "T2: a request that rule 2, 3, 4 or 5 decides has that role whatever the other requests of its session are";
 const t5 =
   "T5: a segment begins at a main request other than the first exactly when the size rule holds for it";
 const title = `${requestLog}/03-domain/title.ts`;
@@ -3217,7 +3217,7 @@ export const layer = (policy: Policy): Layer.Layer<Fallback> =>
     replace:
       "    Option.isSome(Option.flatMap(request.conversation, threadKeyOf));",
     killedBy:
-      "T3: the requests that rule 5 makes main all have the same thread key",
+      "T3: the requests that rule 6 makes main all have the same thread key",
   },
   {
     name: "the last segment is dropped",

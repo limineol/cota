@@ -19,9 +19,10 @@ const at = (value: Schema.Json | undefined, ...path: ReadonlyArray<string>) =>
     value,
   );
 
-/** The role rules 2, 3 and 4 of the sessions spec give a request with a conversation, read from the spec's text. */
+/** The role rules 2 to 5 of the sessions spec give a request with a conversation, read from the spec's text. */
 const clientsWordOf = (request: SessionRequest): Option.Option<RequestRole> => {
   if (Option.isNone(request.conversation)) return Option.none();
+  if (request.protocol === "antigravity-steps") return Option.some("main");
   const { params } = request.conversation.value;
   const format = at(params, "output_config", "format");
   if (
@@ -104,7 +105,7 @@ describe("request roles", () => {
   });
 
   it.effect.prop(
-    "T2: a request that rule 2, 3 or 4 decides has that role whatever the other requests of its session are",
+    "T2: a request that rule 2, 3, 4 or 5 decides has that role whatever the other requests of its session are",
     {
       session: Generated.sessionRequests(15),
       others: Generated.sessionRequests(15, 100),
@@ -131,7 +132,7 @@ describe("request roles", () => {
   );
 
   it.effect.prop(
-    "T3: the requests that rule 5 makes main all have the same thread key",
+    "T3: the requests that rule 6 makes main all have the same thread key",
     { session: Generated.sessionRequests(25) },
     ({ session }) =>
       Effect.sync(() => {

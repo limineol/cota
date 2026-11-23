@@ -8111,7 +8111,8 @@
               "chatgpt-codex",
               "openai-chat",
               "bifrost-responses",
-              "bifrost-chat"
+              "bifrost-chat",
+              "antigravity-steps"
             ]
           },
           "operation": {
@@ -8377,7 +8378,8 @@
               "chatgpt-codex",
               "openai-chat",
               "bifrost-responses",
-              "bifrost-chat"
+              "bifrost-chat",
+              "antigravity-steps"
             ]
           },
           "entries": {

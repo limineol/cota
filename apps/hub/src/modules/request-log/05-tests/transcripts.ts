@@ -4,6 +4,7 @@ import type { StoredProtocol } from "#modules/request-log/03-domain/stored-proto
 import type * as Transcript from "#modules/request-log/03-domain/transcript.ts";
 import * as Conversation from "#shared/03-domain/conversation.ts";
 import type { ProtocolName } from "#shared/03-domain/protocol-name.ts";
+import * as Steps from "./antigravity-steps.ts";
 import { pick } from "./sessions.ts";
 
 const int = (minimum: number, maximum: number) =>
@@ -225,6 +226,43 @@ const templates: Readonly<Record<StoredProtocol, ReadonlyArray<Template>>> = {
     () => ({ type: "configuration_update", reasoning: { effort: "low" } }),
   ],
   "bifrost-chat": wireTemplates["openai-chat"],
+  "antigravity-steps": [
+    (t) => Steps.userMessage(0, at(t, 0)),
+    (t) =>
+      Steps.modelOutput(1, {
+        text: at(t, 0),
+        thoughts: at(t, 1),
+        calls: [{ id: "call_1", name: "read_file", arguments: at(t, 2) }],
+      }),
+    (t) =>
+      Steps.modelOutput(2, {
+        calls: [
+          { id: "call_2", name: "read_file", arguments: at(t, 0) },
+          { id: "call_3", name: "read_file", arguments: at(t, 1) },
+        ],
+      }),
+    () => Steps.modelOutput(3, {}),
+    (t) =>
+      Steps.toolResult(
+        4,
+        { id: "call_1", name: "read_file", arguments: "{}" },
+        at(t, 0),
+      ),
+    (t) => Steps.compaction(5, at(t, 0)),
+    (t) => Steps.step(6, 99, [{ number: 50, text: at(t, 0) }]),
+    () => Steps.step(7, 14, []),
+    (t) =>
+      Steps.step(8, 15, [
+        { number: 20, bytes: new Uint8Array([0x0a, 0xff, 0x01]) },
+        { number: 21, text: at(t, 0) },
+      ]),
+    (t) =>
+      Steps.step(9, "14", [
+        { number: 19, message: [{ number: 2, text: at(t, 0) }] },
+      ]),
+    (t) => ({ idx: 10, step_type: 14, status: 3, note: at(t, 0) }),
+    () => null,
+  ],
 };
 
 const storedOf = (item: Schema.Json): StoredContent => {
@@ -264,6 +302,7 @@ export const requestItems = pick([
   "openai-chat",
   "bifrost-responses",
   "bifrost-chat",
+  "antigravity-steps",
 ]).pipe(
   Arbitrary.flatMap((protocol) =>
     Arbitrary.all({

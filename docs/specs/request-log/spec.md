@@ -46,7 +46,7 @@ One row per request. Text columns are empty, not null, when there is nothing to 
 | `login_fingerprint` | `String` | The fingerprint of the login the client sent. Empty for a keyed pool and for a request without a login. |
 | `refusal_reset` | `Nullable(DateTime64(3, 'UTC'))` | For a refused request, the reset the provider gave. |
 | `provider` | `LowCardinality(String)` | The pool's provider, from the configuration. |
-| `protocol` | `LowCardinality(String)` | `anthropic-messages`, `chatgpt-codex` or `openai-chat`, the protocol the hub forwarded it in; for an imported request, its source form, `bifrost-responses` or `bifrost-chat`, which no pool speaks (`docs/specs/sessions/spec.md`, Source forms). Says how to read the items. |
+| `protocol` | `LowCardinality(String)` | `anthropic-messages`, `chatgpt-codex` or `openai-chat`, the protocol the hub forwarded it in; for an imported request, its source form, `bifrost-responses` or `bifrost-chat`, and for a reported request, its record form, `antigravity-steps`, which no pool speaks (`docs/specs/sessions/spec.md`, Source forms and Record forms). Says how to read the items, and which way the request came in: a protocol is a forwarded request's, a source form an imported one's, a record form a reported one's (`StoredProtocol`, `03-domain/stored-protocol.ts`). |
 | `operation` | `LowCardinality(String)` | What was asked, in the protocol's words; `other` when the protocol does not know the path. |
 | `purpose` | `LowCardinality(String)` | What the client itself says the request is for, where it says so. Never guessed. |
 | `model` | `LowCardinality(String)` | The model asked for. |
