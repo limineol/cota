@@ -81,7 +81,7 @@ A run takes the lock `requests.lock` (in the state's directory) without waiting:
 
 Then it writes `requests.json`, and a run with a problem writes `requests.error` (`2026-11-22T09:12:03.120Z <problem>; <problem>`), prints each on stderr and exits 1; a run without one removes it. A folder that does not exist, or a pool the hub refuses, is a problem of the run, and the other folders are still read. On standard output it says how many calls the hub stored and found held, or that there was nothing new. A machine with no hub key sends nothing, which is a problem.
 
-On macOS every run sends through `/usr/bin/curl` (ADR-0022): curl's configuration, the hub key among it, on its standard input, and the body in a file of its own, 0600, in the state's directory, read by `--data-binary @<file>` and removed after the answer; elsewhere `cota` sends it itself. Neither the key nor an item is ever in an argument.
+On macOS every run sends through `/usr/bin/curl` (ADR-0022): curl's configuration, the hub key among it, on its standard input, and the body in a file of its own, 0600, in the state's directory, read by `--data-binary @<file>` and removed after the answer; elsewhere `cota` sends it itself. Neither the key nor an item is ever in an argument. curl is run with `-q` first, so that no `.curlrc` of the user's adds to or changes what it sends and prints. Neither way follows a redirect: an answer of 3xx is a failed send, as any answer the run does not read, and the hub key and the body never go to where it points.
 
 ### The cursor
 

@@ -24,6 +24,11 @@ export const layer: Layer.Layer<RequestReports> = Layer.effect(
               ),
             )
             .pipe(
+              // A redirect is answered as its status, never followed: the
+              // hub key and the body go to the hub and nowhere else.
+              Effect.provideService(FetchHttpClient.RequestInit, {
+                redirect: "manual",
+              }),
               Effect.mapError((error) =>
                 error.reason._tag === "TransportError"
                   ? new HubUnreachable()

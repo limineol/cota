@@ -35,6 +35,7 @@ export const answerOf = (
     );
   }
   if (status === 401) return new HubKeyUnknown();
+  if (status >= 300 && status < 400) return new HubFailed({ status });
   if (!Number.isInteger(status) || status < 100) return new HubFailed({});
   const problem = Option.getOrElse(
     Option.flatMap(jsonOf(body), Schema.decodeUnknownOption(Problem)),

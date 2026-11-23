@@ -49,7 +49,9 @@ export const layer = (curl: string): Layer.Layer<RequestReports> =>
               try {
                 const bodyFile = join(directory, "body.json");
                 await writeFile(bodyFile, body, { mode: 0o600 });
-                const child = Bun.spawn([curl, "--config", "-"], {
+                // -q first: no .curlrc of the user's is read, so that only
+                // this configuration says what curl sends and prints.
+                const child = Bun.spawn([curl, "-q", "--config", "-"], {
                   stdin: new TextEncoder().encode(
                     configurationOf(
                       `${hub}/api/reported-requests`,
