@@ -7,6 +7,7 @@ import * as Schedule from "#03-domain/schedule.ts";
 import * as Shims from "#03-domain/shims.ts";
 import { System } from "#03-domain/system.ts";
 import * as Cota from "#05-tests/cota.ts";
+import * as InMemoryClientRecords from "#05-tests/fakes/in-memory-client-records.ts";
 import * as InMemoryFiles from "#05-tests/fakes/in-memory-files.ts";
 import * as InMemoryScheduler from "#05-tests/fakes/in-memory-scheduler.ts";
 import * as InMemoryUserPath from "#05-tests/fakes/in-memory-user-path.ts";
@@ -32,6 +33,8 @@ const configurations = {
   "plain http": 'hub = "http://cota.internal:8080"\nmachine = "studio"\n',
   "own pools":
     'hub = "http://127.0.0.1:18080"\nmachine = "studio"\n\n[clients.claude-code]\nown_pool = "personal"\n\n[clients.codex]\nown_pool = "zai"\n',
+  reported:
+    'hub = "http://127.0.0.1:18080"\nmachine = "studio"\n\n[[clients.antigravity.reported]]\nfolder = "/data/agy"\npool = "gemini"\n',
 } as const;
 
 const program = "/usr/local/bin/cota";
@@ -48,6 +51,7 @@ const Machine = Schema.Struct({
     "wrong keys",
     "plain http",
     "own pools",
+    "reported",
   ]),
   subscription: Schema.Literals([
     "absent",
@@ -83,6 +87,16 @@ const Machine = Schema.Struct({
   schedule: Schema.Literals(["as given", "otherwise", "absent", "unavailable"]),
   titlesRun: Schema.Literals(["absent", "lately", "long ago", "broken"]),
   titlesError: Schema.Boolean,
+  requestsRun: Schema.Literals([
+    "absent",
+    "lately",
+    "long ago",
+    "broken",
+    "not reported",
+  ]),
+  requestsError: Schema.Boolean,
+  dataFolder: Schema.Boolean,
+  observed: Schema.Boolean,
 });
 type Machine = typeof Machine.Type;
 
@@ -201,6 +215,52 @@ const filesOf = (drawn: Machine): Entries => {
           ],
         ] as const)
       : []),
+    ...(drawn.requestsRun === "absent"
+      ? []
+      : ([
+          [
+            Paths.requestsFile(paths.success),
+            file(
+              drawn.requestsRun === "broken"
+                ? "{"
+                : JSON.stringify({
+                    folders: {
+                      "/data/agy": {
+                        ranAt:
+                          drawn.requestsRun === "long ago"
+                            ? "1969-12-31T23:50:00.000Z"
+                            : "1970-01-01T00:00:00.000Z",
+                        goodAt: null,
+                        through: null,
+                        conversations:
+                          drawn.requestsRun === "not reported"
+                            ? {
+                                c1: {
+                                  step: -1,
+                                  call: null,
+                                  passed: [],
+                                  stamps: null,
+                                  waiting: null,
+                                  notReported: { reason: "schema", step: null },
+                                },
+                              }
+                            : {},
+                      },
+                    },
+                  }),
+            ),
+          ],
+        ] as const)),
+    ...(drawn.requestsError
+      ? ([
+          [
+            Paths.requestsErrorFile(paths.success),
+            file(
+              "1970-01-01T00:00:00.000Z http://127.0.0.1:18080 could not be reached within 120 seconds\n",
+            ),
+          ],
+        ] as const)
+      : []),
     [program, program_("")],
     [shims, { kind: "directory", mode: 0o755 }],
     ...shimFiles,
@@ -290,7 +350,10 @@ describe("doctor laws", () => {
           ]),
           health: drawn.health,
           pools,
+          observedPools: drawn.observed ? ["gemini"] : [],
         });
+        const records = InMemoryClientRecords.make();
+        if (drawn.dataFolder) records.folders.set("/data/agy", new Map());
         const shims = Result.map(
           Paths.pathsOf(drawn.system, variablesOf(drawn)),
           (paths) => paths.shims,
@@ -308,21 +371,29 @@ describe("doctor laws", () => {
             empty: "",
           }[drawn.userPath],
         );
-        const planned = Result.flatMap(
-          Paths.pathsOf(drawn.system, variablesOf(drawn)),
-          (paths) =>
-            Schedule.scheduleOf(
-              drawn.system,
-              variablesOf(drawn),
-              drawn.schedule === "otherwise" ? "/opt/old/cota" : program,
-              paths,
-            ),
-        );
+        const planned = (reporter: Schedule.Reporter) =>
+          Result.flatMap(
+            Paths.pathsOf(drawn.system, variablesOf(drawn)),
+            (paths) =>
+              Schedule.scheduleOf(
+                reporter,
+                drawn.system,
+                variablesOf(drawn),
+                drawn.schedule === "otherwise" ? "/opt/old/cota" : program,
+                paths,
+              ),
+          );
         const scheduler = InMemoryScheduler.make({
           unavailable: drawn.schedule === "unavailable",
-          ...(drawn.schedule === "absent" || Result.isFailure(planned)
-            ? {}
-            : { installed: planned.success }),
+          installed:
+            drawn.schedule === "absent"
+              ? []
+              : (["titles", "requests"] as const).flatMap((reporter) =>
+                  Result.match(planned(reporter), {
+                    onFailure: () => [],
+                    onSuccess: (each) => [each],
+                  }),
+                ),
         });
         const checks = yield* Effect.flatMap(
           Doctor.Doctor,
@@ -353,6 +424,7 @@ describe("doctor laws", () => {
                   hub.layer,
                   userPath.layer,
                   scheduler.layer,
+                  records.layer,
                   ScriptedLoginShell.make(
                     Object.fromEntries(
                       Client.commands.map((command) => [

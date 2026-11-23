@@ -2,13 +2,24 @@ import { Result } from "effect";
 import { DirectoryUnknown, type Paths } from "./paths.ts";
 import type { System, Variables } from "./system.ts";
 
-/** How often the title reporter runs. */
+/** How often a reporter runs. */
 export const intervalSeconds = 30;
 
-export const launchAgentLabel = "cota.titles";
-export const systemdTimer = "cota-titles.timer";
-export const systemdService = "cota-titles.service";
-export const taskName = "cota titles";
+/** The reporters `cota` schedules, each by the command that runs it: the title reporter and the request reporter. */
+export type Reporter = "titles" | "requests";
+
+const whatOf: Readonly<Record<Reporter, string>> = {
+  titles: "Report session titles to the Cota hub",
+  requests: "Report the model calls of client records to the Cota hub",
+};
+
+/** A reporter's names in each scheduler: `cota.<reporter>`, `cota-<reporter>.timer` and `.service`, and the task `cota <reporter>`. */
+export const namesOf = (reporter: Reporter) => ({
+  launchAgentLabel: `cota.${reporter}`,
+  systemdTimer: `cota-${reporter}.timer`,
+  systemdService: `cota-${reporter}.service`,
+  taskName: `cota ${reporter}`,
+});
 
 /** A file of a schedule's definition, whole. */
 export interface Definition {
@@ -16,16 +27,22 @@ export interface Definition {
   readonly text: string;
 }
 
-/** The title reporter's schedule on a system, as `cota titles schedule` installs it (ADR-0022). */
+/** A reporter's schedule on a system, as `cota titles schedule` and `cota requests schedule` install it (ADR-0022), with the name its scheduler knows it by: the LaunchAgent's label, the systemd timer, or the task. */
 export type Schedule =
-  | { readonly _tag: "LaunchAgent"; readonly plist: Definition }
+  | {
+      readonly _tag: "LaunchAgent";
+      readonly name: string;
+      readonly plist: Definition;
+    }
   | {
       readonly _tag: "Systemd";
+      readonly name: string;
       readonly service: Definition;
       readonly timer: Definition;
     }
   | {
       readonly _tag: "TaskScheduler";
+      readonly name: string;
       /** The task's definition as Task Scheduler takes it, kept in the state's directory to compare with. */
       readonly task: Definition;
     };
@@ -51,9 +68,11 @@ const xml = (text: string) =>
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
 
-const reportArguments = ["titles", "report"] as const;
-
-const plistOf = (program: string, variables: Variables): string => {
+const plistOf = (
+  reporter: Reporter,
+  program: string,
+  variables: Variables,
+): string => {
   const environment = carriedOf(variables);
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
@@ -61,10 +80,10 @@ const plistOf = (program: string, variables: Variables): string => {
     '<plist version="1.0">',
     "<dict>",
     "\t<key>Label</key>",
-    `\t<string>${launchAgentLabel}</string>`,
+    `\t<string>${namesOf(reporter).launchAgentLabel}</string>`,
     "\t<key>ProgramArguments</key>",
     "\t<array>",
-    ...[program, ...reportArguments].map(
+    ...[program, reporter, "report"].map(
       (argument) => `\t\t<string>${xml(argument)}</string>`,
     ),
     "\t</array>",
@@ -99,33 +118,38 @@ const systemdQuoted = (text: string) =>
     .replaceAll("%", "%%")
     .replaceAll("$", "$$$$")}"`;
 
-const serviceOf = (program: string, variables: Variables): string =>
+const serviceOf = (
+  reporter: Reporter,
+  program: string,
+  variables: Variables,
+): string =>
   [
     "[Unit]",
-    "Description=Report session titles to the Cota hub",
+    `Description=${whatOf[reporter]}`,
     "",
     "[Service]",
     "Type=oneshot",
-    `ExecStart=${[program, ...reportArguments].map(systemdQuoted).join(" ")}`,
+    `ExecStart=${[program, reporter, "report"].map(systemdQuoted).join(" ")}`,
     ...carriedOf(variables).map(
       ([name, value]) => `Environment=${systemdQuoted(`${name}=${value}`)}`,
     ),
     "",
   ].join("\n");
 
-const timerText = [
-  "[Unit]",
-  `Description=Report session titles to the Cota hub every ${intervalSeconds} seconds`,
-  "",
-  "[Timer]",
-  `OnActiveSec=${intervalSeconds}s`,
-  `OnUnitActiveSec=${intervalSeconds}s`,
-  "AccuracySec=5s",
-  "",
-  "[Install]",
-  "WantedBy=timers.target",
-  "",
-].join("\n");
+const timerOf = (reporter: Reporter) =>
+  [
+    "[Unit]",
+    `Description=${whatOf[reporter]} every ${intervalSeconds} seconds`,
+    "",
+    "[Timer]",
+    `OnActiveSec=${intervalSeconds}s`,
+    `OnUnitActiveSec=${intervalSeconds}s`,
+    "AccuracySec=5s",
+    "",
+    "[Install]",
+    "WantedBy=timers.target",
+    "",
+  ].join("\n");
 
 /**
  * Task Scheduler's least interval is a minute, so the task has two triggers
@@ -133,7 +157,7 @@ const timerText = [
  * The start is fixed, so that the definition is the same each time it is
  * written.
  */
-const taskOf = (program: string): string => {
+const taskOf = (reporter: Reporter, program: string): string => {
   const trigger = (start: string) => [
     "    <TimeTrigger>",
     `      <StartBoundary>${start}</StartBoundary>`,
@@ -148,7 +172,7 @@ const taskOf = (program: string): string => {
     '<?xml version="1.0" encoding="UTF-16"?>',
     '<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">',
     "  <RegistrationInfo>",
-    "    <Description>Report session titles to the Cota hub</Description>",
+    `    <Description>${whatOf[reporter]}</Description>`,
     "  </RegistrationInfo>",
     "  <Triggers>",
     ...trigger("2026-01-01T00:00:00"),
@@ -171,7 +195,7 @@ const taskOf = (program: string): string => {
     '  <Actions Context="Author">',
     "    <Exec>",
     `      <Command>${xml(program)}</Command>`,
-    `      <Arguments>${reportArguments.join(" ")}</Arguments>`,
+    `      <Arguments>${reporter} report</Arguments>`,
     "    </Exec>",
     "  </Actions>",
     "</Task>",
@@ -180,22 +204,28 @@ const taskOf = (program: string): string => {
 };
 
 /**
- * The title reporter's schedule on a system, running the `cota` given every
+ * A reporter's schedule on a system, running the `cota` given every
  * 30 seconds: a LaunchAgent in `~/Library/LaunchAgents` on macOS, a systemd
  * user service and timer in `$XDG_CONFIG_HOME/systemd/user` on Linux, and a
  * Task Scheduler task on Windows, whose definition is kept in the state's
  * directory.
  */
 export const scheduleOf = (
+  reporter: Reporter,
   system: System,
   variables: Variables,
   program: string,
   paths: Paths,
 ): Result.Result<Schedule, DirectoryUnknown> => {
+  const names = namesOf(reporter);
   if (system === "win32") {
     return Result.succeed({
       _tag: "TaskScheduler",
-      task: { path: `${paths.state}\\titles-task.xml`, text: taskOf(program) },
+      name: names.taskName,
+      task: {
+        path: `${paths.state}\\${reporter}-task.xml`,
+        text: taskOf(reporter, program),
+      },
     });
   }
   const home = variables.HOME;
@@ -207,9 +237,10 @@ export const scheduleOf = (
     }
     return Result.succeed({
       _tag: "LaunchAgent",
+      name: names.launchAgentLabel,
       plist: {
-        path: `${home.replace(/\/+$/, "")}/Library/LaunchAgents/${launchAgentLabel}.plist`,
-        text: plistOf(program, variables),
+        path: `${home.replace(/\/+$/, "")}/Library/LaunchAgents/${names.launchAgentLabel}.plist`,
+        text: plistOf(reporter, program, variables),
       },
     });
   }
@@ -224,11 +255,15 @@ export const scheduleOf = (
   const units = `${configuration.replace(/\/+$/, "")}/systemd/user`;
   return Result.succeed({
     _tag: "Systemd",
+    name: names.systemdTimer,
     service: {
-      path: `${units}/${systemdService}`,
-      text: serviceOf(program, variables),
+      path: `${units}/${names.systemdService}`,
+      text: serviceOf(reporter, program, variables),
     },
-    timer: { path: `${units}/${systemdTimer}`, text: timerText },
+    timer: {
+      path: `${units}/${names.systemdTimer}`,
+      text: timerOf(reporter),
+    },
   });
 };
 
@@ -247,5 +282,5 @@ export const definitionsOf = (
 };
 
 /** The line that runs the reporter from a scheduler of the owner's own, where `cota` has none it can use: cron's, every minute, its least interval. */
-export const cronLineOf = (program: string): string =>
-  `* * * * * '${program.replaceAll("'", "'\\''")}' titles report`;
+export const cronLineOf = (program: string, reporter: Reporter): string =>
+  `* * * * * '${program.replaceAll("'", "'\\''")}' ${reporter} report`;

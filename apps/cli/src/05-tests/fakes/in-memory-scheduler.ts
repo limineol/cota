@@ -5,17 +5,19 @@ import {
 } from "#02-application/interfaces/scheduler.ts";
 import type { Schedule } from "#03-domain/schedule.ts";
 
-/** A scheduler that keeps the one schedule it was given in memory, or a system that has none `cota` can use. */
+/** A scheduler that keeps the schedules it was given in memory, by their names, or a system that has none `cota` can use. */
 export const make = (
   options: {
-    readonly installed?: Schedule;
+    readonly installed?: ReadonlyArray<Schedule>;
     readonly unavailable?: boolean;
   } = {},
 ): {
-  readonly held: { installed: Schedule | undefined };
+  readonly held: Map<string, Schedule>;
   readonly layer: Layer.Layer<Scheduler>;
 } => {
-  const held = { installed: options.installed };
+  const held = new Map(
+    (options.installed ?? []).map((schedule) => [schedule.name, schedule]),
+  );
   const unavailable = Effect.fail(
     new SchedulerUnavailable({
       reason: "systemctl --user has no user session",
@@ -27,27 +29,24 @@ export const make = (
       installed: (schedule) =>
         options.unavailable === true
           ? unavailable
-          : Effect.sync(() =>
-              held.installed === undefined
+          : Effect.sync(() => {
+              const kept = held.get(schedule.name);
+              return kept === undefined
                 ? "absent"
-                : JSON.stringify(held.installed) === JSON.stringify(schedule)
+                : JSON.stringify(kept) === JSON.stringify(schedule)
                   ? "as given"
-                  : "otherwise",
-            ),
+                  : "otherwise";
+            }),
       install: (schedule) =>
         options.unavailable === true
           ? unavailable
           : Effect.sync(() => {
-              held.installed = schedule;
+              held.set(schedule.name, schedule);
             }),
-      remove: () =>
+      remove: (schedule) =>
         options.unavailable === true
           ? unavailable
-          : Effect.sync(() => {
-              const was = held.installed !== undefined;
-              held.installed = undefined;
-              return was;
-            }),
+          : Effect.sync(() => held.delete(schedule.name)),
     }),
   );
   return { held, layer };

@@ -7,6 +7,7 @@ import {
   Option,
   Result,
 } from "effect";
+import { ClientRecords } from "#02-application/interfaces/client-records.ts";
 import { Environment } from "#02-application/interfaces/environment.ts";
 import { Files, type FilesFailed } from "#02-application/interfaces/files.ts";
 import { Hub } from "#02-application/interfaces/hub.ts";
@@ -30,7 +31,15 @@ import {
   keptScopes,
   type OpenedPool,
 } from "#03-domain/machine.ts";
-import { type Paths, titlesErrorFile, titlesFile } from "#03-domain/paths.ts";
+import {
+  type Paths,
+  requestsErrorFile,
+  requestsFile,
+  requestsScratch,
+  titlesErrorFile,
+  titlesFile,
+} from "#03-domain/paths.ts";
+import * as Requests from "#03-domain/requests.ts";
 import * as Schedule from "#03-domain/schedule.ts";
 import * as Shims from "#03-domain/shims.ts";
 import * as Titles from "#03-domain/titles.ts";
@@ -104,7 +113,12 @@ const listed = (names: ReadonlyArray<string>) =>
 const claudeProtocol = "anthropic-messages";
 
 /** How lately the title reporter must have run, which it does every 30 seconds. */
-const titlesLately = "5 minutes";
+const reportersLately = "5 minutes";
+
+const reporterNames: Readonly<Record<Schedule.Reporter, string>> = {
+  titles: "title reporter",
+  requests: "request reporter",
+};
 
 export const layer: Layer.Layer<
   Doctor,
@@ -124,6 +138,7 @@ export const layer: Layer.Layer<
   | PlanSchedule
   | Scheduler
   | UserPath
+  | ClientRecords
 > = Layer.effect(
   Doctor,
   Effect.gen(function* () {
@@ -142,6 +157,7 @@ export const layer: Layer.Layer<
     const userPath = yield* UserPath;
     const planSchedule = yield* PlanSchedule;
     const scheduler = yield* Scheduler;
+    const records = yield* ClientRecords;
 
     const withinDeadline = <A, E>(effect: Effect.Effect<A, E>) =>
       effect.pipe(
@@ -190,6 +206,7 @@ export const layer: Layer.Layer<
     ) {
       const fix = joinCommand(Option.some(configuration));
       const pools: Array<OpenedPool> = [];
+      const observedPools: Array<string> = [];
       const keys = yield* Effect.result(readHubKeys.execute(paths));
       if (Result.isFailure(keys)) {
         return {
@@ -198,6 +215,7 @@ export const layer: Layer.Layer<
             fix,
           ),
           pools,
+          observedPools,
         };
       }
       const problems: Array<string> = [];
@@ -215,10 +233,15 @@ export const layer: Layer.Layer<
           );
         } else {
           pools.push(...answer.success.pools);
+          observedPools.push(...answer.success.observedPools);
         }
       }
       if (problems.length > 0) {
-        return { outcome: Check.failed(problems.join("; "), fix), pools };
+        return {
+          outcome: Check.failed(problems.join("; "), fix),
+          pools,
+          observedPools,
+        };
       }
       if (
         Option.isNone(keys.success.subscription) &&
@@ -227,6 +250,7 @@ export const layer: Layer.Layer<
         return {
           outcome: Check.failed("this machine keeps no hub key", fix),
           pools,
+          observedPools,
         };
       }
       if (Option.isNone(keys.success.keyed)) {
@@ -236,9 +260,10 @@ export const layer: Layer.Layer<
             `${fix}, with a keyed hub key among the keys`,
           ),
           pools,
+          observedPools,
         };
       }
-      return { outcome: Check.passed, pools };
+      return { outcome: Check.passed, pools, observedPools };
     });
 
     const filesCheck = Effect.fn(function* (paths: Paths) {
@@ -247,15 +272,20 @@ export const layer: Layer.Layer<
         Effect.map(files.list(directory), (names) =>
           names.map((name) => `${directory}${paths.separator}${name}`),
         );
+      const scratch = requestsScratch(paths);
       const expected: ReadonlyArray<readonly [string, number]> = [
-        ...[paths.configuration, paths.hubKeys, paths.logins, paths.state].map(
-          (directory) => [directory, 0o700] as const,
-        ),
+        ...[
+          paths.configuration,
+          paths.hubKeys,
+          paths.logins,
+          paths.state,
+          scratch,
+        ].map((directory) => [directory, 0o700] as const),
         ...[
           paths.configurationFile,
           ...(yield* inside(paths.hubKeys)),
           ...(yield* inside(paths.logins)),
-          ...(yield* inside(paths.state)),
+          ...(yield* inside(paths.state)).filter((path) => path !== scratch),
         ].map((file) => [file, 0o600] as const),
       ];
       const wrong: Array<{ path: string; mode: number; wanted: number }> = [];
@@ -630,16 +660,80 @@ export const layer: Layer.Layer<
       );
     });
 
-    const titlesCheck = Effect.fn(function* (paths: Paths) {
-      const planned = yield* Effect.result(planSchedule.execute(paths));
+    /** Whether a reporter is scheduled as `cota <reporter> schedule` installs it, ran lately, and did not fail; its problems and fixes. */
+    const reporterProblems = Effect.fn(function* (
+      paths: Paths,
+      reporter: Schedule.Reporter,
+      ranAt: Option.Option<DateTime.Utc>,
+      errorFile: string,
+    ) {
+      const named = reporterNames[reporter];
+      const problems: Array<string> = [];
+      const fixes: Array<string> = [];
+      const reschedule = `cota ${reporter} schedule`;
+      const planned = yield* Effect.result(
+        planSchedule.execute(paths, reporter),
+      );
       if (Result.isFailure(planned)) {
         const { variable } = planned.failure;
-        return Check.failed(
-          `where the title reporter's schedule goes cannot be known: ${variable} is not set`,
-          `set ${variable}, then cota titles schedule`,
+        problems.push(
+          `where the ${named}'s schedule goes cannot be known: ${variable} is not set`,
         );
+        fixes.push(`set ${variable}, then ${reschedule}`);
+        return { problems, fixes };
       }
       const now = yield* DateTime.now;
+      const ranLately = Option.exists(ranAt, (at) =>
+        Duration.isLessThan(DateTime.distance(at, now), Duration.minutes(5)),
+      );
+      const installed = yield* Effect.result(
+        scheduler.installed(planned.success),
+      );
+      if (Result.isFailure(installed)) {
+        const error = installed.failure;
+        if (error._tag === "SchedulerFailed") {
+          problems.push(
+            `whether the ${named} is scheduled cannot be known: ${error.reason}`,
+          );
+          fixes.push(reschedule);
+        } else if (!ranLately) {
+          problems.push(
+            `this system has no scheduler cota can use (${error.reason}), and the ${named} has not run in the last ${reportersLately}`,
+          );
+          fixes.push(
+            `edit your crontab (crontab -e) to add ${Schedule.cronLineOf(program, reporter)}`,
+          );
+        }
+      } else if (installed.success === "absent") {
+        problems.push(`the ${named} is not scheduled`);
+        fixes.push(reschedule);
+      } else if (installed.success === "otherwise") {
+        problems.push(
+          `the ${named}'s schedule is not the one ${reschedule} installs`,
+        );
+        fixes.push(reschedule);
+      }
+      if (Result.isSuccess(installed) && !ranLately) {
+        problems.push(
+          Option.match(ranAt, {
+            onNone: () => `the ${named} has not run yet`,
+            onSome: (at) =>
+              `the ${named} last ran at ${DateTime.formatIso(at)}, over ${reportersLately} ago`,
+          }),
+        );
+        if (fixes.length === 0) fixes.push(reschedule);
+      }
+      const error = yield* files
+        .read(errorFile)
+        .pipe(Effect.orElseSucceed(() => Option.none<string>()));
+      if (Option.isSome(error)) {
+        problems.push(`the ${named}'s last run failed: ${error.value.trim()}`);
+        fixes.push(`fix what that says, then cota ${reporter} report`);
+      }
+      return { problems, fixes };
+    });
+
+    const titlesCheck = Effect.fn(function* (paths: Paths) {
       const ranAt = Option.map(
         Option.flatMap(
           yield* files
@@ -649,61 +743,90 @@ export const layer: Layer.Layer<
         ),
         ({ ranAt }) => ranAt,
       );
-      const ranLately = Option.exists(ranAt, (at) =>
-        Duration.isLessThan(DateTime.distance(at, now), Duration.minutes(5)),
+      const { problems, fixes } = yield* reporterProblems(
+        paths,
+        "titles",
+        ranAt,
+        titlesErrorFile(paths),
       );
-      const problems: Array<string> = [];
-      const fixes: Array<string> = [];
-      const reschedule = "cota titles schedule";
-      const installed = yield* Effect.result(
-        scheduler.installed(planned.success),
-      );
-      if (Result.isFailure(installed)) {
-        const error = installed.failure;
-        if (error._tag === "SchedulerFailed") {
-          problems.push(
-            `whether the title reporter is scheduled cannot be known: ${error.reason}`,
-          );
-          fixes.push(reschedule);
-        } else if (!ranLately) {
-          problems.push(
-            `this system has no scheduler cota can use (${error.reason}), and the title reporter has not run in the last ${titlesLately}`,
-          );
-          fixes.push(
-            `edit your crontab (crontab -e) to add ${Schedule.cronLineOf(program)}`,
-          );
-        }
-      } else if (installed.success === "absent") {
-        problems.push("the title reporter is not scheduled");
-        fixes.push(reschedule);
-      } else if (installed.success === "otherwise") {
-        problems.push(
-          "the title reporter's schedule is not the one cota titles schedule installs",
-        );
-        fixes.push(reschedule);
-      }
-      if (Result.isSuccess(installed) && !ranLately) {
-        problems.push(
-          Option.match(ranAt, {
-            onNone: () => "the title reporter has not run yet",
-            onSome: (at) =>
-              `the title reporter last ran at ${DateTime.formatIso(at)}, over ${titlesLately} ago`,
-          }),
-        );
-        if (fixes.length === 0) fixes.push(reschedule);
-      }
-      const error = yield* files
-        .read(titlesErrorFile(paths))
-        .pipe(Effect.orElseSucceed(() => Option.none<string>()));
-      if (Option.isSome(error)) {
-        problems.push(
-          `the title reporter's last run failed: ${error.value.trim()}`,
-        );
-        fixes.push("fix what that says, then cota titles report");
-      }
       return problems.length === 0
         ? Check.passed
         : Check.failed(problems.join("; "), fixes.join(", and "));
+    });
+
+    const requestsCheck = Effect.fn(function* (
+      paths: Paths,
+      configuration: Configuration,
+      observedPools: ReadonlyArray<string>,
+    ) {
+      const folders = configuration.clients?.antigravity?.reported ?? [];
+      if (folders.length === 0) return Check.skipped;
+      const state = Requests.stateOf(
+        yield* files
+          .read(requestsFile(paths))
+          .pipe(Effect.orElseSucceed(() => Option.none<string>())),
+      );
+      const ranAt = Option.flatMap(state, (each) =>
+        Option.flatMap(
+          Option.fromUndefinedOr(
+            [...each.values()]
+              .flatMap((folder) => Option.toArray(folder.ranAt))
+              .sort()
+              .at(-1),
+          ),
+          (at) => Option.map(DateTime.make(at), DateTime.toUtc),
+        ),
+      );
+      const { problems, fixes } = yield* reporterProblems(
+        paths,
+        "requests",
+        ranAt,
+        requestsErrorFile(paths),
+      );
+      for (const { folder, pool } of folders) {
+        if (
+          Option.isNone(
+            yield* records
+              .folder(folder)
+              .pipe(Effect.orElseSucceed(() => Option.none<string>())),
+          )
+        ) {
+          problems.push(`the data folder ${folder} does not exist`);
+          fixes.push(`cota requests remove antigravity ${quoted(folder)}`);
+        } else if (!observedPools.includes(pool)) {
+          problems.push(
+            `the hub has no observed pool ${pool}, which ${folder} bills`,
+          );
+          fixes.push(
+            `cota requests add antigravity ${quoted(folder)} <an observed pool>`,
+          );
+        }
+      }
+      const notReported = Option.match(state, {
+        onNone: () => [],
+        onSome: (each) =>
+          [...each].flatMap(([folder, kept]) =>
+            [...kept.conversations].flatMap(([conversation, cursor]) =>
+              Option.match(cursor.notReported, {
+                onNone: () => [],
+                onSome: ({ reason }) => [
+                  `${folder}'s conversation ${conversation} is not reported (${reason})`,
+                ],
+              }),
+            ),
+          ),
+      });
+      const show =
+        "cota requests show; where the reason is schema or unreadable-step, Antigravity's record changed: open an issue";
+      if (problems.length > 0) {
+        return Check.failed(
+          [...problems, ...notReported].join("; "),
+          [...fixes, ...(notReported.length > 0 ? [show] : [])].join(", and "),
+        );
+      }
+      return notReported.length === 0
+        ? Check.passed
+        : Check.warned(notReported.join("; "), show);
     });
 
     return Doctor.of({
@@ -731,7 +854,7 @@ export const layer: Layer.Layer<
         const hubKeys =
           hubOutcome.outcome === "passed" && Option.isSome(config.configuration)
             ? yield* hubKeysCheck(paths, config.configuration.value)
-            : { outcome: Check.skipped, pools: [] };
+            : { outcome: Check.skipped, pools: [], observedPools: [] };
         const filesOutcome = Option.isNone(config.configuration)
           ? Check.skipped
           : yield* filesCheck(paths).pipe(
@@ -789,6 +912,16 @@ export const layer: Layer.Layer<
               : Check.skipped),
           },
           { id: "titles", ...(yield* titlesCheck(paths)) },
+          {
+            id: "requests",
+            ...(answered
+              ? yield* requestsCheck(
+                  paths,
+                  configuration,
+                  hubKeys.observedPools,
+                )
+              : Check.skipped),
+          },
         ] satisfies ReadonlyArray<Check.Check>;
       }).pipe(Effect.withSpan("Doctor.execute")),
     });

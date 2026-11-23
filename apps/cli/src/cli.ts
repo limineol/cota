@@ -1,5 +1,6 @@
 import { Effect, Layer, Result } from "effect";
-import { reportedLines } from "#01-presentation/cota.ts";
+import { reportedLines, sentLines } from "#01-presentation/cota.ts";
+import * as AddReportedFolder from "#02-application/commands/add-reported-folder.command.ts";
 import * as ConfigureClients from "#02-application/commands/configure-clients.command.ts";
 import * as InstallShims from "#02-application/commands/install-shims.command.ts";
 import * as JoinMachine from "#02-application/commands/join-machine.command.ts";
@@ -8,9 +9,11 @@ import * as KeepReaderKey from "#02-application/commands/keep-reader-key.command
 import * as LaunchClient from "#02-application/commands/launch-client.command.ts";
 import * as LeaveMachine from "#02-application/commands/leave-machine.command.ts";
 import * as RemoveMachineLogin from "#02-application/commands/remove-machine-login.command.ts";
+import * as RemoveReportedFolder from "#02-application/commands/remove-reported-folder.command.ts";
 import * as RemoveShims from "#02-application/commands/remove-shims.command.ts";
 import * as ReportTitles from "#02-application/commands/report-titles.command.ts";
-import * as ScheduleTitles from "#02-application/commands/schedule-titles.command.ts";
+import * as ScheduleReporter from "#02-application/commands/schedule-reporter.command.ts";
+import * as SendReportedRequests from "#02-application/commands/send-reported-requests.command.ts";
 import * as SetRoutes from "#02-application/commands/set-routes.command.ts";
 import { CodexProviders } from "#02-application/interfaces/codex-providers.ts";
 import {
@@ -32,6 +35,7 @@ import * as ReadKeptAnswers from "#02-application/queries/read-kept-answers.quer
 import * as ReadMachineLogins from "#02-application/queries/read-machine-logins.query.ts";
 import * as ReadMemory from "#02-application/queries/read-memory.query.ts";
 import * as ReadProject from "#02-application/queries/read-project.query.ts";
+import * as ShowRequests from "#02-application/queries/show-requests.query.ts";
 import * as ShowRoutes from "#02-application/queries/show-routes.query.ts";
 import * as WhichRoute from "#02-application/queries/which-route.query.ts";
 import { configuredClients } from "#03-domain/client-files.ts";
@@ -39,15 +43,16 @@ import { configuredClients } from "#03-domain/client-files.ts";
 const lines = (said: ReadonlyArray<string>) =>
   said.map((line) => `${line}\n`).join("");
 
-/** The steps of joining and leaving that are not the machine's own files: the shims, the clients' configuration and the title reporter's schedule. */
+/** The steps of joining and leaving that are not the machine's own files: the shims, the clients' configuration and the reporters' schedules. */
 const machineSteps = Layer.effect(
   MachineSteps,
   Effect.gen(function* () {
     const install = yield* InstallShims.InstallShims;
     const remove = yield* RemoveShims.RemoveShims;
     const configure = yield* ConfigureClients.ConfigureClients;
-    const schedule = yield* ScheduleTitles.ScheduleTitles;
+    const schedule = yield* ScheduleReporter.ScheduleReporter;
     const report = yield* ReportTitles.ReportTitles;
+    const send = yield* SendReportedRequests.SendReportedRequests;
     const terminal = yield* Terminal;
     return MachineSteps.of({
       join: [
@@ -85,7 +90,7 @@ const machineSteps = Layer.effect(
           run: (joined) =>
             Effect.gen(function* () {
               const scheduled = yield* Effect.result(
-                schedule.execute(joined.paths, false),
+                schedule.execute(joined.paths, "titles", false),
               );
               if (Result.isFailure(scheduled)) {
                 yield* terminal.printError(
@@ -101,13 +106,44 @@ const machineSteps = Layer.effect(
               yield* terminal.printError(err);
             }),
         },
+        {
+          name: "the request reporter",
+          run: (joined) =>
+            Effect.gen(function* () {
+              const folders =
+                joined.configuration.clients?.antigravity?.reported ?? [];
+              if (folders.length === 0) return;
+              const scheduled = yield* Effect.result(
+                schedule.execute(joined.paths, "requests", false),
+              );
+              if (Result.isFailure(scheduled)) {
+                yield* terminal.printError(
+                  `cota: the request reporter was not scheduled: ${scheduled.failure.problem}\n`,
+                );
+              } else {
+                yield* terminal.print(lines(scheduled.success));
+              }
+              const { out, err } = sentLines(
+                yield* send.execute(joined.paths, joined.configuration),
+              );
+              yield* terminal.print(out);
+              yield* terminal.printError(err);
+            }),
+        },
       ],
       leave: [
+        {
+          name: "the request reporter's schedule",
+          run: (paths) =>
+            schedule
+              .execute(paths, "requests", true)
+              .pipe(Effect.flatMap((said) => terminal.print(lines(said)))),
+        },
         {
           name: "the title reporter's schedule",
           run: (paths) =>
             schedule
-              .execute(paths, true)
+              .execute(paths, "titles", true)
               .pipe(Effect.flatMap((said) => terminal.print(lines(said)))),
         },
         {
@@ -169,6 +205,7 @@ const queries = Layer.mergeAll(
   Doctor.layer,
   ShowRoutes.layer,
   ReadMemory.layer,
+  ShowRequests.layer,
 ).pipe(
   Layer.provideMerge(Layer.mergeAll(PlanClientFiles.layer, AsOwner.layer)),
   Layer.provideMerge(
@@ -192,8 +229,9 @@ const steps = Layer.mergeAll(machineSteps, codexProviders).pipe(
       InstallShims.layer,
       RemoveShims.layer,
       ConfigureClients.layer,
-      ScheduleTitles.layer,
+      ScheduleReporter.layer,
       ReportTitles.layer,
+      SendReportedRequests.layer,
     ).pipe(Layer.provideMerge(queries)),
   ),
 );
@@ -208,4 +246,6 @@ export const layer = Layer.mergeAll(
   RemoveMachineLogin.layer,
   WhichRoute.layer,
   SetRoutes.layer,
+  AddReportedFolder.layer,
+  RemoveReportedFolder.layer,
 ).pipe(Layer.provideMerge(steps));

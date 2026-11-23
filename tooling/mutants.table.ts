@@ -47,6 +47,8 @@ export type Law =
   | "L15"
   | "L16"
   | "L17"
+  | "L18"
+  | "L19"
   | "S1"
   | "S2"
   | "M1"
@@ -221,6 +223,14 @@ export type Law =
   | "J16"
   | "J17"
   | "J18"
+  | "J19"
+  | "J20"
+  | "J21"
+  | "J22"
+  | "J23"
+  | "J24"
+  | "J26"
+  | "J27"
   | "E1"
   | "E2"
   | "E3"
@@ -307,6 +317,12 @@ const stoppedAtItsStart =
 const stoppedAtItsLimits =
   "stops a client at its turn limit, its spend limit, and when the eval stops it, keeping what it reported spending";
 const cliReportTitles = `${cli}/02-application/commands/report-titles.command.ts`;
+const cliRecord = `${cli}/03-domain/antigravity-record.ts`;
+const cliRequests = `${cli}/03-domain/requests.ts`;
+const cliSendRequests = `${cli}/02-application/commands/send-reported-requests.command.ts`;
+const cliSqliteRecords = `${cli}/04-infrastructure/sqlite-client-records.ts`;
+const cliRunLock = `${cli}/04-infrastructure/node-run-lock.ts`;
+const cliShowRequests = `${cli}/02-application/queries/show-requests.query.ts`;
 const j3 =
   "J3: For every client file and every set of pools, what is not `cota`'s reads as the same value after a rewrite as before, and in Codex's file every line outside `cota`'s tables is unchanged and in order.";
 const j4 =
@@ -368,6 +384,22 @@ const j16 =
   "J16: An address is kept only when it is `http` or `https` with no user information, path, query or fragment, and an `http` one only when its host is loopback or plain http was allowed; what is kept is its scheme, host and port, and a refusal repeats no user information.";
 const j17 =
   "J17: For every set of keys and every answer of the hub to each, a join writes the configuration and keys only when the hub was reached and every key is known, none is a reader key and no two are of one scope; otherwise the machine's files are as they were.";
+const j19 =
+  "J19: For any record appended to step by step and read in runs cut anywhere (between steps, on an unfinished step, after a compaction), the model calls read run by run are those of reading the whole record once, with the same usage, model, times and output, but for a step reported unfinished, which stays as it was reported, and the order a late call is read in: a step read past while not finished and without usage, which later finishes with usage, is read by the first run after it finishes, before that run's newer calls; and each call names as `after` the call of the greatest step below its own among those read before it, its input every step between the two, so that a call read past a late one names the call before that late one and holds its step as it was.";
+const j20 =
+  "J20: For any sequence of appends and runs whose reports are answered 200, refused, failed or never, a call is among those each run sends until a report holding it is answered 200, and among none after: a call reported unfinished among them, whatever its step becomes, and a late call from the first run after its step finishes; each call names as `after` a call before it in its conversation, stored before its report or earlier in it: the one just before it, but for a call read past a late one.";
+const j21 =
+  "J21: Every report holds calls of one folder, at most 200 and 8 MiB but for a call alone over it, in order, and no report's body is over 64 MiB; a run reads a conversation only once the calls it read before and has not sent fit in one report.";
+const j22 =
+  "J22: A call's usage, model, times and items are those of the record when it was read, and an item written out in the record form reads back into the step's bytes exactly.";
+const j23 =
+  "J23: A run opens no file of a data folder but `conversations/*.db` and their `-wal`, opens none of them to write, and leaves every file of the folder as it was.";
+const j24 =
+  "J24: For any record with a table or column missing, a sub-agent, a step that is not a protocol buffer or a record rewritten, the calls reported are those before it, and `cota requests show` and doctor name the conversation and the reason.";
+const j26 =
+  "J26: A report carries a folder's `through` only when every call the folder's readable conversations held when the run began reading it has been answered 200, and that `through` is the moment the run began.";
+const j27 =
+  "J27: Of runs that take the lock at once, over no lock or one whose process is gone, exactly one takes it; the lock appears whole, naming its owner, or not at all; and a run removes only its own lock.";
 const signIn = "apps/hub/src/modules/sign-in";
 const access = `${signIn}/03-domain/access.ts`;
 const attempts = `${signIn}/03-domain/attempts.ts`;
@@ -431,6 +463,10 @@ const l16 =
   "L16: for any sequence of reports, a machine's, client's and pool's through is the greatest any of their reports gave";
 const l17 =
   "L17: a reported request's cost is the one the writer gives a request of its pool, model and usage, and none where that has no price";
+const l18 =
+  "L18: a call whose call before another call already names, held in the log or earlier in the report, is stored, its input part its call before's input and output and then its own input, and the other call's rows are left as they are";
+const l19 =
+  "L19: a report holding a call the log holds, with other content than was stored, leaves that call's rows as they were, stores its items the session does not hold, and builds each later call of the report on the call as the report gives it";
 const segment = `${requestLog}/03-domain/segment.ts`;
 const t1 =
   "T1: every request of a session has exactly one request role, and it depends on that session's requests only";
@@ -6941,19 +6977,19 @@ export const layer = (policy: Admission.Policy) =>
     killedBy: j13,
   },
   {
-    name: "the titles check's failed last run names no fix",
+    name: "a reporter check's failed last run names no fix",
     law: "J14",
     file: cliDoctor,
-    find: '        fixes.push("fix what that says, then cota titles report");',
+    find: "        fixes.push(`fix what that says, then cota ${reporter} report`);",
     replace: "",
     killedBy: j14,
   },
   {
-    name: "the titles check's missing schedule names no fix",
+    name: "a reporter check's missing schedule names no fix",
     law: "J14",
     file: cliDoctor,
-    find: '        problems.push("the title reporter is not scheduled");\n        fixes.push(reschedule);',
-    replace: '        problems.push("the title reporter is not scheduled");',
+    find: "        problems.push(`the ${named} is not scheduled`);\n        fixes.push(reschedule);",
+    replace: "        problems.push(`the ${named} is not scheduled`);",
     killedBy: j14,
   },
   {
@@ -7581,6 +7617,24 @@ export const layer = (policy: Admission.Policy) =>
     killedBy: l17,
   },
   {
+    name: "a call before is the call before of one call only",
+    law: "L18",
+    file: reportDomain,
+    find: "    built.set(checked.call.call, each);\n",
+    replace:
+      "    built.set(checked.call.call, each);\n    if (Option.isSome(checked.call.after)) built.delete(checked.call.after.value.call);\n",
+    killedBy: l18,
+  },
+  {
+    name: "a call the log holds has none of its items stored when sent again with others",
+    law: "L19",
+    file: reportRequests,
+    find: "        for (const item of built.flatMap((each) => each.items)) {",
+    replace:
+      "        for (const item of built\n          .filter(({ request }) => !held.requests.has(request.id))\n          .flatMap((each) => each.items)) {",
+    killedBy: l19,
+  },
+  {
     name: "a record's model call is not decided main",
     law: "T2",
     file: requestRole,
@@ -7624,5 +7678,228 @@ export const layer = (policy: Admission.Policy) =>
     find: "Duration.isGreaterThan(",
     replace: "Duration.isGreaterThanOrEqualTo(",
     killedBy: lateness,
+  },
+  {
+    name: "a reading on loses the workspace of the message before its cursor",
+    law: "J19",
+    file: cliRecord,
+    find: "  const workspaceBefore = Option.flatMap(read.lastUserMessage, workspaceOfRow);",
+    replace: "  const workspaceBefore: Option.Option<string> = Option.none();",
+    killedBy: j19,
+  },
+  {
+    name: "a step not finished does not wait to settle",
+    law: "J19",
+    file: cliRecord,
+    find: "    if (unfinished && !settled) {\n      return { calls, stopped: Option.none(), waiting: true, next };\n    }\n",
+    replace: "",
+    killedBy: j19,
+  },
+  {
+    name: "a compaction's model is read from the generation of a model's step not read as a call",
+    law: "J19",
+    file: cliRecord,
+    find: "        lastStep > generationStep &&\n        !anotherCall(lastStep)\n",
+    replace: "        lastStep > generationStep\n",
+    killedBy: j19,
+  },
+  {
+    name: "a step read past while not finished is never looked at again",
+    law: "J19",
+    file: cliRecord,
+    find: "  for (const { idx } of from.passed) {",
+    replace: "  for (const { idx } of from.passed.filter(() => false)) {",
+    killedBy: j19,
+  },
+  {
+    name: "a step read past keeps the call before it had though an earlier one became a late call",
+    law: "J19",
+    file: cliRecord,
+    find: "          : Option.isSome(late) && other.idx > idx && other.step < idx",
+    replace: "          : false",
+    killedBy: j19,
+  },
+  {
+    name: "a run reads a conversation only from its cursor's step",
+    law: "J20",
+    file: cliSendRequests,
+    find: "          readAfter(cursor.from),",
+    replace: "          cursor.from.step,",
+    killedBy: j20,
+  },
+  {
+    name: "a report not stored does not stop its folder",
+    law: "J20",
+    file: cliSendRequests,
+    find: "                      stopFolder = true;\n                      break;",
+    replace: "                      continue;",
+    killedBy: j20,
+  },
+  {
+    name: "a conversation's files are kept though not every call read was stored",
+    law: "J20",
+    file: cliSendRequests,
+    find: "                  const unsent = read.stored < read.reading.calls.length;",
+    replace: "                  const unsent = false;",
+    killedBy: j20,
+  },
+  {
+    name: "a report holds one call more than the limit",
+    law: "J21",
+    file: cliRequests,
+    find: "      (current.length >= given.calls || size + bytes > given.bytes)",
+    replace:
+      "      (current.length > given.calls || size + bytes > given.bytes)",
+    killedBy: j21,
+  },
+  {
+    name: "a run reads every conversation of a folder before it sends",
+    law: "J21",
+    file: cliSendRequests,
+    find: "                  pending = batches.at(-1) ?? [];\n                  for (const batch of batches.slice(0, -1)) {",
+    replace:
+      "                  pending = entries;\n                  for (const batch of batches.slice(0, 0)) {",
+    killedBy: j21,
+  },
+
+  {
+    name: "a report's calls are not held to its bytes",
+    law: "J21",
+    file: cliRequests,
+    find: "      (current.length >= given.calls || size + bytes > given.bytes)",
+    replace: "      current.length >= given.calls",
+    killedBy: j21,
+  },
+  {
+    name: "reasoning is read from the answer's count",
+    law: "J22",
+    file: cliRecord,
+    find: "  reasoning: 9,",
+    replace: "  reasoning: 10,",
+    killedBy: j22,
+  },
+  {
+    name: "a text's byte order mark is dropped",
+    law: "J22",
+    file: cliRecord,
+    find: 'const decoder = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });',
+    replace: 'const decoder = new TextDecoder("utf-8", { fatal: true });',
+    killedBy: j22,
+  },
+  {
+    name: "a call finishes when it finished generating, not when completed",
+    law: "J22",
+    file: cliRecord,
+    find: "      Option.orElse(timeOf(metadata, record.completedAt), () =>\n        timeOf(metadata, record.generatedAt),\n      ),",
+    replace:
+      "      Option.orElse(timeOf(metadata, record.generatedAt), () =>\n        timeOf(metadata, record.completedAt),\n      ),",
+    killedBy: j22,
+  },
+  {
+    name: "the reader opens the client's database",
+    law: "J23",
+    file: cliSqliteRecords,
+    find: "      const db = disk.openDatabase(copy);",
+    replace: "      const db = disk.openDatabase(database);",
+    killedBy: j23,
+  },
+  {
+    name: "the reader copies the -shm",
+    law: "J23",
+    file: cliSqliteRecords,
+    find: "      const afterCopy = await filesOf(database, within);",
+    replace:
+      "      await disk.writeBytes(`${copy}-shm`, await disk.readBytes(`${database}-shm`));\n      const afterCopy = await filesOf(database, within);",
+    killedBy: j23,
+  },
+  {
+    name: "a database linked out of the conversations directory is read",
+    law: "J23",
+    file: cliSqliteRecords,
+    find: "        if (!real.startsWith(`${within}${sep}`)) {",
+    replace: "        if (!real.startsWith(sep)) {",
+    killedBy: j23,
+  },
+  {
+    name: "a conversations directory that is a link is read through",
+    law: "J23",
+    file: cliSqliteRecords,
+    find: "      if (status.isLink) {\n        throw new NotFollowed(\n          directory,",
+    replace:
+      "      if (status.isLink && status.isFile) {\n        throw new NotFollowed(\n          directory,",
+    killedBy: j23,
+  },
+  {
+    name: "a sub-agent's conversation is read",
+    law: "J24",
+    file: cliRecord,
+    find: '  if (read.subAgent) return stop("sub-agent", Option.none());',
+    replace: "",
+    killedBy: j24,
+  },
+  {
+    name: "a varint not in its shortest form is read",
+    law: "J24",
+    file: cliRecord,
+    find: "      if (index > at && byte === 0) return Option.none();",
+    replace: "",
+    killedBy: j24,
+  },
+  {
+    name: "a status the reader does not know is read as done",
+    law: "J24",
+    file: cliRecord,
+    find: '    if (!unfinished && row.status !== record.done) {\n      return stop("unknown-status", at);\n    }\n',
+    replace: "",
+    killedBy: j24,
+  },
+  {
+    name: "cota requests show names no conversation not reported",
+    law: "J24",
+    file: cliShowRequests,
+    find: "                      onSome: ({ reason, step }) => [\n                        { conversation, reason, step },\n                      ],",
+    replace: "                      onSome: () => [],",
+    killedBy: j24,
+  },
+  {
+    name: "doctor names no conversation not reported",
+    law: "J24",
+    file: cliDoctor,
+    find: "                onSome: ({ reason }) => [\n                  `${folder}'s conversation ${conversation} is not reported (${reason})`,",
+    replace:
+      "                onSome: () => [\n                  `${folder} has a conversation not reported`,",
+    killedBy: j24,
+  },
+  {
+    name: "a folder's through is sent though a conversation was not read",
+    law: "J26",
+    file: cliSendRequests,
+    find: "                yield* report(pending, complete);",
+    replace: "                yield* report(pending, true);",
+    killedBy: j26,
+  },
+  {
+    name: "the lock appears before its owner is written in it",
+    law: "J27",
+    file: cliRunLock,
+    find: '  await writeFile(written, owned, { mode: 0o600, flag: "wx" });',
+    replace: '  await writeFile(written, "", { mode: 0o600, flag: "wx" });',
+    killedBy: j27,
+  },
+  {
+    name: "a dead run's lock is taken over without taking it over first",
+    law: "J27",
+    file: cliRunLock,
+    find: "    if (!(await claim(taking))) return false;\n",
+    replace: "",
+    killedBy: j27,
+  },
+  {
+    name: "a run's release removes a lock not its own",
+    law: "J27",
+    file: cliRunLock,
+    find: "        if ((await textAt(path)) === owned) await rm(path, { force: true });",
+    replace: "        await rm(path, { force: true });",
+    killedBy: j27,
   },
 ];

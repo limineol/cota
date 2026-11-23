@@ -50,6 +50,7 @@ const later = (on: Machine) =>
     "passed   kept-routes\n",
     "passed   configured\n",
     "passed   titles\n",
+    "skipped  requests\n",
   ].join("");
 
 const healthy = (on: Machine) =>
@@ -98,6 +99,7 @@ const afterConfig = [
   "kept-routes",
   "configured",
   "titles",
+  "requests",
 ];
 
 layer(Layer.effectDiscard(listing).pipe(Layer.provideMerge(Harness.layer())))(
@@ -438,7 +440,7 @@ layer(Layer.effectDiscard(listing).pipe(Layer.provideMerge(Harness.layer())))(
                   const id = line.slice(9).split(" ")[0];
                   return {
                     id,
-                    outcome: "passed",
+                    outcome: line.slice(0, 9).trim(),
                     problem: null,
                     fix: null,
                     ...(id === "clients" ? { found: clientsFound(on) } : {}),
@@ -536,6 +538,7 @@ layer(Layer.effectDiscard(listing).pipe(Layer.provideMerge(Harness.layer())))(
                 "passed   kept-routes\n",
                 "skipped  configured\n",
                 "passed   titles\n",
+                "skipped  requests\n",
               ].join(""),
             );
           }),
@@ -636,6 +639,7 @@ layer(Layer.effectDiscard(listing).pipe(Layer.provideMerge(Harness.layer())))(
                 `                   fix: rm '${on.routes}'`,
                 "passed   configured",
                 "passed   titles",
+                "skipped  requests",
                 "",
               ].join("\n"),
             );

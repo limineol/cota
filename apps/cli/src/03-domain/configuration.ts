@@ -1,6 +1,9 @@
 import { Duration, Result, Schema } from "effect";
 import * as HubAddress from "./hub-address.ts";
 
+const isAbsolute = (path: string) =>
+  path.startsWith("/") || /^[A-Za-z]:[\\/]/.test(path);
+
 /** The longest machine name, in characters (code points). */
 export const longestMachineName = 200;
 
@@ -19,6 +22,22 @@ const ClientSettings = Schema.Struct({
   own_pool: Schema.optionalKey(Schema.NonEmptyString),
 });
 
+/** A data folder of a reported client this machine reports, and the observed pool its model calls bill. */
+const ReportedFolder = Schema.Struct({
+  folder: Schema.String.check(
+    Schema.makeFilter((folder) => isAbsolute(folder), {
+      expected: "an absolute path",
+    }),
+  ),
+  pool: Schema.NonEmptyString,
+});
+export type ReportedFolder = typeof ReportedFolder.Type;
+
+/** A reported client's settings: its data folders, and no setting of a launched client's. */
+const ReportedSettings = Schema.Struct({
+  reported: Schema.Array(ReportedFolder),
+});
+
 /** `config.toml` as it is written: no secret, and only what the owner or a join chose (`docs/specs/cli/spec.md`). */
 const File = Schema.Struct({
   hub: Schema.String,
@@ -35,6 +54,7 @@ const File = Schema.Struct({
     Schema.Struct({
       "claude-code": Schema.optionalKey(ClientSettings),
       codex: Schema.optionalKey(ClientSettings),
+      antigravity: Schema.optionalKey(ReportedSettings),
     }),
   ),
 });
@@ -115,6 +135,14 @@ export const textOf = (configuration: Configuration): string => {
     if (settings.own_pool !== undefined) {
       lines.push(`own_pool = ${tomlString(settings.own_pool)}`);
     }
+  }
+  for (const { folder, pool } of clients?.antigravity?.reported ?? []) {
+    lines.push(
+      "",
+      "[[clients.antigravity.reported]]",
+      `folder = ${tomlString(folder)}`,
+      `pool = ${tomlString(pool)}`,
+    );
   }
   return `${lines.join("\n")}\n`;
 };

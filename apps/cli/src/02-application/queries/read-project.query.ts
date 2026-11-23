@@ -11,6 +11,8 @@ export class ReadProject extends Context.Service<
   {
     /** The project of a launch in the working directory (`docs/specs/cli/spec.md`, The project). */
     readonly execute: (variables: Variables) => Effect.Effect<string>;
+    /** The project of a directory a client record names, from its Git files alone: the request reporter never runs `git`. */
+    readonly ofDirectory: (directory: string) => Effect.Effect<string>;
   }
 >()("@cota/cli/ReadProject") {}
 
@@ -26,14 +28,14 @@ export const layer: Layer.Layer<
     const processes = yield* Processes;
     const findCommand = yield* FindCommand;
     const separator = system === "win32" ? /[\\/]/ : /\//;
-    const parts = workingDirectory
-      .split(separator)
-      .filter((part) => part !== "");
+    const partsOf = (directory: string) =>
+      directory.split(separator).filter((part) => part !== "");
+    const parts = partsOf(workingDirectory);
     const join = (each: ReadonlyArray<string>) =>
       system === "win32" ? each.join("\\") : `/${each.join("/")}`;
 
     /** The `origin` remote read from the repository's own files, for a machine without `git`. */
-    const remoteFromFiles = Effect.gen(function* () {
+    const remoteFromFiles = Effect.fn(function* (parts: ReadonlyArray<string>) {
       for (let depth = parts.length; depth >= 0; depth--) {
         const dotGit = join([...parts.slice(0, depth), ".git"]);
         const config = yield* files
@@ -79,8 +81,18 @@ export const layer: Layer.Layer<
               ),
               (output) => output.trim(),
             )
-          : yield* remoteFromFiles;
+          : yield* remoteFromFiles(parts);
         return Project.projectOf({ given, remote, directory });
+      }),
+      ofDirectory: Effect.fn("ReadProject.ofDirectory")(function* (
+        directory: string,
+      ) {
+        const each = partsOf(directory);
+        return Project.projectOf({
+          given: undefined,
+          remote: yield* remoteFromFiles(each),
+          directory: each.at(-1) ?? directory,
+        });
       }),
     });
   }),

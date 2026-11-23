@@ -717,3 +717,151 @@ describe("a reported request's cost", () => {
     { arbitrary: { runs: 60 } },
   );
 });
+
+const lateSession = "conversation-late";
+
+const startOf = (minute: number) =>
+  DateTime.makeUnsafe(
+    DateTime.toEpochMillis(Reports.now) - 3_600_000 + minute * 60_000,
+  );
+
+/** A call of one conversation, its call before named, steps as given, started at its minute. */
+const callIn = (
+  call: string,
+  before: Option.Option<Report.Call>,
+  input: ReadonlyArray<Schema.JsonObject>,
+  output: Schema.JsonObject,
+  minute: number,
+): Report.Call => ({
+  call,
+  after: Option.map(before, ({ call, startedAt }) => ({ call, startedAt })),
+  session: lateSession,
+  project: "garden",
+  clientVersion: "",
+  model: "gemini-3-pro-preview",
+  startedAt: startOf(minute),
+  finishedAt: startOf(minute + 1),
+  outcome: "ok",
+  errorType: "",
+  errorMessage: "",
+  stopReason: "STOP",
+  providerRequestId: "",
+  usage: Option.none(),
+  input,
+  output: [output],
+});
+
+const rowOf = (memory: InMemoryRequests.InMemory, call: Report.Call) =>
+  memory.requestItems.find(({ requestId }) => requestId === idOf(call));
+
+describe("a call before named again", () => {
+  // The first call; a later one whose input holds step 3 not yet finished;
+  // and step 3 finished as a call of its own, after the first.
+  const first = callIn(
+    "late:1",
+    Option.none(),
+    [Steps.userMessage(0, "read the notes")],
+    Steps.modelOutput(1, { text: "reading" }),
+    0,
+  );
+  const unfinished = { ...Steps.modelOutput(3, { text: "half" }), status: 8 };
+  const later = callIn(
+    "late:4",
+    Option.some(first),
+    [Steps.userMessage(2, "and the plan"), unfinished],
+    Steps.modelOutput(4, { text: "both read" }),
+    4,
+  );
+  const late = callIn(
+    "late:3",
+    Option.some(first),
+    [Steps.userMessage(2, "and the plan")],
+    Steps.modelOutput(3, { text: "the plan, read" }),
+    3,
+  );
+
+  it.effect(
+    "L18: a call whose call before another call already names, held in the log or earlier in the report, is stored, its input part its call before's input and output and then its own input, and the other call's rows are left as they are",
+    () =>
+      Effect.gen(function* () {
+        yield* atNow;
+        for (const reports of [
+          [[first, later], [late]],
+          [[first, later, late]],
+        ]) {
+          const world = yield* Reports.started();
+          for (const report of reports) {
+            const answer = yield* world.reportRequests.execute(
+              Reports.reportOf(report),
+              callerOf(Reports.reporters[0]),
+            );
+            expect(answer.stored).toBe(report.length);
+          }
+          const digests = (call: Report.Call) => ({
+            input: call.input.map(digestOf),
+            output: call.output.map(digestOf),
+          });
+          const one = digests(first);
+          expect(rowOf(world.memory, late)).toMatchObject({
+            input: [...one.input, ...one.output, ...digests(late).input],
+            output: digests(late).output,
+          });
+          expect(rowOf(world.memory, later)).toMatchObject({
+            input: [...one.input, ...one.output, ...digests(later).input],
+            output: digests(later).output,
+          });
+          expect(holds(world.memory, idOf(late))).toBe(true);
+        }
+      }).pipe(Effect.scoped),
+  );
+
+  it.effect(
+    "L19: a report holding a call the log holds, with other content than was stored, leaves that call's rows as they were, stores its items the session does not hold, and builds each later call of the report on the call as the report gives it",
+    () =>
+      Effect.gen(function* () {
+        yield* atNow;
+        const world = yield* Reports.started();
+        const caller = callerOf(Reports.reporters[0]);
+        yield* world.reportRequests.execute(Reports.reportOf([first]), caller);
+        const heldRequest = world.memory.requests.find(
+          ({ request }) => request.id === idOf(first),
+        );
+        const heldRow = rowOf(world.memory, first);
+        const changed: Report.Call = {
+          ...first,
+          output: [Steps.modelOutput(1, { text: "reading, again" })],
+        };
+        const next = callIn(
+          "late:3",
+          Option.some(changed),
+          [Steps.userMessage(2, "and the plan")],
+          Steps.modelOutput(3, { text: "the plan, read" }),
+          3,
+        );
+        const answer = yield* world.reportRequests.execute(
+          Reports.reportOf([changed, next]),
+          caller,
+        );
+        expect(answer).toEqual({ stored: 1, held: 1 });
+        expect(
+          world.memory.requests.filter(
+            ({ request }) => request.id === idOf(first),
+          ),
+        ).toEqual([heldRequest]);
+        expect(
+          world.memory.requestItems.filter(
+            ({ requestId }) => requestId === idOf(first),
+          ),
+        ).toEqual([heldRow]);
+        expect(rowOf(world.memory, next)?.input).toEqual([
+          ...changed.input.map(digestOf),
+          ...changed.output.map(digestOf),
+          ...next.input.map(digestOf),
+        ]);
+        const kept = new Set(world.memory.items.map(({ digest }) => digest));
+        for (const step of [...first.output, ...changed.output]) {
+          expect(kept.has(digestOf(step))).toBe(true);
+        }
+      }).pipe(Effect.scoped),
+  );
+});
