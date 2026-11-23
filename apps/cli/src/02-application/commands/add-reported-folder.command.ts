@@ -15,6 +15,38 @@ export class FolderRefused extends Schema.TaggedError<
   { readonly brand: unique symbol }
 >()("FolderRefused", { problem: Schema.String }) {}
 
+/**
+ * The kept entry a folder names: the one kept by that very path, else the one
+ * kept by another path to the same directory. Two of those are ambiguous, and
+ * refused.
+ */
+export const keptFolderOf = Effect.fn("keptFolderOf")(function* (
+  kept: ReadonlyArray<Configuration.ReportedFolder>,
+  folder: string,
+  realOf: (folder: string) => Effect.Effect<Option.Option<string>>,
+) {
+  const exact = kept.find((each) => each.folder === folder);
+  if (exact !== undefined) return Option.some(exact);
+  const real = yield* realOf(folder);
+  if (Option.isNone(real)) return Option.none<Configuration.ReportedFolder>();
+  const same: Array<Configuration.ReportedFolder> = [];
+  for (const each of kept) {
+    if (Option.contains(yield* realOf(each.folder), real.value)) {
+      same.push(each);
+    }
+  }
+  if (same.length > 1) {
+    return yield* new FolderRefused({
+      problem: `${folder} is the same directory as ${same
+        .map((each) => each.folder)
+        .join(
+          " and ",
+        )}, each kept apart; name the one meant by the path it is kept by (cota requests show lists them)`,
+    });
+  }
+  return Option.fromUndefinedOr(same[0]);
+});
+
 export interface Added {
   readonly said: ReadonlyArray<string>;
   /** Whether it is the configuration's first reported folder, which schedules the request reporter. */
@@ -74,15 +106,7 @@ export const layer: Layer.Layer<
           return yield* refused(`${folder} is not a directory`);
         }
         const kept = configuration.clients?.antigravity?.reported ?? [];
-        let same: Option.Option<Configuration.ReportedFolder> = Option.none();
-        for (const each of kept) {
-          if (
-            each.folder === folder ||
-            Option.contains(yield* realOf(each.folder), real.value)
-          ) {
-            same = Option.some(each);
-          }
-        }
+        const same = yield* keptFolderOf(kept, folder, realOf);
         if (Option.exists(same, (each) => each.pool === pool)) {
           return {
             said: [`cota: ${folder} is reported already, billing ${pool}.`],

@@ -5,7 +5,7 @@ import type { ReportedClient } from "#03-domain/client.ts";
 import * as Configuration from "#03-domain/configuration.ts";
 import { type Paths, requestsFile } from "#03-domain/paths.ts";
 import * as Requests from "#03-domain/requests.ts";
-import { FolderRefused } from "./add-reported-folder.command.ts";
+import { FolderRefused, keptFolderOf } from "./add-reported-folder.command.ts";
 
 export interface Removed {
   readonly said: ReadonlyArray<string>;
@@ -43,17 +43,7 @@ export const layer: Layer.Layer<
         { folder },
       ) {
         const kept = configuration.clients?.antigravity?.reported ?? [];
-        const real = yield* realOf(folder);
-        let found: Option.Option<Configuration.ReportedFolder> = Option.none();
-        for (const each of kept) {
-          if (
-            each.folder === folder ||
-            (Option.isSome(real) &&
-              Option.contains(yield* realOf(each.folder), real.value))
-          ) {
-            found = Option.some(each);
-          }
-        }
+        const found = yield* keptFolderOf(kept, folder, realOf);
         if (Option.isNone(found)) {
           return yield* new FolderRefused({
             problem: `${folder} is not a reported data folder; cota requests show lists them`,

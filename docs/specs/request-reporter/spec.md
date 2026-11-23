@@ -59,6 +59,8 @@ A join keeps them as it keeps `[launch]` and the other `clients` settings, after
 | --- | --- |
 | `cota requests add <client> <folder> <pool>` | Checks that `<client>` is a reported client, that `<folder>` exists and is a directory, and that the hub lists `<pool>` in `observedPools` (`GET /api/machine`, with the hub key the reporter sends with); keeps the entry; schedules the reporter when it is the first entry; and runs it once, printing what it reported. A folder already kept is given its new pool, and says so: calls reported before keep the pool they billed. |
 | `cota requests remove <client> <folder>` | Forgets the entry and its cursor; removes the schedule when it was the last. What was reported stays on the hub. A folder not kept says so and exits 1. |
+
+A folder given to `add` or `remove` names the entry kept by that very path; with none, the one entry kept by another path to the same directory (a link, or a path spelled otherwise); two such entries are ambiguous, and the command says so, names both and exits 1, changing nothing.
 | `cota requests show` | Prints each kept folder, its pool, how far it was reported (the time of the last run that caught up with it), each conversation not reported and why, and each of the client's default folders (`~/.gemini/antigravity-cli`, `~/.gemini/antigravity`) that exists, holds a `conversations` directory and is not kept. `--json` prints the same as JSON. It reads, and never writes or calls the hub. |
 | `cota requests report` | One run (below). |
 | `cota requests schedule` | Installs the schedule (below); `--remove` removes it. |
