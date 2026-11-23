@@ -1,4 +1,5 @@
 import { Effect, Option, Redacted, Result } from "effect";
+import { AddReportedFolder } from "#02-application/commands/add-reported-folder.command.ts";
 import {
   ConfigureClients,
   leftLine,
@@ -10,12 +11,17 @@ import { KeepReaderKey } from "#02-application/commands/keep-reader-key.command.
 import { LaunchClient } from "#02-application/commands/launch-client.command.ts";
 import { LeaveMachine } from "#02-application/commands/leave-machine.command.ts";
 import { RemoveMachineLogin } from "#02-application/commands/remove-machine-login.command.ts";
+import { RemoveReportedFolder } from "#02-application/commands/remove-reported-folder.command.ts";
 import { RemoveShims } from "#02-application/commands/remove-shims.command.ts";
 import {
   type Reported,
   ReportTitles,
 } from "#02-application/commands/report-titles.command.ts";
-import { ScheduleTitles } from "#02-application/commands/schedule-titles.command.ts";
+import { ScheduleReporter } from "#02-application/commands/schedule-reporter.command.ts";
+import {
+  SendReportedRequests,
+  type Sent,
+} from "#02-application/commands/send-reported-requests.command.ts";
 import { SetRoutes } from "#02-application/commands/set-routes.command.ts";
 import type { FilesFailed } from "#02-application/interfaces/files.ts";
 import { MachineSteps } from "#02-application/interfaces/machine-steps.ts";
@@ -25,6 +31,10 @@ import { LocateFiles } from "#02-application/queries/locate-files.query.ts";
 import { ReadConfiguration } from "#02-application/queries/read-configuration.query.ts";
 import { ReadHubKeys } from "#02-application/queries/read-hub-keys.query.ts";
 import { ReadMemory } from "#02-application/queries/read-memory.query.ts";
+import {
+  type Shown,
+  ShowRequests,
+} from "#02-application/queries/show-requests.query.ts";
 import { ShowRoutes } from "#02-application/queries/show-routes.query.ts";
 import { WhichRoute } from "#02-application/queries/which-route.query.ts";
 import * as Check from "#03-domain/check.ts";
@@ -35,6 +45,7 @@ import * as Launch from "#03-domain/launch.ts";
 import * as Memory from "#03-domain/memory.ts";
 import type { DirectoryUnknown, Paths } from "#03-domain/paths.ts";
 import * as RouteList from "#03-domain/route-list.ts";
+import type { Reporter } from "#03-domain/schedule.ts";
 import cli from "#package.json" with { type: "json" };
 import * as CommandLine from "./command-line.ts";
 import * as DoctorReport from "./doctor-report.ts";
@@ -72,6 +83,71 @@ export const reportedLines = ({ kept, problems }: Reported) => ({
         ? "cota: there was no new title to send.\n"
         : "",
   err: problems.map((problem) => `cota: ${problem}\n`).join(""),
+});
+
+/** What a run of the request reporter says: on standard output what the hub stored, on stderr each problem, or that another run was going on. */
+export const sentLines = ({ stored, held, busy, problems }: Sent) => ({
+  out: busy
+    ? ""
+    : stored + held > 0
+      ? `cota: the hub stored ${stored} ${stored === 1 ? "call" : "calls"}${held > 0 ? `, and held ${held} already` : ""}.\n`
+      : problems.length === 0
+        ? "cota: there was nothing new to report.\n"
+        : "",
+  err: busy
+    ? "cota: another run of cota requests report is going on; this one did nothing.\n"
+    : problems.map((problem) => `cota: ${problem}\n`).join(""),
+});
+
+const shownText = ({ folders, stateRead, notKept }: Shown): string => {
+  const lines: Array<string> = [];
+  if (!stateRead) {
+    lines.push(
+      "cota: requests.json does not read, so how far each folder was reported is not known.",
+    );
+  }
+  if (folders.length === 0) lines.push("No data folder is reported.");
+  for (const each of folders) {
+    lines.push(
+      `${each.folder}: bills ${each.pool}; ${Option.match(each.through, {
+        onNone: () => "not caught up with yet",
+        onSome: (at) => `reported through ${at}`,
+      })}${Option.match(each.ranAt, {
+        onNone: () => ", and the reporter has not run for it",
+        onSome: (at) => `, last run ${at}`,
+      })}.`,
+    );
+    for (const { conversation, reason, step } of each.notReported) {
+      lines.push(
+        `  ${conversation}: not reported (${reason}${Option.match(step, {
+          onNone: () => "",
+          onSome: (at) => `, at step ${at}`,
+        })})`,
+      );
+    }
+  }
+  for (const folder of notKept) {
+    lines.push(
+      `${folder}: holds conversations and is not reported. cota requests add antigravity '${folder}' <pool> reports it.`,
+    );
+  }
+  return lines.map((line) => `${line}\n`).join("");
+};
+
+const shownJson = ({ folders, stateRead, notKept }: Shown) => ({
+  stateRead,
+  folders: folders.map((each) => ({
+    folder: each.folder,
+    pool: each.pool,
+    through: Option.getOrNull(each.through),
+    ranAt: Option.getOrNull(each.ranAt),
+    notReported: each.notReported.map(({ conversation, reason, step }) => ({
+      conversation,
+      reason,
+      step: Option.getOrNull(step),
+    })),
+  })),
+  notKept,
 });
 
 const launch = Effect.fn("cota.launch")(function* (
@@ -284,7 +360,7 @@ const titles = Effect.fn("cota.titles")(function* (
       yield* terminal.printError(unreadConfiguration(located.failure));
       return failed;
     }
-    return yield* schedule(located.success, true);
+    return yield* schedule(located.success, "titles", true);
   }
   const machine = yield* Effect.result(joinedMachine);
   if (Result.isFailure(machine)) {
@@ -293,7 +369,7 @@ const titles = Effect.fn("cota.titles")(function* (
   }
   const { paths, configuration } = machine.success;
   if (invocation._tag === "TitlesSchedule") {
-    return yield* schedule(paths, false);
+    return yield* schedule(paths, "titles", false);
   }
   const reported = yield* (yield* ReportTitles).execute(paths, configuration);
   const { out, err } = reportedLines(reported);
@@ -304,11 +380,12 @@ const titles = Effect.fn("cota.titles")(function* (
 
 const schedule = Effect.fn("cota.schedule")(function* (
   paths: Paths,
+  reporter: Reporter,
   remove: boolean,
 ) {
   const terminal = yield* Terminal;
   const done = yield* Effect.result(
-    (yield* ScheduleTitles).execute(paths, remove),
+    (yield* ScheduleReporter).execute(paths, reporter, remove),
   );
   if (Result.isFailure(done)) {
     yield* terminal.printError(`cota: ${done.failure.problem}\n`);
@@ -317,11 +394,107 @@ const schedule = Effect.fn("cota.schedule")(function* (
   const said =
     remove && done.success.length === 0
       ? [
-          "cota: the title reporter was not scheduled; there was nothing to remove.",
+          `cota: the ${reporter === "titles" ? "title" : "request"} reporter was not scheduled; there was nothing to remove.`,
         ]
       : done.success;
   yield* terminal.print(said.map((line) => `${line}\n`).join(""));
   return succeeded;
+});
+
+/** One run of the request reporter, saying what it did; its exit status. */
+const reportRequests = Effect.fn("cota.reportRequests")(function* (
+  paths: Paths,
+  configuration: Configuration.Configuration,
+) {
+  const terminal = yield* Terminal;
+  const sent = yield* (yield* SendReportedRequests).execute(
+    paths,
+    configuration,
+  );
+  const { out, err } = sentLines(sent);
+  yield* terminal.print(out);
+  yield* terminal.printError(err);
+  return sent.problems.length === 0 ? succeeded : failed;
+});
+
+const requests = Effect.fn("cota.requests")(function* (
+  invocation: Extract<
+    CommandLine.Invocation,
+    {
+      readonly _tag:
+        | "RequestsAdd"
+        | "RequestsRemove"
+        | "RequestsShow"
+        | "RequestsReport"
+        | "RequestsSchedule";
+    }
+  >,
+) {
+  const terminal = yield* Terminal;
+  if (invocation._tag === "RequestsSchedule" && invocation.remove) {
+    const located = yield* Effect.result((yield* LocateFiles).execute);
+    if (Result.isFailure(located)) {
+      yield* terminal.printError(unreadConfiguration(located.failure));
+      return failed;
+    }
+    return yield* schedule(located.success, "requests", true);
+  }
+  const machine = yield* Effect.result(joinedMachine);
+  if (Result.isFailure(machine)) {
+    yield* terminal.printError(unreadConfiguration(machine.failure));
+    return failed;
+  }
+  const { paths, configuration } = machine.success;
+  switch (invocation._tag) {
+    case "RequestsSchedule":
+      return yield* schedule(paths, "requests", false);
+    case "RequestsReport":
+      return yield* reportRequests(paths, configuration);
+    case "RequestsShow": {
+      const shown = yield* (yield* ShowRequests).execute(paths, configuration);
+      yield* terminal.print(
+        invocation.json
+          ? `${JSON.stringify(shownJson(shown), null, 2)}\n`
+          : shownText(shown),
+      );
+      return succeeded;
+    }
+    case "RequestsAdd": {
+      const added = yield* Effect.result(
+        (yield* AddReportedFolder).execute(paths, configuration, invocation),
+      );
+      if (Result.isFailure(added)) {
+        yield* terminal.printError(`cota: ${added.failure.problem}\n`);
+        return failed;
+      }
+      yield* terminal.print(
+        added.success.said.map((line) => `${line}\n`).join(""),
+      );
+      const scheduled = added.success.first
+        ? yield* schedule(paths, "requests", false)
+        : succeeded;
+      const reported = yield* reportRequests(
+        paths,
+        added.success.configuration,
+      );
+      return scheduled === succeeded ? reported : scheduled;
+    }
+    case "RequestsRemove": {
+      const removed = yield* Effect.result(
+        (yield* RemoveReportedFolder).execute(paths, configuration, invocation),
+      );
+      if (Result.isFailure(removed)) {
+        yield* terminal.printError(`cota: ${removed.failure.problem}\n`);
+        return failed;
+      }
+      yield* terminal.print(
+        removed.success.said.map((line) => `${line}\n`).join(""),
+      );
+      return removed.success.last
+        ? yield* schedule(paths, "requests", true)
+        : succeeded;
+    }
+  }
 });
 
 const routes = Effect.fn("cota.routes")(function* (
@@ -484,6 +657,12 @@ export const run = Effect.fn("cota")(function* (argv: ReadonlyArray<string>) {
     case "TitlesReport":
     case "TitlesSchedule":
       return yield* titles(invocation);
+    case "RequestsAdd":
+    case "RequestsRemove":
+    case "RequestsShow":
+    case "RequestsReport":
+    case "RequestsSchedule":
+      return yield* requests(invocation);
     case "MemoryKey":
     case "MemoryGet":
     case "MemorySql":

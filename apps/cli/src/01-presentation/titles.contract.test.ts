@@ -291,7 +291,9 @@ layer(Harness.layer())("the title reporter against a whole hub", (it) => {
           );
           const doctor = yield* cota(on, ["doctor", "--json"]);
           expect(doctor.status).toBe(1);
-          const titles = JSON.parse(doctor.out).checks.at(-1);
+          const titles = JSON.parse(doctor.out).checks.find(
+            ({ id }: { readonly id: string }) => id === "titles",
+          );
           expect(titles).toEqual({
             id: "titles",
             outcome: "failed",

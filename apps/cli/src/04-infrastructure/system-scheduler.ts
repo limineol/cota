@@ -7,7 +7,7 @@ import {
   SchedulerFailed,
   SchedulerUnavailable,
 } from "#02-application/interfaces/scheduler.ts";
-import * as Schedule from "#03-domain/schedule.ts";
+import type * as Schedule from "#03-domain/schedule.ts";
 import type { System } from "#03-domain/system.ts";
 
 /** What a program the scheduler adapter ran gave back; a program that could not start exits 127. */
@@ -107,9 +107,10 @@ const must = async (ran: Promise<Ran>, what: string): Promise<void> => {
 
 const launchd = (run: Run, uid: number): Scheduler["Service"] => {
   const domain = `gui/${uid}`;
-  const service = `${domain}/${Schedule.launchAgentLabel}`;
-  const loaded = async () =>
-    (await run("launchctl", ["print", service])).exitCode === 0;
+  const serviceOf = (schedule: Schedule.Schedule) =>
+    `${domain}/${schedule.name}`;
+  const loaded = async (schedule: Schedule.Schedule) =>
+    (await run("launchctl", ["print", serviceOf(schedule)])).exitCode === 0;
   const plistOf = (schedule: Schedule.Schedule) =>
     schedule._tag === "LaunchAgent" ? [schedule.plist] : [];
   return Scheduler.of({
@@ -117,8 +118,8 @@ const launchd = (run: Run, uid: number): Scheduler["Service"] => {
       attempt(async (): Promise<Installed> => {
         const files = await definitionState(plistOf(schedule), "utf8");
         if (files === "absent")
-          return (await loaded()) ? "otherwise" : "absent";
-        return files === "as given" && (await loaded())
+          return (await loaded(schedule)) ? "otherwise" : "absent";
+        return files === "as given" && (await loaded(schedule))
           ? "as given"
           : "otherwise";
       }),
@@ -126,9 +127,9 @@ const launchd = (run: Run, uid: number): Scheduler["Service"] => {
       attempt(async () => {
         for (const plist of plistOf(schedule)) {
           await writeText(plist, "utf8");
-          if (await loaded()) {
+          if (await loaded(schedule)) {
             await must(
-              run("launchctl", ["bootout", service]),
+              run("launchctl", ["bootout", serviceOf(schedule)]),
               "launchctl bootout",
             );
           }
@@ -140,10 +141,10 @@ const launchd = (run: Run, uid: number): Scheduler["Service"] => {
       }),
     remove: (schedule) =>
       attempt(async () => {
-        const wasLoaded = await loaded();
+        const wasLoaded = await loaded(schedule);
         if (wasLoaded) {
           await must(
-            run("launchctl", ["bootout", service]),
+            run("launchctl", ["bootout", serviceOf(schedule)]),
             "launchctl bootout",
           );
         }
@@ -188,8 +189,8 @@ const systemd = (run: Run): Scheduler["Service"] => {
         attempt(async (): Promise<Installed> => {
           const files = await definitionState(unitsOf(schedule), "utf8");
           const enabled =
-            (await user("is-enabled", Schedule.systemdTimer)).exitCode === 0 &&
-            (await user("is-active", Schedule.systemdTimer)).exitCode === 0;
+            (await user("is-enabled", schedule.name)).exitCode === 0 &&
+            (await user("is-active", schedule.name)).exitCode === 0;
           if (files === "absent") return enabled ? "otherwise" : "absent";
           return files === "as given" && enabled ? "as given" : "otherwise";
         }),
@@ -200,12 +201,9 @@ const systemd = (run: Run): Scheduler["Service"] => {
         attempt(async () => {
           for (const unit of unitsOf(schedule)) await writeText(unit, "utf8");
           await must(user("daemon-reload"), "systemctl --user daemon-reload");
+          await must(user("enable", schedule.name), "systemctl --user enable");
           await must(
-            user("enable", Schedule.systemdTimer),
-            "systemctl --user enable",
-          );
-          await must(
-            user("restart", Schedule.systemdTimer),
+            user("restart", schedule.name),
             "systemctl --user restart",
           );
         }),
@@ -215,8 +213,8 @@ const systemd = (run: Run): Scheduler["Service"] => {
         available,
         attempt(async () => {
           const wasEnabled =
-            (await user("is-enabled", Schedule.systemdTimer)).exitCode === 0;
-          await user("disable", "--now", Schedule.systemdTimer);
+            (await user("is-enabled", schedule.name)).exitCode === 0;
+          await user("disable", "--now", schedule.name);
           let removed = wasEnabled;
           for (const unit of unitsOf(schedule)) {
             if ((await readText(unit.path, "utf8")) !== undefined) {
@@ -234,8 +232,7 @@ const systemd = (run: Run): Scheduler["Service"] => {
 };
 
 const taskScheduler = (run: Run): Scheduler["Service"] => {
-  const name = Schedule.taskName;
-  const exists = async () =>
+  const exists = async (name: string) =>
     (await run("schtasks", ["/Query", "/TN", name])).exitCode === 0;
   const taskOf = (schedule: Schedule.Schedule) =>
     schedule._tag === "TaskScheduler" ? [schedule.task] : [];
@@ -243,7 +240,7 @@ const taskScheduler = (run: Run): Scheduler["Service"] => {
     installed: (schedule) =>
       attempt(async (): Promise<Installed> => {
         const kept = await definitionState(taskOf(schedule), "utf16le");
-        const registered = await exists();
+        const registered = await exists(schedule.name);
         if (!registered) return kept === "absent" ? "absent" : "otherwise";
         return kept === "as given" ? "as given" : "otherwise";
       }),
@@ -252,17 +249,24 @@ const taskScheduler = (run: Run): Scheduler["Service"] => {
         for (const task of taskOf(schedule)) {
           await writeText(task, "utf16le");
           await must(
-            run("schtasks", ["/Create", "/TN", name, "/XML", task.path, "/F"]),
+            run("schtasks", [
+              "/Create",
+              "/TN",
+              schedule.name,
+              "/XML",
+              task.path,
+              "/F",
+            ]),
             "schtasks /Create",
           );
         }
       }),
     remove: (schedule) =>
       attempt(async () => {
-        const registered = await exists();
+        const registered = await exists(schedule.name);
         if (registered) {
           await must(
-            run("schtasks", ["/Delete", "/TN", name, "/F"]),
+            run("schtasks", ["/Delete", "/TN", schedule.name, "/F"]),
             "schtasks /Delete",
           );
         }

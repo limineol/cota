@@ -52,6 +52,8 @@ export interface OpenedPool {
 export interface Machine {
   readonly hubKey: { readonly name: string; readonly scope: Scope };
   readonly pools: ReadonlyArray<OpenedPool>;
+  /** The observed pools, by id, which a report may bill. */
+  readonly observedPools: ReadonlyArray<string>;
 }
 
 export class HubUnreachable extends Schema.TaggedError<

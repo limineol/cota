@@ -19,6 +19,8 @@ export interface Script {
   readonly health?: "up" | "down" | "failing";
   /** The pools each scope of hub key opens. */
   readonly pools?: Partial<Record<Scope, ReadonlyArray<OpenedPool>>>;
+  /** The observed pools the hub lists. */
+  readonly observedPools?: ReadonlyArray<string>;
   /** What the hub answers `GET /api/route`; by default it cannot be reached. */
   readonly route?: (
     question: RouteQuestion,
@@ -63,6 +65,7 @@ export const make = (
             return Effect.succeed({
               hubKey: { name: "a key", scope: answer },
               pools: script.pools?.[answer] ?? [],
+              observedPools: script.observedPools ?? [],
             });
         }
       },

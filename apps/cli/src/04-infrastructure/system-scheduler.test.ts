@@ -40,7 +40,7 @@ const onASystem = <A, E>(
       });
       const scheduleOf = (program: string) => {
         const schedule = Result.getOrThrow(
-          Schedule.scheduleOf(system, variables, program, paths),
+          Schedule.scheduleOf("titles", system, variables, program, paths),
         );
         return system === "win32" && schedule._tag === "TaskScheduler"
           ? {
@@ -191,7 +191,13 @@ describe("the schedule's definitions", () => {
       PATH: "/usr/bin",
     };
     const launchAgent = Result.getOrThrow(
-      Schedule.scheduleOf("darwin", variables, "/Users/me/bin/cota", paths),
+      Schedule.scheduleOf(
+        "titles",
+        "darwin",
+        variables,
+        "/Users/me/bin/cota",
+        paths,
+      ),
     );
     expect(Schedule.definitionsOf(launchAgent)).toEqual([
       {
@@ -230,6 +236,7 @@ describe("the schedule's definitions", () => {
     ]);
     const units = Result.getOrThrow(
       Schedule.scheduleOf(
+        "titles",
         "linux",
         variables,
         "/home/me/my tools/100%/cota",

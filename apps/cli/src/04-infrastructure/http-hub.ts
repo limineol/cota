@@ -141,6 +141,7 @@ export const layer: Layer.Layer<Hub> = Layer.effect(
                 ? []
                 : [{ id, kind, protocol, displayName, models }],
           ),
+          observedPools: machine.observedPools.map(({ id }) => id),
         };
       }),
       route: Effect.fn("Hub.route")(function* (

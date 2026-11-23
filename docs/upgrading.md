@@ -2,8 +2,8 @@
 status: active
 scope: repository
 owner: limineol
-last_verified: 2026-11-22
-review_by: 2027-02-20
+last_verified: 2026-11-23
+review_by: 2027-02-23
 supersedes: []
 code:
   - deploy/compose.yaml
@@ -86,7 +86,7 @@ docker compose logs hub | grep -c 'cota hub listening'
 
 The hub runs the new image, answers `{"status":"ok"}`, and has started once, with its pools named on that line. Sign in to the dashboard. If anything is wrong, roll back. `rm -rf "$DOWNLOADS"` removes the downloads once you no longer need the release's Compose file.
 
-The machines need nothing for a new hub image. A release whose notes say `cota` changed: on each machine, install its `cota` as the install did ([`install.md`](install.md), Each machine, step 1, with `VERSION` the new release's), which replaces `~/.local/bin/cota`, and run `~/.local/bin/cota doctor`.
+The machines need nothing for a new hub image. A release whose notes say `cota` changed: on each machine, install its `cota` as the install did ([`install.md`](install.md), Each machine, step 1, with `VERSION` the new release's), which replaces `~/.local/bin/cota`, and run `~/.local/bin/cota doctor`. A machine joined by a `cota` before `cota requests` reports no data folder until the owner names one: to report Antigravity's model calls there, run `cota requests add` as the install does ([`install.md`](install.md), Each machine, step 5), after adding the observed pool to `cota.toml` and restarting the hub.
 
 ### What an upgrade keeps
 

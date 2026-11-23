@@ -14,6 +14,7 @@ export const CheckId = Schema.Literals([
   "kept-routes",
   "configured",
   "titles",
+  "requests",
 ]);
 export type CheckId = typeof CheckId.Type;
 

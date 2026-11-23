@@ -2,14 +2,14 @@
 status: active
 scope: apps/cli
 owner: limineol
-last_verified: 2026-11-17
-review_by: 2027-02-17
+last_verified: 2026-11-23
+review_by: 2027-02-23
 supersedes: []
 code:
   - apps/cli/src/03-domain/titles.ts
   - apps/cli/src/03-domain/schedule.ts
   - apps/cli/src/02-application/commands/report-titles.command.ts
-  - apps/cli/src/02-application/commands/schedule-titles.command.ts
+  - apps/cli/src/02-application/commands/schedule-reporter.command.ts
   - apps/cli/src/02-application/queries/plan-schedule.query.ts
   - apps/cli/src/02-application/interfaces/title-sources.ts
   - apps/cli/src/02-application/interfaces/title-reports.ts
@@ -54,11 +54,11 @@ Installs the schedule of ADR-0022, replacing one already there only when it diff
 | Linux | `$XDG_CONFIG_HOME/systemd/user/cota-titles.service` (a `oneshot`) and `cota-titles.timer` (`OnActiveSec` and `OnUnitActiveSec` 30 seconds) | `systemctl --user daemon-reload`, `enable` and `restart` of the timer |
 | Windows | the task `cota titles`, whose definition is kept as `titles-task.xml` in the state's directory: two time triggers half a minute apart, each repeating every minute, Task Scheduler's least interval, `IgnoreNew` for a run still going | `schtasks /Create /XML … /F` |
 
-It is installed as given when its definition's files hold what it would write and the scheduler has it loaded (`launchctl print`, `systemctl --user is-enabled` and `is-active`, `schtasks /Query`). Linux without a systemd user session (a container, WSL without systemd) has no scheduler `cota` can use: `cota titles schedule` says so, with the line that runs the reporter every minute from cron, and exits 1; a join says the same and goes on; `--remove` has nothing to remove. Joining schedules it and runs the reporter once (the CLI spec's Joining, step 7), so that doctor, which ends the join, sees a run; leaving removes it first.
+It is installed as given when its definition's files hold what it would write and the scheduler has it loaded (`launchctl print`, `systemctl --user is-enabled` and `is-active`, `schtasks /Query`). Linux without a systemd user session (a container, WSL without systemd) has no scheduler `cota` can use: `cota titles schedule` says so, with the line that runs the reporter every minute from cron, and exits 1; a join says the same and goes on; `--remove` has nothing to remove. Joining schedules it and runs the reporter once (the CLI spec's Joining, step 7), so that doctor, which ends the join, sees a run; leaving removes it first of the machine's files, after the request reporter's schedule. The request reporter's schedule is built the same way, by the same command (`ScheduleReporter`), under names of its own (`docs/specs/request-reporter/spec.md`).
 
 ## Doctor's check
 
-Doctor (the CLI spec's Doctor) gains one check, last. It needs `config`.
+Doctor (the CLI spec's Doctor) gains one check, after the CLI's own and before the request reporter's `requests`. It needs `config`.
 
 | Id | Passes when | Fix |
 | --- | --- | --- |

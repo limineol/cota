@@ -127,3 +127,19 @@ export const titlesFile = (paths: Paths): string =>
 /** Why the title reporter's last run failed, `titles.error`, in the state's directory. */
 export const titlesErrorFile = (paths: Paths): string =>
   `${paths.state}${paths.separator}titles.error`;
+
+/** The request reporter's report cursors, `requests.json`, in the state's directory. */
+export const requestsFile = (paths: Paths): string =>
+  `${paths.state}${paths.separator}requests.json`;
+
+/** Why the request reporter's last run failed, `requests.error`, in the state's directory. */
+export const requestsErrorFile = (paths: Paths): string =>
+  `${paths.state}${paths.separator}requests.error`;
+
+/** The request reporter's run lock, `requests.lock`, in the state's directory. */
+export const requestsLockFile = (paths: Paths): string =>
+  `${paths.state}${paths.separator}requests.lock`;
+
+/** Where the request reporter copies a conversation to read it, and where a report's body waits for curl, in the state's directory. */
+export const requestsScratch = (paths: Paths): string =>
+  `${paths.state}${paths.separator}requests`;

@@ -15,14 +15,18 @@ import * as Harness from "@cota/hub/harness";
 import { expect } from "@effect/vitest";
 import { Effect, type Layer } from "effect";
 import type { Hub } from "#02-application/interfaces/hub.ts";
+import type { RequestReports } from "#02-application/interfaces/request-reports.ts";
 import type { TitleReports } from "#02-application/interfaces/title-reports.ts";
 import type { Variables } from "#03-domain/system.ts";
 import * as HttpHub from "#04-infrastructure/http-hub.ts";
+import * as HttpRequestReports from "#04-infrastructure/http-request-reports.ts";
 import * as HttpTitleReports from "#04-infrastructure/http-title-reports.ts";
 import * as NodeFiles from "#04-infrastructure/node-files.ts";
 import * as NodeProcesses from "#04-infrastructure/node-processes.ts";
+import * as NodeRunLock from "#04-infrastructure/node-run-lock.ts";
 import * as NodeTitleSources from "#04-infrastructure/node-title-sources.ts";
 import * as ProcessLoginShell from "#04-infrastructure/process-login-shell.ts";
+import * as SqliteClientRecords from "#04-infrastructure/sqlite-client-records.ts";
 import * as SystemScheduler from "#04-infrastructure/system-scheduler.ts";
 import * as Cota from "./cota.ts";
 import * as RecordingRun from "./fakes/recording-run.ts";
@@ -123,6 +127,8 @@ export const machine = () => {
     routes: join(state, "routes.json"),
     titles: join(state, "titles.json"),
     titlesError: join(state, "titles.error"),
+    requests: join(state, "requests.json"),
+    requestsError: join(state, "requests.error"),
     launchAgent: join(home, "Library", "LaunchAgents", "cota.titles.plist"),
     /** The stand-in for `launchctl`, which records what it is given and runs nothing. */
     launchctl: RecordingRun.make(),
@@ -173,6 +179,7 @@ export const cota = (
     readonly variables?: Variables;
     readonly hub?: Layer.Layer<Hub>;
     readonly titleReports?: Layer.Layer<TitleReports>;
+    readonly requestReports?: Layer.Layer<RequestReports>;
   } = {},
 ) =>
   Effect.gen(function* () {
@@ -199,6 +206,9 @@ export const cota = (
         uid: 501,
         run: on.launchctl.run,
       }),
+      clientRecords: SqliteClientRecords.layer,
+      requestReports: options.requestReports ?? HttpRequestReports.layer,
+      runLock: NodeRunLock.layer,
     });
     const out = terminal.printed.out.join("");
     const err = terminal.printed.err.join("");

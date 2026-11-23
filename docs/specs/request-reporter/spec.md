@@ -1,18 +1,39 @@
 ---
-status: draft
+status: active
 scope: apps/cli
 owner: limineol
-last_verified: 2026-11-22
-review_by: 2027-02-22
+last_verified: 2026-11-23
+review_by: 2027-02-23
 supersedes: []
-code: []
+code:
+  - apps/cli/src/03-domain/antigravity-record.ts
+  - apps/cli/src/03-domain/requests.ts
+  - apps/cli/src/03-domain/configuration.ts
+  - apps/cli/src/03-domain/client.ts
+  - apps/cli/src/03-domain/schedule.ts
+  - apps/cli/src/02-application/commands/send-reported-requests.command.ts
+  - apps/cli/src/02-application/commands/add-reported-folder.command.ts
+  - apps/cli/src/02-application/commands/remove-reported-folder.command.ts
+  - apps/cli/src/02-application/commands/schedule-reporter.command.ts
+  - apps/cli/src/02-application/queries/show-requests.query.ts
+  - apps/cli/src/02-application/queries/read-project.query.ts
+  - apps/cli/src/02-application/queries/doctor.query.ts
+  - apps/cli/src/02-application/interfaces/client-records.ts
+  - apps/cli/src/02-application/interfaces/request-reports.ts
+  - apps/cli/src/02-application/interfaces/run-lock.ts
+  - apps/cli/src/04-infrastructure/sqlite-client-records.ts
+  - apps/cli/src/04-infrastructure/request-answers.ts
+  - apps/cli/src/04-infrastructure/http-request-reports.ts
+  - apps/cli/src/04-infrastructure/curl-request-reports.ts
+  - apps/cli/src/04-infrastructure/node-run-lock.ts
+  - tooling/mutants.table.ts
 ---
 
 # The request reporter
 
 What reads the record a client that cannot be pointed at the hub writes of its conversations, and reports each model call in it to the hub: `cota requests report`, run every 30 seconds by the machine's own scheduler (`CONTEXT.md`, Request reporter), and the commands that say which data folders it reads. Its one reader is Antigravity's (below). ADR-0029 gives the reasons; the endpoint it calls, `POST /api/reported-requests`, and what the hub does with a report are `docs/specs/reported-requests/spec.md`; the rest of `cota` is `docs/specs/cli/spec.md`, and its sibling, which this follows where it can, is `docs/specs/title-reporter/spec.md`.
 
-**Status.** Draft: nothing here is built. Milestone 6d builds it, after confirming what ADR-0029 lists under Facts to confirm when built, and this spec changes with what is found; it becomes active then. Antigravity's tables and field numbers are as one conversation on one machine showed them, read by trial.
+**Status.** Active: milestone 6d built it, on what it found of ADR-0029's Facts to confirm when built. Antigravity's tables and field numbers are as four copies of one throwaway conversation on one machine showed them, read by trial and against public parsers of the same record; the tests read generated records, and no run has reported a real conversation. The schedulers are those of the title reporter, driven in the tests by the same stand-in, and nothing of it ran on Windows. Sending through `/usr/bin/curl` is tested against a whole hub with a body of several MB, but not from a launchd job.
 
 ## The configuration
 
@@ -44,7 +65,7 @@ A join keeps them as it keeps `[launch]` and the other `clients` settings, after
 
 On a machine that has not joined, each says so and exits 1, writing nothing.
 
-**History, decided by default.** When a folder is added, its first run reports every conversation the folder holds, whenever written: the request log is the record, and the memory skill reads it. The other way, only those changed since the folder was added (a first cursor at each conversation's end), was the owner's to choose, who has not answered; this is the recommendation, taken by default, and changing it is a first cursor for each conversation `add` finds (`SendReportedRequests`' `fromStart`).
+**History, decided by default.** When a folder is added, its first run reports every conversation the folder holds, whenever written: the request log is the record, and the memory skill reads it. The other way, only those changed since the folder was added (a first cursor at each conversation's end), was the owner's to choose, who has not answered; this is the recommendation, taken by default, and changing it is a first cursor at its end for each conversation `add` finds, in place of `firstCursor` (`03-domain/requests.ts`), which starts before the first step.
 
 ## `cota requests report`
 
@@ -53,7 +74,7 @@ A run takes the lock `requests.lock` (in the state's directory) without waiting:
 1. **Notes when it begins reading the folder**: the run's `through` for that folder.
 2. **Lists** `<folder>/conversations/*.db`: regular files whose names are a conversation's id and `.db`; nothing else of the folder is listed or opened.
 3. **Reads each conversation that is due**: one with no cursor; one whose database's or `-wal`'s size or modification time differs from the cursor's; one whose cursor says it is `waiting` on an unfinished step, at every run until that is settled, since the 10 minutes pass without the files changing; and one the last run read further than the hub stored (below). The sizes and times are those taken before the conversation was copied, so that a step the client adds while it is read leaves them older than the files and the next run reads it again. Each is read with the Antigravity reader, from its cursor on, into its model calls in order (each with its new items), and stops a conversation where the reader stops it.
-4. **Sends them in reports** of one folder, with the subscription hub key, else the keyed one, and `x-cota-machine` (as the title reporter sends): calls in the order of their conversations and each conversation's in order, at most 200 calls and 8 MiB written out to a report, a call alone over 8 MiB in a report of its own, waiting 120 seconds for each answer. A report answered 200 moves the cursor of each conversation it held to its last call, and `requests.json` is written; any other answer, or none, stops the folder, which keeps its cursors. A conversation's `db` and `wal` are kept only once every call the run read from it was answered 200: until then they stay as they were, so a conversation whose later report failed is due at the next run though its files did not change. A 409 `report-out-of-order` says as well that the hub does not hold what this folder's cursor says was reported, and that `cota requests remove` and `add` report the folder again from its first call: the hub stores what it does not hold, and nothing twice.
+4. **Sends them in reports** of one folder, with the subscription hub key, else the keyed one, and `x-cota-machine` (as the title reporter sends): calls in the order of their conversations and each conversation's in order, at most 200 calls and 8 MiB written out to a report, a call alone over 8 MiB in a report of its own, waiting 120 seconds for each answer. A report answered 200 moves the cursor of each conversation it held to its last call, and `requests.json` is written; any other answer stops the folder, which keeps its cursors, and no answer, or a hub key the hub does not know (401), stops the run, since every other folder's report would meet the same. A conversation's `db` and `wal` are kept only once every call the run read from it was answered 200: until then they stay as they were, so a conversation whose later report failed is due at the next run though its files did not change. A 409 `report-out-of-order` says as well that the hub does not hold what this folder's cursor says was reported, and that `cota requests remove` and `add` report the folder again from its first call: the hub stores what it does not hold, and nothing twice.
 5. **Ends the folder** with a report holding its `through`, when every conversation it read was sent to where the reader stopped: the last report of the folder carries it, or a report with no calls when there was nothing new, so that the hub sees a machine that is current. A conversation the reader does not report (below) does not hold back `through`: it is said by `cota requests show` and doctor instead, so that one conversation cannot make a machine look silent.
 
 Then it writes `requests.json`, and a run with a problem writes `requests.error` (`2026-11-22T09:12:03.120Z <problem>; <problem>`), prints each on stderr and exits 1; a run without one removes it. A folder that does not exist, or a pool the hub refuses, is a problem of the run, and the other folders are still read. On standard output it says how many calls the hub stored and found held, or that there was nothing new. A machine with no hub key sends nothing, which is a problem.
@@ -66,13 +87,13 @@ On macOS every run sends through `/usr/bin/curl` (ADR-0022): curl's configuratio
 
 | Field | Holds |
 | --- | --- |
-| `step` | The `idx` of the last step reported: the step that carries the last stored call's usage. |
-| `call`, `startedAt` | That call's call key and its start, which the next report names as its first call's `after`. |
-| `db`, `wal` | The sizes and modification times of the database and its `-wal`, taken before the last read of it whose every call the hub stored. |
-| `waiting` | Since when the conversation has ended on an unfinished step, with the sizes and times of its files then, when it does (below). |
-| `notReported` | Why the reader stopped the conversation, when it did: a reason of the table below, and the step it stopped at. |
+| `step` | The `idx` of the last step reported: the step that carries the last stored call's usage; -1 before the first. |
+| `call` | That call's call key and its start (`{ call, startedAt }`, milliseconds), which the next report names as its first call's `after`; `null` before the first. |
+| `stamps` | The sizes and modification times of the database and its `-wal` (`{ db, wal }`, each `{ size, changedAt }`, `wal` `null` when there is none), taken before the last read of it whose every call the hub stored. |
+| `waiting` | Since when the conversation has ended on an unfinished step, with the stamps of its files then (`{ since, stamps }`), when it does (below). |
+| `notReported` | Why the reader stopped the conversation, when it did: a reason of the table below, and the step it stopped at (`{ reason, step }`). |
 
-and the times of the last run, and of the last that ended without a problem, per folder. A `requests.json` that does not read is a problem of the run, which reports nothing and leaves it as it is. `cota requests remove` and `add` of the folder start it again: every conversation is sent from its first call, and the hub stores only what it does not hold, whichever hub key reported it before.
+and, per folder, the times of the last run (`ranAt`), of the last that ended without a problem (`goodAt`), and the `through` the hub last stored (`through`), each `null` until there is one. A `requests.json` that does not read is a problem of the run, which reports nothing and leaves it as it is. `cota requests remove` and `add` of the folder start it again: every conversation is sent from its first call, and the hub stores only what it does not hold, whichever hub key reported it before.
 
 ## `cota requests schedule`
 
@@ -148,7 +169,7 @@ Doctor gains one check after `titles`. It needs `config`, and `hub-keys` to pass
 
 | Id | Passes when | Fix |
 | --- | --- | --- |
-| `requests` | skipped when no folder is kept; otherwise the reporter is scheduled as `cota requests schedule` would install it, its last run was under 5 minutes ago, `requests.error` is absent, each kept folder exists and each kept pool is in the hub's `observedPools`; warned when a conversation is not reported, naming the reason and the conversation | `cota requests schedule`; with `requests.error`, what it says, then `cota requests report`; for a folder gone or a pool refused, `cota requests remove <client> <folder>`, or `cota requests add` with an observed pool; for a conversation not reported, `cota requests show`, and an issue when the reason is `schema` or `unreadable-step` (Antigravity changed) |
+| `requests` | skipped when no folder is kept; otherwise the reporter is scheduled as `cota requests schedule` would install it, its last run was under 5 minutes ago, `requests.error` is absent, each kept folder exists and each kept pool is in the hub's `observedPools`; warned when a conversation is not reported, naming the reason and the conversation, which a failed check names too | `cota requests schedule`; with `requests.error`, what it says, then `cota requests report`; for a folder gone or a pool refused, `cota requests remove <client> <folder>`, or `cota requests add` with an observed pool; for a conversation not reported, `cota requests show`, and an issue when the reason is `schema` or `unreadable-step` (Antigravity changed) |
 
 **A data folder not reported, decided by default.** This check does not warn of a default folder of Antigravity's that holds conversations and is not kept, which would nag an owner who chose not to report one; `cota requests show` lists them. A warning was the owner's other choice, who has not answered; this is the recommendation, taken by default.
 
@@ -165,9 +186,9 @@ Doctor gains one check after `titles`. It needs `config`, and `hub-keys` to pass
 | J25 | **Reported or launched, never both.** A client is a reported client or a launched one: `cota requests add` takes no launched client, `clients.<client>.reported` decodes for no launched client, and no shim, route or client file is written for a reported one. | types |
 | J26 | **Through only once caught up.** A report carries a folder's `through` only when every call the folder's readable conversations held when the run began reading it has been answered 200, and that `through` is the moment the run began. | property |
 
-J19, J22 and J24 build generated records (conversations of user messages, model outputs, tool calls and results, compactions, steps unfinished, failed and of unknown kinds, buffers of every wire type with text, non-UTF-8 bytes and nested messages, and the defects of J24) as SQLite databases in a scratch directory, and read them with the reader (`03-domain/antigravity-record.laws.test.ts`, `04-infrastructure/antigravity-reader.laws.test.ts`). J20, J21 and J26 run `SendReportedRequests` (the run's command; the hub's is `ReportRequests`) over generated sequences of appends and runs against a stand-in for the hub that answers each report in every way, with generated limits, and check after each run what the next has to send and the cursor (`02-application/commands/send-reported-requests.command.laws.test.ts`). J23 runs the reader over a folder that also holds a token file and others, watched by a file system that records each open and its mode, and compares every file's bytes before and after; its contract half runs `cota requests report` against a whole hub of the harness. J25 is the types of `Client` and of the configuration's `clients`. J9 (the CLI spec) covers the schedule's definition: no hub key and no variable but those carried.
+J19, J22 and J24 build generated records (conversations of user messages, model outputs, tool calls and results, compactions and other steps, steps unfinished and of a status not seen, buffers of every wire type with text, a byte order mark, non-UTF-8 bytes and nested messages, and the defects of J24) and read them with the reader (`03-domain/antigravity-record.laws.test.ts`), and as SQLite databases in WAL mode in a scratch directory, held open by a writer, with the SQLite reader (`04-infrastructure/antigravity-reader.laws.test.ts`). J20, J21 and J26 run `SendReportedRequests` (the run's command; the hub's is `ReportRequests`) over generated sequences of appends, steps finishing, files changing while copied and runs, against a stand-in for the hub that answers each report 200, 409, 503, 401, undecodable or never, with generated limits (2 to 4 calls and 7,500 to 9,000 bytes to a report), and check every report against what the hub stored before it (`02-application/commands/send-reported-requests.command.laws.test.ts`); every case begins with the same three conversations and two runs, so that each law's mutants are killed whatever the seed. J24's naming by `cota requests show` and doctor runs `cota` itself over each reason (`01-presentation/requests.laws.test.ts`). J23 runs the reader over a folder that also holds a token file, a setting, a log and a file that is not a database, through a disk that records each path it reads, lists, stats, writes or opens as a database, and compares every file's bytes and modification time before and after; its contract half runs `cota requests add` and `report` against a whole hub of the harness, the database held open by a writer. J25 is the types of `Client` and of the configuration's `clients`. J9 (the CLI spec) covers the schedule's definition: no hub key and no variable but those carried. Each law's mutants are in `tooling/mutants.table.ts`.
 
-**Contract tests** (`01-presentation/requests.contract.test.ts`) run `cota requests add`, `report`, `show` and `remove` on a machine of their own, joined to a whole hub of the harness with an observed pool, with a generated record in a data folder in its home: calls reported and read back from `GET /api/sessions/{session}`; a record growing between runs; a report whose answer is lost and is sent again, stored once; a pool not observed refused at `add` and at the hub; the hub away and back, `requests.error` written and removed and doctor's check failing and passing; a conversation not reported listed by `show` and warned by doctor; sending through `/usr/bin/curl`, where the system has it.
+**Contract tests** (`01-presentation/requests.contract.test.ts`) run `cota requests add`, `report`, `show` and `remove` on a machine of their own, joined to a whole hub of the harness with an observed pool, with a generated record in a data folder in its home: calls reported and read back from `GET /api/sessions/{session}`; a record growing between runs; a report whose answer is lost and is sent again, stored once; a pool not observed refused at `add` and at the hub; the hub away and back, `requests.error` written and removed and doctor's check failing and passing; a conversation not reported listed by `show` and warned by doctor; a machine that has not joined; and sending through `/usr/bin/curl`, where the system has it, a report of several MB and a refusal.
 
 ## Not built, on purpose
 

@@ -244,7 +244,7 @@ layer(Layer.effectDiscard(listing).pipe(Layer.provideMerge(Harness.layer())))(
             );
             const doctor = yield* cota(on, ["doctor", "--json"]);
             expect(doctor.status).toBe(1);
-            const configured = JSON.parse(doctor.out).checks.at(-2);
+            const configured = JSON.parse(doctor.out).checks.at(-3);
             expect(configured.id).toBe("configured");
             expect(configured.outcome).toBe("failed");
             expect(configured.problem).toContain(
@@ -272,11 +272,12 @@ layer(Layer.effectDiscard(listing).pipe(Layer.provideMerge(Harness.layer())))(
             );
             const behind = yield* cota(on, ["doctor"]);
             expect(behind.status).toBe(1);
-            expect(behind.out.split("\n").slice(-4).join("\n")).toBe(
+            expect(behind.out.split("\n").slice(-5).join("\n")).toBe(
               [
                 `failed   configured ${on.clientFile.opencode} is not what cota configure would write now`,
                 "                   fix: cota configure",
                 "passed   titles",
+                "skipped  requests",
                 "",
               ].join("\n"),
             );
@@ -292,7 +293,7 @@ layer(Layer.effectDiscard(listing).pipe(Layer.provideMerge(Harness.layer())))(
             rmSync(dirname(on.clientFile.opencode), { recursive: true });
             rmSync(dirname(on.clientFile.pi), { recursive: true });
             const none = yield* cota(on, ["doctor"]);
-            expect(none.out.split("\n").at(-3)).toBe("skipped  configured");
+            expect(none.out.split("\n").at(-4)).toBe("skipped  configured");
             expect(yield* cota(on, ["configure"])).toEqual({
               status: 0,
               out: "cota: none of codex, opencode and pi is installed; there was nothing to configure.\n",

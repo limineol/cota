@@ -3,6 +3,7 @@ import { Arbitrary, Effect, Schema } from "effect";
 import { definitionsOf } from "#03-domain/schedule.ts";
 import { System } from "#03-domain/system.ts";
 import * as Cota from "#05-tests/cota.ts";
+import * as InMemoryClientRecords from "#05-tests/fakes/in-memory-client-records.ts";
 import * as InMemoryFiles from "#05-tests/fakes/in-memory-files.ts";
 import * as InMemoryScheduler from "#05-tests/fakes/in-memory-scheduler.ts";
 import * as ScriptedHub from "#05-tests/fakes/scripted-hub.ts";
@@ -53,7 +54,12 @@ describe("cota laws", () => {
         const hub = ScriptedHub.make({
           keys: new Map(given.map(({ key, answer }) => [key, answer])),
           health,
+          observedPools: ["gemini"],
         });
+        const records = InMemoryClientRecords.make();
+        const folder =
+          system === "win32" ? "C:\\Users\\me\\agy" : "/home/me/agy";
+        records.folders.set(folder, new Map());
         const terminal = ScriptedTerminal.make(
           typed ? { typed: keys } : { input: keys.join("\n") },
         );
@@ -75,12 +81,14 @@ describe("cota laws", () => {
           terminal: terminal.layer,
           hub: hub.layer,
           scheduler: scheduler.layer,
+          clientRecords: records.layer,
         };
         const address = plainHttp
           ? "http://cota.internal:8080"
           : "http://127.0.0.1:18080";
         const argv = [
           ["join", address, "--machine", "studio"],
+          ["requests", "add", "antigravity", folder, "gemini"],
           ["doctor"],
           ["doctor", "--json"],
           ["leave"],
@@ -89,11 +97,12 @@ describe("cota laws", () => {
         const scheduled: Array<string> = [];
         for (const each of argv) {
           yield* Cota.run(each, ports);
-          if (scheduler.held.installed !== undefined) {
+          for (const schedule of scheduler.held.values()) {
             scheduled.push(
-              ...definitionsOf(scheduler.held.installed).flatMap(
-                ({ path, text }) => [path, text],
-              ),
+              ...definitionsOf(schedule).flatMap(({ path, text }) => [
+                path,
+                text,
+              ]),
             );
           }
         }

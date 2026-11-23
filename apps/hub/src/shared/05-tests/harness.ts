@@ -43,6 +43,8 @@ import * as Request from "#shared/03-domain/request.entity.ts";
 import * as HubStore from "#shared/04-infrastructure/hub-store/hub-store.ts";
 import * as FakeProvider from "./fake-provider.ts";
 
+/** The request log, kept in memory: what it stored, and the faults it answers the next batches with. */
+export { InMemoryRequests } from "#modules/request-log/05-tests/fakes/in-memory-requests.repository.ts";
 /** The titles machines reported, kept in memory: what `PUT /api/session-titles` stored, and a switch that fails it as an unreachable ClickHouse would. */
 export { InMemorySessionTitles } from "#modules/request-log/05-tests/fakes/in-memory-session-titles.ts";
 export { FakeProvider };

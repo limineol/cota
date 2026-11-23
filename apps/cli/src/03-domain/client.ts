@@ -22,3 +22,10 @@ export const protocolOf: Readonly<Record<RoutedCommand, string>> = {
   claude: "anthropic-messages",
   codex: "chatgpt-codex",
 };
+
+/** The clients a machine reports from their records and never launches (`docs/specs/request-reporter/spec.md`). */
+export const reportedClients = ["antigravity"] as const;
+export type ReportedClient = (typeof reportedClients)[number];
+
+export const isReported = (client: string): client is ReportedClient =>
+  reportedClients.some((each) => each === client);

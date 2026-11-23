@@ -24,7 +24,11 @@ export const make = (
           return first !== undefined && loaded.has(first) ? ok : no();
         case "bootstrap": {
           if (first === undefined || second === undefined) return no();
-          loaded.add(`${first}/cota.titles`);
+          const label = second
+            .split("/")
+            .at(-1)
+            ?.replace(/\.plist$/, "");
+          loaded.add(`${first}/${label}`);
           return ok;
         }
         case "bootout":

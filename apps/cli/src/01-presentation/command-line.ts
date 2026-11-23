@@ -38,6 +38,20 @@ export type Invocation =
   | { readonly _tag: "Shims"; readonly remove: boolean }
   | { readonly _tag: "TitlesReport" }
   | { readonly _tag: "TitlesSchedule"; readonly remove: boolean }
+  | {
+      readonly _tag: "RequestsAdd";
+      readonly client: Client.ReportedClient;
+      readonly folder: string;
+      readonly pool: string;
+    }
+  | {
+      readonly _tag: "RequestsRemove";
+      readonly client: Client.ReportedClient;
+      readonly folder: string;
+    }
+  | { readonly _tag: "RequestsShow"; readonly json: boolean }
+  | { readonly _tag: "RequestsReport" }
+  | { readonly _tag: "RequestsSchedule"; readonly remove: boolean }
   | { readonly _tag: "Doctor"; readonly json: boolean }
   | { readonly _tag: "HubKey" }
   | { readonly _tag: "MemoryKey" }
@@ -66,6 +80,11 @@ export const usage = `Usage:
   cota shims [--remove]
   cota titles report
   cota titles schedule [--remove]
+  cota requests add antigravity <folder> <pool>
+  cota requests remove antigravity <folder>
+  cota requests show [--json]
+  cota requests report
+  cota requests schedule [--remove]
   cota doctor [--json]
   cota hub-key keyed
   cota memory key
@@ -147,6 +166,96 @@ const routedClient = (
       : `cota ${command} takes claude or codex, not ${name}`,
   );
 };
+
+const reportedClient = (
+  command: string,
+  name: string | undefined,
+): Result.Result<Client.ReportedClient, string> => {
+  if (name !== undefined && Client.isReported(name)) {
+    return Result.succeed(name);
+  }
+  return Result.fail(
+    name === undefined
+      ? `cota ${command} needs a client: antigravity`
+      : `cota ${command} takes a reported client, antigravity, not ${name}`,
+  );
+};
+
+/** `cota requests <action> …`: each action with only the options and arguments it takes. */
+const requestsOf = (
+  args: ReadonlyArray<string>,
+): Result.Result<Invocation, string> =>
+  Result.flatMap(
+    argumentsOf("requests", args, { remove: "switch", json: "switch" }, 4),
+    (parsed): Result.Result<Invocation, string> => {
+      const [action, ...rest] = parsed.positionals;
+      const command = `requests ${action ?? ""}`.trim();
+      const only = (
+        options: ReadonlyArray<string>,
+        count: number,
+      ): Result.Result<void, string> => {
+        const other = [...parsed.switches].find(
+          (name) => !options.includes(name),
+        );
+        if (other !== undefined) {
+          return Result.fail(`cota ${command} has no option --${other}`);
+        }
+        if (rest.length > count) {
+          return Result.fail(
+            `cota ${command} was given ${rest.slice(count).join(" ")}, which it does not take`,
+          );
+        }
+        return Result.void;
+      };
+      switch (action) {
+        case "add":
+          return Result.flatMap(only([], 3), () =>
+            Result.flatMap(reportedClient(command, rest[0]), (client) => {
+              const [, folder, pool] = rest;
+              if (folder === undefined || pool === undefined) {
+                return Result.fail(
+                  "cota requests add needs a client, a data folder and a pool",
+                );
+              }
+              return Result.succeed({
+                _tag: "RequestsAdd",
+                client,
+                folder,
+                pool,
+              });
+            }),
+          );
+        case "remove":
+          return Result.flatMap(only([], 2), () =>
+            Result.flatMap(reportedClient(command, rest[0]), (client) => {
+              const [, folder] = rest;
+              if (folder === undefined) {
+                return Result.fail(
+                  "cota requests remove needs a client and a data folder",
+                );
+              }
+              return Result.succeed({ _tag: "RequestsRemove", client, folder });
+            }),
+          );
+        case "show":
+          return Result.map(only(["json"], 0), () => ({
+            _tag: "RequestsShow",
+            json: parsed.switches.has("json"),
+          }));
+        case "report":
+          return Result.map(only([], 0), () => ({ _tag: "RequestsReport" }));
+        case "schedule":
+          return Result.map(only(["remove"], 0), () => ({
+            _tag: "RequestsSchedule",
+            remove: parsed.switches.has("remove"),
+          }));
+        default:
+          return Result.fail(
+            "cota requests needs add, remove, show, report or schedule",
+          );
+      }
+    },
+  );
 
 const required = (
   command: string,
@@ -338,6 +447,8 @@ const named = (
           );
         },
       );
+    case "requests":
+      return requestsOf(args);
     case "doctor":
       return Result.map(
         argumentsOf(command, args, { json: "switch" }, 0),
