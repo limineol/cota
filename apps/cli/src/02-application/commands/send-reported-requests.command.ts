@@ -111,6 +111,28 @@ interface Read {
   stored: number;
 }
 
+/** A call read, written out, in the conversation it was read from. */
+interface Entry {
+  readonly read: Read;
+  readonly call: ModelCall;
+  readonly written: string;
+}
+
+const entriesOf = (read: Read): ReadonlyArray<Entry> =>
+  read.written.flatMap((written, index) => {
+    const call = read.reading.calls[index];
+    return call === undefined ? [] : [{ read, call, written }];
+  });
+
+const entriesAt = (
+  entries: ReadonlyArray<Entry>,
+  batch: ReadonlyArray<number>,
+): ReadonlyArray<Entry> =>
+  batch.flatMap((at) => {
+    const entry = entries[at];
+    return entry === undefined ? [] : [entry];
+  });
+
 /** The run over the limits of a report: the hub's, or smaller ones for the laws. */
 export const layerOf = (
   given: Requests.Limits,
@@ -347,11 +369,70 @@ export const layerOf = (
               let complete = true;
               let sentThrough = false;
               let stopRun = false;
+              let stopFolder = false;
+              /** Conversations read whose calls are not all stored yet. */
+              const open: Array<Read> = [];
+              /** Calls read that do not yet fill a report, sent with the next conversation's or last. */
+              let pending: ReadonlyArray<Entry> = [];
+
+              const report = Effect.fn(function* (
+                batch: ReadonlyArray<Entry>,
+                last: boolean,
+              ) {
+                const body = Requests.bodyOf(
+                  pool,
+                  last ? Option.some(through) : Option.none(),
+                  batch.map((entry) => entry.written),
+                );
+                const answer = yield* Effect.result(
+                  reports.send(hub, key.value, machine, body, scratch).pipe(
+                    Effect.timeoutOrElse({
+                      duration: reportDeadline,
+                      orElse: () => Effect.fail(new HubUnreachable()),
+                    }),
+                  ),
+                );
+                if (Result.isFailure(answer)) {
+                  problems.push(sendProblem(hub, kept, answer.failure));
+                  stopRun =
+                    answer.failure._tag === "HubUnreachable" ||
+                    answer.failure._tag === "HubKeyUnknown";
+                  return false;
+                }
+                stored += answer.success.stored;
+                held += answer.success.held;
+                if (last) sentThrough = true;
+                for (const { read, call } of batch) {
+                  read.cursor = { ...read.cursor, from: call.next };
+                  read.stored += 1;
+                  cursors.set(read.conversation, read.cursor);
+                }
+                state.set(folder, { ...folderState, conversations: cursors });
+                return yield* save();
+              });
+
+              /** Moves the cursor of each conversation every call of which is stored past what it read. */
+              const settle = () => {
+                for (const read of open.splice(0)) {
+                  const unsent = read.stored < read.reading.calls.length;
+                  if (unsent) open.push(read);
+                  else {
+                    cursors.set(
+                      read.conversation,
+                      Requests.cursorAfter(
+                        read.cursor,
+                        read.stamps,
+                        read.reading,
+                        now,
+                      ),
+                    );
+                  }
+                }
+              };
 
               const listed = yield* Effect.result(
                 records.conversations(folder),
               );
-              const reads: Array<Read> = [];
               if (Result.isFailure(listed)) {
                 problems.push(
                   `${listed.failure.path} cannot be read: ${listed.failure.reason}`,
@@ -369,7 +450,10 @@ export const layerOf = (
                 for (const id of cursors.keys()) {
                   if (!names.has(id)) cursors.delete(id);
                 }
+                // One conversation at a time: what of it fills reports is
+                // sent, and its cursors kept, before the next is read.
                 for (const each of listed.success.value) {
+                  if (stopFolder) break;
                   const cursor = Option.fromUndefinedOr(
                     cursors.get(each.conversation),
                   );
@@ -390,79 +474,34 @@ export const layerOf = (
                       `${read.failure.path} cannot be read: ${read.failure.reason}`,
                     );
                     complete = false;
-                  } else if (Option.isNone(read.success)) {
-                    complete = false;
-                  } else {
-                    reads.push(read.success.value);
+                    continue;
                   }
+                  if (Option.isNone(read.success)) {
+                    complete = false;
+                    continue;
+                  }
+                  const fresh = read.success.value;
+                  open.push(fresh);
+                  const entries = [...pending, ...entriesOf(fresh)];
+                  const batches = Requests.reportsOf(
+                    pool,
+                    entries.map((entry) => entry.written),
+                    given,
+                  ).map((batch) => entriesAt(entries, batch));
+                  pending = batches.at(-1) ?? [];
+                  for (const batch of batches.slice(0, -1)) {
+                    if (!(yield* report(batch, false))) {
+                      stopFolder = true;
+                      break;
+                    }
+                  }
+                  settle();
                 }
               }
-
-              const entries = reads.flatMap((read) =>
-                read.written.map((written, index) => ({
-                  read,
-                  call: read.reading.calls[index],
-                  written,
-                })),
-              );
-              const batches = Requests.reportsOf(
-                pool,
-                entries.map((entry) => entry.written),
-                given,
-              );
-              const sendable =
-                complete && batches.length === 0 ? [[]] : batches;
-              for (const [index, batch] of sendable.entries()) {
-                const last = index === sendable.length - 1 && complete;
-                const body = Requests.bodyOf(
-                  pool,
-                  last ? Option.some(through) : Option.none(),
-                  batch.map((at) => entries[at]?.written ?? ""),
-                );
-                const answer = yield* Effect.result(
-                  reports.send(hub, key.value, machine, body, scratch).pipe(
-                    Effect.timeoutOrElse({
-                      duration: reportDeadline,
-                      orElse: () => Effect.fail(new HubUnreachable()),
-                    }),
-                  ),
-                );
-                if (Result.isFailure(answer)) {
-                  problems.push(sendProblem(hub, kept, answer.failure));
-                  stopRun =
-                    answer.failure._tag === "HubUnreachable" ||
-                    answer.failure._tag === "HubKeyUnknown";
-                  break;
-                }
-                stored += answer.success.stored;
-                held += answer.success.held;
-                if (last) sentThrough = true;
-                for (const at of batch) {
-                  const entry = entries[at];
-                  if (entry === undefined || entry.call === undefined) continue;
-                  entry.read.cursor = {
-                    ...entry.read.cursor,
-                    from: entry.call.next,
-                  };
-                  entry.read.stored += 1;
-                  cursors.set(entry.read.conversation, entry.read.cursor);
-                }
-                state.set(folder, { ...folderState, conversations: cursors });
-                if (!(yield* save())) break;
+              if (!stopFolder && (complete || pending.length > 0)) {
+                yield* report(pending, complete);
               }
-
-              for (const read of reads) {
-                if (read.stored < read.reading.calls.length) continue;
-                cursors.set(
-                  read.conversation,
-                  Requests.cursorAfter(
-                    read.cursor,
-                    read.stamps,
-                    read.reading,
-                    now,
-                  ),
-                );
-              }
+              settle();
               const good = problems.length === folderProblems;
               const ranAt = DateTime.formatIso(yield* DateTime.now);
               state.set(folder, {

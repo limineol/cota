@@ -389,7 +389,7 @@ const j19 =
 const j20 =
   "J20: For any sequence of appends and runs whose reports are answered 200, refused, failed or never, a call is among those each run sends until a report holding it is answered 200, and among none after: a call reported unfinished among them, whatever its step becomes, and a late call from the first run after its step finishes; each call names as `after` a call before it in its conversation, stored before its report or earlier in it: the one just before it, but for a call read past a late one.";
 const j21 =
-  "J21: Every report holds calls of one folder, at most 200 and 8 MiB but for a call alone over it, in order, and no report's body is over 64 MiB.";
+  "J21: Every report holds calls of one folder, at most 200 and 8 MiB but for a call alone over it, in order, and no report's body is over 64 MiB; a run reads a conversation only once the calls it read before and has not sent fit in one report.";
 const j22 =
   "J22: A call's usage, model, times and items are those of the record when it was read, and an item written out in the record form reads back into the step's bytes exactly.";
 const j23 =
@@ -7731,17 +7731,16 @@ export const layer = (policy: Admission.Policy) =>
     name: "a report not stored does not stop its folder",
     law: "J20",
     file: cliSendRequests,
-    find: '                    answer.failure._tag === "HubKeyUnknown";\n                  break;',
-    replace:
-      '                    answer.failure._tag === "HubKeyUnknown";\n                  continue;',
+    find: "                      stopFolder = true;\n                      break;",
+    replace: "                      continue;",
     killedBy: j20,
   },
   {
     name: "a conversation's files are kept though not every call read was stored",
     law: "J20",
     file: cliSendRequests,
-    find: "                if (read.stored < read.reading.calls.length) continue;\n",
-    replace: "",
+    find: "                  const unsent = read.stored < read.reading.calls.length;",
+    replace: "                  const unsent = false;",
     killedBy: j20,
   },
   {
@@ -7753,6 +7752,16 @@ export const layer = (policy: Admission.Policy) =>
       "      (current.length > given.calls || size + bytes > given.bytes)",
     killedBy: j21,
   },
+  {
+    name: "a run reads every conversation of a folder before it sends",
+    law: "J21",
+    file: cliSendRequests,
+    find: "                  pending = batches.at(-1) ?? [];\n                  for (const batch of batches.slice(0, -1)) {",
+    replace:
+      "                  pending = entries;\n                  for (const batch of batches.slice(0, 0)) {",
+    killedBy: j21,
+  },
+
   {
     name: "a report's calls are not held to its bytes",
     law: "J21",
@@ -7865,8 +7874,8 @@ export const layer = (policy: Admission.Policy) =>
     name: "a folder's through is sent though a conversation was not read",
     law: "J26",
     file: cliSendRequests,
-    find: "                const last = index === sendable.length - 1 && complete;",
-    replace: "                const last = index === sendable.length - 1;",
+    find: "                yield* report(pending, complete);",
+    replace: "                yield* report(pending, true);",
     killedBy: j26,
   },
   {

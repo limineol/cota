@@ -196,6 +196,8 @@ interface Sent {
   readonly storedBefore: ReadonlySet<string>;
   /** The calls the folder's conversations held when the run began. */
   readonly held: ReadonlySet<string>;
+  /** How many conversations had been read, in every run, when it was sent. */
+  readonly readsBefore: number;
 }
 
 /** Runs the request reporter over a case and records every report, what was stored before each, and what the folders held. */
@@ -207,7 +209,12 @@ const reportedOver = ({ calls, bytes, grown, runs }: Case) =>
     const ends = fixedRuns.length + runs.length;
     const records = InMemoryClientRecords.make();
     let answers: Array<ScriptedRequestReports.Answer> = [];
-    const hub = ScriptedRequestReports.make(() => answers.shift() ?? 200);
+    /** How many conversations had been read when each report was sent. */
+    const readsAt: Array<number> = [];
+    const hub = ScriptedRequestReports.make(() => {
+      readsAt.push(records.reads.length);
+      return answers.shift() ?? 200;
+    });
     const { layer: files } = InMemoryFiles.make([
       [paths.hubKeys, { kind: "directory", mode: 0o700 }],
       [
@@ -241,6 +248,11 @@ const reportedOver = ({ calls, bytes, grown, runs }: Case) =>
 
     const stored = new Set<string>();
     const sent: Array<Sent> = [];
+    /** Each conversation read, in the order read, and the run that read it. */
+    const reads: Array<{
+      readonly run: number;
+      readonly conversation: string;
+    }> = [];
     const changingIn = new Set<string>();
     for (const [run, { answers: given, pause }] of every.entries()) {
       const end = run >= ends;
@@ -263,8 +275,12 @@ const reportedOver = ({ calls, bytes, grown, runs }: Case) =>
       }
       answers = [...given];
       const before = hub.sent.length;
+      const readBefore = records.reads.length;
       yield* send.execute(paths, configuration);
-      for (const each of hub.sent.slice(before)) {
+      for (const { conversation } of records.reads.slice(readBefore)) {
+        reads.push({ run, conversation });
+      }
+      for (const [index, each] of hub.sent.slice(before).entries()) {
         const folder = folders.findIndex(
           ({ pool }) => pool === each.report.pool,
         );
@@ -277,6 +293,7 @@ const reportedOver = ({ calls, bytes, grown, runs }: Case) =>
           answer: each.answer,
           storedBefore: new Set(stored),
           held: held[folder] ?? new Set(),
+          readsBefore: readsAt[before + index] ?? 0,
         });
         if (each.answer === 200) {
           for (const call of each.report.calls) stored.add(call.call);
@@ -293,7 +310,15 @@ const reportedOver = ({ calls, bytes, grown, runs }: Case) =>
         },
       ]),
     );
-    return { limits, sent, stored, ended, changingIn, runs: every.length };
+    return {
+      limits,
+      sent,
+      stored,
+      ended,
+      changingIn,
+      reads,
+      runs: every.length,
+    };
   });
 
 describe("request reporter laws", () => {
@@ -370,11 +395,27 @@ describe("request reporter laws", () => {
   );
 
   it.effect.prop(
-    "J21: Every report holds calls of one folder, at most 200 and 8 MiB but for a call alone over it, in order, and no report's body is over 64 MiB.",
+    "J21: Every report holds calls of one folder, at most 200 and 8 MiB but for a call alone over it, in order, and no report's body is over 64 MiB; a run reads a conversation only once the calls it read before and has not sent fit in one report.",
     { drawn: Arbitrary.schema(Case) },
     ({ drawn }) =>
       Effect.gen(function* () {
-        const { limits, sent, ended } = yield* reportedOver(drawn);
+        const { limits, sent, ended, reads } = yield* reportedOver(drawn);
+        for (const [at, { run, conversation }] of reads.entries()) {
+          const readBefore = new Set(
+            reads
+              .slice(0, at)
+              .filter((each) => each.run === run)
+              .map((each) => each.conversation),
+          );
+          const unsent = sent
+            .filter((each) => each.run === run && each.readsBefore > at)
+            .flatMap(({ report }) => report.calls)
+            .filter(({ session }) => readBefore.has(session));
+          expect({ conversation, unsent: unsent.length }).toEqual({
+            conversation,
+            unsent: Math.min(unsent.length, limits.calls),
+          });
+        }
         const runs = new Set(sent.map(({ run }) => run));
         for (const run of runs) {
           for (const at of folders.keys()) {
