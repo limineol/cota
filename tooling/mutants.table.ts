@@ -29,6 +29,7 @@ export type Law =
   | "R4"
   | "R5"
   | "R6"
+  | "R7"
   | "L1"
   | "L2"
   | "L3"
@@ -666,6 +667,8 @@ const forwardRequest =
 const planCredential =
   "apps/hub/src/modules/relay/02-application/queries/plan-credential.query.ts";
 const config = "apps/hub/src/config/config.ts";
+const neverReported =
+  "R7: a forwarded request's client is never a reported client, whatever its tag and user agent";
 const anthropic =
   "apps/hub/src/modules/relay/04-infrastructure/protocols/anthropic-messages/anthropic-messages.ts";
 const codex =
@@ -1879,6 +1882,22 @@ export const layer = (policy: Policy): Layer.Layer<Fallback> =>
     replace: "} else if (false) {",
     killedBy:
       "reports every rule between pools and hub keys, and every secret it cannot read, at once, each with its path",
+  },
+  {
+    name: "a forwarded request's tag may name a reported client",
+    law: "R7",
+    file: "apps/hub/src/shared/03-domain/client.ts",
+    find: '  if (tag !== "" && !isReported(tag)) return { client: tag, version };',
+    replace: '  if (tag !== "") return { client: tag, version };',
+    killedBy: neverReported,
+  },
+  {
+    name: "a forwarded request's user agent may name a reported client",
+    law: "R7",
+    file: "apps/hub/src/shared/03-domain/client.ts",
+    find: '    client: name === undefined || isReported(name) ? "unknown" : name,',
+    replace: '    client: name ?? "unknown",',
+    killedBy: neverReported,
   },
   {
     name: "the copy holds the client back when its reader falls behind",

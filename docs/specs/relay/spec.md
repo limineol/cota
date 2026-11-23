@@ -2,8 +2,8 @@
 status: active
 scope: apps/hub
 owner: limineol
-last_verified: 2026-11-17
-review_by: 2027-02-12
+last_verified: 2026-11-23
+review_by: 2027-02-23
 supersedes: []
 code:
   - apps/hub/src/hub.ts
@@ -12,6 +12,7 @@ code:
   - apps/hub/src/lib/copy.ts
   - apps/hub/src/lib/tee.ts
   - apps/hub/src/shared/04-infrastructure/shutdown.ts
+  - apps/hub/src/shared/03-domain/client.ts
   - apps/hub/src/main.ts
 ---
 
@@ -34,6 +35,7 @@ x-cota-client: <client>        optional
 - `<rest>` and `<query>` are whatever the client appends to its provider's base URL.
 - The **hub key** is the value of `x-cota-key`. A request to a keyed pool that has no `x-cota-key` presents the bearer token of its `authorization` header instead, because OpenCode and Pi can only send their key there, and without a bearer token its `x-api-key`, where Claude Code sends `ANTHROPIC_API_KEY`. A request to a subscription pool presents only `x-cota-key`, and a request to a pool the hub does not have is read as a subscription pool's, so the answer to a request without a known hub key says nothing about which pools exist. The admission module decides which value is presented (`docs/specs/admission/spec.md`).
 - The **tags** are the three optional headers. A tag is trimmed and cut to 200 characters. A missing tag is recorded as empty.
+- The request's **client** is its `x-cota-client` tag, else the one its user agent names (`docs/specs/request-log/spec.md`, `client`), by `Client.of` (`apps/hub/src/shared/03-domain/client.ts`). A forwarded request never claims a **reported client** (`antigravity`, ADR-0029, Relayed or reported, never both): a tag naming one, in any case, is passed over as if the request had none, and a user agent naming one makes the client `unknown`. The request is forwarded and recorded all the same; it is not refused, since the tag is the client's own word and refusing it would stop a request for a label.
 
 `GET /health` answers `200` with `{"status":"ok"}` and needs no hub key.
 
@@ -161,8 +163,9 @@ Messages are for the owner. They say what happened and what to check, and never 
 | R4 | **A keyed pool never sees a client's credential.** A request to a keyed pool reaches the provider with the pool's held key or with none. | property |
 | R5 | **Reading cannot break forwarding.** Whatever the copy's reader or the recorder does (falls behind, fails, never finishes), the client receives the provider's full response. | property |
 | R6 | **Recorded once.** Every request the hub sends to a provider is recorded in the request log exactly once, whatever the outcome; a rejected request is not recorded. | property, replay |
+| R7 | **Never a reported client.** A forwarded request's client is never a reported client, whatever its tag and user agent. | property |
 
-The property tests run the real hub against a fake provider on real sockets, with generated requests, bodies and responses. R5 also has one fixed case, a recorder that hangs after the first of 24 events, since a generated case holds the recorder's queue full only now and then. "Replay" replays the exchanges of ADR-0008 through the real hub.
+The property tests run the real hub against a fake provider on real sockets, with generated requests, bodies and responses. R5 also has one fixed case, a recorder that hangs after the first of 24 events, since a generated case holds the recorder's queue full only now and then. R7 runs `Client.of` over generated tags and user agents that name the reported clients in several cases, the forwarded clients and others (`apps/hub/src/shared/03-domain/client.test.ts`). "Replay" replays the exchanges of ADR-0008 through the real hub.
 
 ## Not built, on purpose
 

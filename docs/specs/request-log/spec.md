@@ -36,7 +36,7 @@ One row per request. Text columns are empty, not null, when there is nothing to 
 | `session` | `String` | The client's session id, or `request:<id>` when it sent none. |
 | `session_source` | `LowCardinality(String)` | Where the session id was read from (a header's name, or `body`); empty when the hub made the key. |
 | `machine`, `project` | `LowCardinality(String)` | The tags. |
-| `client` | `LowCardinality(String)` | The `x-cota-client` tag, else read from the user agent: `claude-code`, `codex`, `opencode`, `pi`, else the agent's first product name in lower case, else `unknown`. |
+| `client` | `LowCardinality(String)` | The `x-cota-client` tag, else read from the user agent: `claude-code`, `codex`, `opencode`, `pi`, else the agent's first product name in lower case, else `unknown`. A forwarded request never claims a reported client: a tag naming one is passed over, and a user agent naming one gives `unknown` (`docs/specs/relay/spec.md`, R7). |
 | `client_version` | `LowCardinality(String)` | The version in the user agent's first product. |
 | `user_agent` | `String` | As sent. |
 | `hub_key` | `LowCardinality(String)` | The name of the hub key that admitted the request. |
