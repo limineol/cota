@@ -126,6 +126,27 @@ const propertySeed = "1";
 const exactly = (titles: ReadonlyArray<string>) =>
   `(?:${titles.map((title) => title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})$`;
 
+/**
+ * Linux refuses a single argument over 128 KiB, and the baseline names every
+ * mutant's test at once: the titles go to vitest in as many runs as keep each
+ * pattern well under that.
+ */
+const patternBytes = 100_000;
+
+const batchesOf = (titles: ReadonlyArray<string>) =>
+  [...new Set(titles)].reduce<Array<Array<string>>>((batches, title) => {
+    const last = batches.at(-1);
+    if (
+      last !== undefined &&
+      Buffer.byteLength(exactly([...last, title])) <= patternBytes
+    ) {
+      last.push(title);
+    } else {
+      batches.push([title]);
+    }
+    return batches;
+  }, []);
+
 const declaring = (copy: string, titles: ReadonlyArray<string>) =>
   [...new Glob("**/*.test.ts").scanSync(copy)].filter(
     (file) =>
@@ -218,17 +239,19 @@ const testsOf = async (
   // One tier at a time: each run takes every worker, and two at once made
   // the slowest clickhouse test pass its time limit on a small machine.
   const runs: Array<Run> = [];
-  for (const [index, tier] of configsOf(files).entries()) {
-    runs.push(
-      await runOf(
-        copy,
-        tier.files,
-        tier.config,
-        titles,
-        workers,
-        join(copy, `report-${index}.json`),
-      ),
-    );
+  for (const [batch, named] of batchesOf(titles).entries()) {
+    for (const [index, tier] of configsOf(files).entries()) {
+      runs.push(
+        await runOf(
+          copy,
+          tier.files,
+          tier.config,
+          named,
+          workers,
+          join(copy, `report-${batch}-${index}.json`),
+        ),
+      );
+    }
   }
   return {
     tests: runs.flatMap(({ tests }) => tests),
