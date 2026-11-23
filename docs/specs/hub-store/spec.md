@@ -2,13 +2,14 @@
 status: active
 scope: apps/hub
 owner: limineol
-last_verified: 2026-11-19
+last_verified: 2026-11-23
 review_by: 2027-02-19
 supersedes: []
 code:
   - apps/hub/src/shared/04-infrastructure/hub-store
   - apps/hub/src/shared/03-domain/hub-store.ts
   - apps/hub/src/modules/routes/04-infrastructure/persistence/sqlite
+  - apps/hub/src/modules/request-log/04-infrastructure/persistence/sqlite
 ---
 
 # Hub store
@@ -34,7 +35,7 @@ The connection and its migrations are `apps/hub/src/shared/04-infrastructure/hub
 
 ## Tables
 
-The store holds `migrations` and the tables of the modules whose steps the hub lists, in this order: the sign-in module's `sign-in/0001-sign-ins`, which makes `sign_ins`, `sign-in/0002-owner-password`, which makes `owner_password`, and `sign-in/0003-passkeys`, which makes `passkeys`, then the display-names module's `display-names/0001-display-names`, which makes `display_names`, then the quota module's `quota/0001-quota-logins`, which makes `quota_logins`, then the routes module's `routes/0001-routes`, which makes `route_lists` and `routes`.
+The store holds `migrations` and the tables of the modules whose steps the hub lists, in this order: the sign-in module's `sign-in/0001-sign-ins`, which makes `sign_ins`, `sign-in/0002-owner-password`, which makes `owner_password`, and `sign-in/0003-passkeys`, which makes `passkeys`, then the display-names module's `display-names/0001-display-names`, which makes `display_names`, then the quota module's `quota/0001-quota-logins`, which makes `quota_logins`, then the routes module's `routes/0001-routes`, which makes `route_lists` and `routes`, then the request-log module's `request-log/0001-reported-through`, which makes `reported_through`.
 
 `sign_ins` (the sign-in module, `docs/specs/sign-in/spec.md`, `apps/hub/src/modules/sign-in/04-infrastructure/persistence/sqlite`):
 
@@ -85,6 +86,8 @@ Forgetting the stored password and removing a passkey each check, in one transac
 `quota_logins` (the quota module, `apps/hub/src/modules/quota/04-infrastructure/persistence/sqlite`): one row per pool that was given a quota login, its columns as `docs/specs/quota-logins/spec.md` lists them. It holds the logins' access and refresh tokens as the providers gave them, so from milestone 2b the store holds secrets that can spend a subscription: the file is guarded, mounted and backed up as the environment's secrets are.
 
 `route_lists` and `routes` (the routes module, `docs/specs/routes/spec.md`, `apps/hub/src/modules/routes/04-infrastructure/persistence/sqlite`): one row per routed client whose list was ever stored, with its default pool, revision and when it changed, and its routes by position, their columns as the routes spec's "Keeping them" lists them, `PRIMARY KEY (client, position)` and `UNIQUE (client, pattern)` on `routes`, whose `client` references `route_lists`. A change replaces one client's list in one transaction, and writes only when the client's revision is the one it was made from.
+
+`reported_through` (the request-log module, `docs/specs/reported-requests/spec.md`, Reported through, `apps/hub/src/modules/request-log/04-infrastructure/persistence/sqlite`): one row per machine, reported client and observed pool that reported a `through`, its columns as that spec lists them, `PRIMARY KEY (machine, client, pool)`. A report's `through` replaces the row's only when it is later, in the one statement that writes it.
 
 ## Laws
 

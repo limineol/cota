@@ -2,7 +2,7 @@
 status: active
 scope: apps/hub
 owner: limineol
-last_verified: 2026-11-17
+last_verified: 2026-11-23
 review_by: 2027-02-17
 supersedes: []
 code:
@@ -50,7 +50,7 @@ Each endpoint says who may call it: the owner alone (the default), a reader key 
 | Endpoints | Who may call | No caller | Subscription or keyed hub key | Reader key | Owner |
 | --- | --- | --- | --- | --- | --- |
 | `POST /api/sign-in`, `GET /api/sign-in`, `POST /api/setup`, `POST /api/sign-in/passkey/options`, `POST /api/sign-in/passkey`, `GET /api/openapi.json` | anyone | yes | yes | yes | yes |
-| `PUT /api/session-titles`, `GET /api/machine`, `GET /api/route` | any hub key | 401 | yes | yes | yes |
+| `PUT /api/session-titles`, `POST /api/reported-requests`, `GET /api/machine`, `GET /api/route` | any hub key | 401 | yes | yes | yes |
 | `GET /api/me`, `GET /api/overview`, `GET /api/series`, `GET /api/breakdown`, `GET /api/facets`, `GET /api/errors`, `GET /api/sessions`, `GET /api/sessions/{session}`, `GET /api/requests/{id}`, `GET /api/requests/{id}/body`, `GET /api/search`, `POST /api/sql`, `GET /api/schema`, `GET /api/display-names`, `GET /api/pools`, `GET /api/routes` | reader | 401 | 403 | yes | yes |
 | `POST /api/sign-out`, `GET /api/sign-ins`, `DELETE /api/sign-ins`, `DELETE /api/sign-ins/{id}`, `GET /api/owner-password`, `PUT /api/owner-password`, `DELETE /api/owner-password`, `POST /api/passkeys/options`, `POST /api/passkeys`, `GET /api/passkeys`, `DELETE /api/passkeys/{id}`, `PUT /api/display-names/{kind}/{key}`, `DELETE /api/display-names/{kind}/{key}`, `PUT /api/pools/{pool}/quota-login`, `DELETE /api/pools/{pool}/quota-login`, `PUT /api/routes/{client}` | owner | 401 | 403 | 403 | yes |
 
@@ -155,7 +155,7 @@ Revoked and expired sign-ins are deleted from the store once they ended more tha
 | Id | Law | Held by |
 | --- | --- | --- |
 | I1 | **No caller, no data.** Every endpoint but those anyone may call (`POST /api/sign-in`, `GET /api/sign-in`, `POST /api/setup`, `POST /api/sign-in/passkey/options`, `POST /api/sign-in/passkey`) and `GET /api/openapi.json` answers 401 to a request with no cookie and no hub key, and to one whose cookie and hub key the hub does not know. | contract |
-| I2 | **Spending keys do not read.** Every endpoint but those and the ones any hub key may call (`PUT /api/session-titles`, `GET /api/machine` and `GET /api/route`) answers 403 to a subscription or keyed hub key. | contract |
+| I2 | **Spending keys do not read.** Every endpoint but those and the ones any hub key may call (`PUT /api/session-titles`, `POST /api/reported-requests`, `GET /api/machine` and `GET /api/route`) answers 403 to a subscription or keyed hub key. | contract |
 | I3 | **Readers do not manage.** A reader key gets 403 from every endpoint the table above keeps for the owner. | contract |
 | I4 | **Only digests are kept.** After any sequence of setups, sign-ins with a password or a passkey, changes of the password, passkeys made, sign-outs and revocations, the hub store holds no token, no setup code, no password in the clear, no challenge and no passkey's private key: SHA-256 digests of tokens, one hash of the stored password, and passkeys' public keys, which are not secrets. | property |
 | I5 | **Revoked and expired sign-ins open nothing.** A token whose sign-in is revoked, or whose `expiresAt` is not after now, makes no caller, whatever else is true. | property |

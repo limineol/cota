@@ -14,6 +14,7 @@ code:
   - apps/hub/src/modules/request-log/01-presentation
   - apps/hub/src/modules/request-log/02-application/queries
   - apps/hub/src/modules/request-log/02-application/commands/report-session-titles.command.ts
+  - apps/hub/src/modules/request-log/02-application/commands/report-requests.command.ts
   - apps/hub/src/modules/request-log/03-domain/traffic.ts
   - apps/hub/src/modules/display-names/01-presentation
   - apps/hub/src/modules/quota/01-presentation
@@ -25,7 +26,7 @@ code:
 
 The hub's HTTP API: what the dashboard (Milestone 3) and the owner's agents read the request log through. ADR-0011 gives its form, ADR-0012 who may call it. The definition in `apps/hub/src/api.ts` and the committed `apps/hub/openapi.json` are the contract, and this spec says what they must say.
 
-**What is built.** Every endpoint this spec lists: the conventions, the errors, the filters, the `sign-in` and `traffic` groups, the `sessions` group (`GET /api/sessions` with `q`, `GET /api/sessions/{session}` and `PUT /api/session-titles`), the `requests`, `search`, `sql` and `display-names` groups, `GET /api/openapi.json`, the `pools` group (`GET /api/pools` and a pool's quota login, whose behaviour is `docs/specs/quota-sources/spec.md`, `docs/specs/quota-readers/spec.md` and `docs/specs/quota-logins/spec.md`), the `machine` group (`GET /api/machine`), the `routes` group (`GET /api/routes`, `PUT /api/routes/{client}` and `GET /api/route`), the limits, and the laws H1 to H9.
+**What is built.** Every endpoint this spec lists: the conventions, the errors, the filters, the `sign-in` and `traffic` groups, the `sessions` group (`GET /api/sessions` with `q`, `GET /api/sessions/{session}` and `PUT /api/session-titles`), the `requests`, `search`, `sql` and `display-names` groups, the `reports` group (`POST /api/reported-requests`; its `GET /api/reported-through` is 6e's), `GET /api/openapi.json`, the `pools` group (`GET /api/pools` and a pool's quota login, whose behaviour is `docs/specs/quota-sources/spec.md`, `docs/specs/quota-readers/spec.md` and `docs/specs/quota-logins/spec.md`), the `machine` group (`GET /api/machine`), the `routes` group (`GET /api/routes`, `PUT /api/routes/{client}` and `GET /api/route`), the limits, and the laws H1 to H9.
 
 Sessions, transcripts and titles are `docs/specs/sessions/spec.md`; search `docs/specs/search/spec.md`; SQL `docs/specs/sql/spec.md`; display names `docs/specs/display-names/spec.md`; signing in, setup and who may call what `docs/specs/sign-in/spec.md`. This spec lists every endpoint with its parameters, its answer and its errors, and the rules they share.
 
@@ -61,7 +62,7 @@ These can come from any endpoint that reads what they name:
 | `urn:cota:not-allowed` | 403 | The caller is known but may not call this endpoint |
 | `urn:cota:cross-site` | 403 | A browser request that changes something came from another site: a signed-in one, signing in (with a password or a passkey), or setting up |
 | `urn:cota:unsupported-media-type` | 415 | The request has a body not said to be JSON (Conventions) |
-| `urn:cota:body-too-large` | 413 | The request body is over 1 MiB (Limits) |
+| `urn:cota:body-too-large` | 413 | The request body is over its limit: 1 MiB, or 64 MiB for a report (Limits) |
 | `urn:cota:hub-store-unavailable` | 503 | The hub store failed |
 | `urn:cota:request-log-unavailable` | 503 | ClickHouse could not be reached, did not answer within the query limit, or failed; or, for a search with a tolerance, the log's words are still being gathered after an upgrade (`docs/specs/search/spec.md`, Tolerance); `detail` says which, and the error code it failed with, never ClickHouse's message |
 | `urn:cota:empty-window` | 400 | A reading endpoint's `from` is not before its `to` |
@@ -69,7 +70,7 @@ These can come from any endpoint that reads what they name:
 
 Each endpoint below lists the others it can give. An answer the hub fails to encode is `{ "type": "about:blank", "status": 500, "title": "Internal Server Error" }`, which the `ProblemDetails` middleware declares beside its 400. A path under `/api` that is no endpoint is 404 with no body.
 
-The 401 and 403 problems come from `CallerMiddleware` (`docs/specs/sign-in/spec.md`), which every group declares and the endpoints anyone may call come before, and which decides who the caller is before an endpoint decodes anything. The 415 and the 413 come from `JsonBody`, and the 400 from `ProblemDetails`, which every group declares (`apps/hub/src/shared/01-presentation`); `JsonBody` runs before `CallerMiddleware`, so a body that is not JSON is refused whoever sends it.
+The 401 and 403 problems come from `CallerMiddleware` (`docs/specs/sign-in/spec.md`), which every group declares and the endpoints anyone may call come before, and which decides who the caller is before an endpoint decodes anything. The 415 and the 413 come from `JsonBody`, which every group declares but the `reports` group, which declares `ReportBody`, the same with its own limit, and the 400 from `ProblemDetails`, which every group declares (`apps/hub/src/shared/01-presentation`); `JsonBody` and `ReportBody` run before `CallerMiddleware`, so a body that is not JSON is refused whoever sends it.
 
 ## Filters
 
@@ -300,7 +301,23 @@ The request inspector: one request, whatever its operation. Errors: `no-such-req
 
 ### `GET /api/requests/{id}/body`
 
-The request's body as the hub forwarded it, rebuilt from the request log (`RebuildConversation`; the request log spec's L1: the same JSON value, not the same bytes); for an imported request, whose `protocol` is a source form, its conversation as the import source logged it, not what the client sent (ADR-0025), which the inspector says beside it. Answer: the JSON object. Errors: `no-such-request` 404, also for an id that is not one; `no-conversation` 404 for a request whose body was not stored. When the request log fails while rebuilding, the 503's `detail` is `ClickHouse could not be reached, or failed the query.`: the repository that stores and rebuilds conversations does not say which (`RequestsRepositoryFailed`).
+The request's body as the hub forwarded it, rebuilt from the request log (`RebuildConversation`; the request log spec's L1: the same JSON value, not the same bytes); for an imported request, whose `protocol` is a source form, its conversation as the import source logged it, not what the client sent (ADR-0025), and for a reported request, whose `protocol` is a record form, `{ "steps": [ … ] }`, every step through its input as the client recorded it (ADR-0029); the inspector says either beside it. Answer: the JSON object. Errors: `no-such-request` 404, also for an id that is not one; `no-conversation` 404 for a request whose body was not stored. When the request log fails while rebuilding, the 503's `detail` is `ClickHouse could not be reached, or failed the query.`: the repository that stores and rebuilds conversations does not say which (`RequestsRepositoryFailed`).
+
+## Reports (the `reports` group, the request-log module)
+
+Built in part: `POST /api/reported-requests`; `GET /api/reported-through` is 6e's. What a report holds, its checks, how it is stored and what it answers are `docs/specs/reported-requests/spec.md`.
+
+### `POST /api/reported-requests`
+
+A machine reports model calls its clients made without the hub. Any known hub key may call it, or the owner (`docs/specs/sign-in/spec.md`); the reporter is the caller, and the machine its `x-cota-machine` tag, which it must give. Body: `{ client, pool, through, calls }`, at most 64 MiB, 0 to 500 calls. Answer: `{ stored, held }`, the calls it stored and the calls the log already held, once every call is in the log. Errors:
+
+| `type` | Status | Title |
+| --- | --- | --- |
+| `urn:cota:report-refused` | 400 | The report was not stored. |
+| `urn:cota:pool-not-observed` | 400 | That pool is not an observed pool. |
+| `urn:cota:report-out-of-order` | 409 | A call's call before was never stored. |
+
+and `no-such-pool` 404, `request-log-unavailable` 503 (the report is sent again) and `hub-store-unavailable` 503 (its calls are stored; its reported through was not kept).
 
 ## Search (the `search` group, the request-log module)
 
@@ -507,7 +524,7 @@ Each routed client's list of routes and its default pool, and which pool one lau
 
 | Limit | Value | Over it |
 | --- | --- | --- |
-| A request body | 1 MiB | 413 `body-too-large`, and the connection is closed |
+| A request body | 1 MiB; 64 MiB for a report | 413 `body-too-large`, and the connection is closed |
 | One ClickHouse query for an endpoint | 30 seconds, stopped by ClickHouse; a query the hub stops waiting for is cancelled | 503 `request-log-unavailable` |
 | Requests listed for one session | 10,000 | the oldest left out, counted in `requestsCut` |
 | Requests the role rules read, for one session | 10,000, its latest | the older ones have no role or segment, and give no title or first prompt |
