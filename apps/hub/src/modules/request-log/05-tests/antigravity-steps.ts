@@ -206,6 +206,31 @@ export const toolResult = (idx: number, call: Call, result: string) =>
     [{ number: table.toolResult.call, message: callFields(call) }],
   );
 
+/** A tool's step as it is while its command runs on, or done with nothing the table reads: its call, and no result's text. */
+export const toolResultWithoutText = (
+  idx: number,
+  call: Call,
+  status: number,
+): Schema.JsonObject => ({
+  ...step(
+    idx,
+    table.toolResult.stepType,
+    [
+      {
+        number: table.toolResult.payload,
+        message: [
+          {
+            number: table.toolResult.result,
+            message: [{ number: 3, text: "Running" }],
+          },
+        ],
+      },
+    ],
+    [{ number: table.toolResult.call, message: callFields(call) }],
+  ),
+  status,
+});
+
 /** A task's notification, of the kind `kind`, that the command `call` started has ended. */
 export const taskNotification = (
   idx: number,

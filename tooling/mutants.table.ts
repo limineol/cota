@@ -385,9 +385,9 @@ const j16 =
 const j17 =
   "J17: For every set of keys and every answer of the hub to each, a join writes the configuration and keys only when the hub was reached and every key is known, none is a reader key and no two are of one scope; otherwise the machine's files are as they were.";
 const j19 =
-  "J19: For any record appended to step by step and read in runs cut anywhere (between steps, on an unfinished step, after a compaction), the model calls read run by run are those of reading the whole record once, with the same usage, model, times and output, but for a step reported unfinished, which stays as it was reported, and the order a late call is read in: a step read past while not finished and without usage, which later finishes with usage, is read by the first run after it finishes, before that run's newer calls; and each call names as `after` the call of the greatest step below its own among those read before it, its input every step between the two, so that a call read past a late one names the call before that late one and holds its step as it was.";
+  "J19: For any record appended to step by step, its steps finishing in place later or never, and read in runs cut anywhere (between steps, on an unfinished step, after a compaction), the model calls read run by run are those of reading the whole record once, with the same usage, model, times and output, but for a step reported unfinished, which stays as it was reported, a step read past while not finished, which the next call's input holds as it was read, and the order a late call is read in. A call whose step is finished is read by the first run that finds it so, whatever step not finished lies before it, and a run not settled reports a step unfinished only when a finished call follows it; a step read past while not finished and without usage, which later finishes with usage, is read by the first run after it finishes, before that run's newer calls; and each call names as `after` the call of the greatest step below its own among those read before it, its input every step between the two, so that a call read past a late one names the call before that late one and holds its step as it was.";
 const j20 =
-  "J20: For any sequence of appends and runs whose reports are answered 200, refused, failed or never, a call is among those each run sends until a report holding it is answered 200, and among none after: a call reported unfinished among them, whatever its step becomes, and a late call from the first run after its step finishes; each call names as `after` a call before it in its conversation, stored before its report or earlier in it: the one just before it, but for a call read past a late one.";
+  "J20: For any sequence of appends and runs whose reports are answered 200, refused, failed or never, a call is among those each run sends from the first run that finds its step finished, whatever step not finished lies before it, until a report holding it is answered 200, and among none after: a call reported unfinished among them, whatever its step becomes, and a late call from the first run after its step finishes; each call names as `after` a call before it in its conversation, stored before its report or earlier in it: the one just before it, but for a call read past a late one.";
 const j21 =
   "J21: Every report holds calls of one folder, at most 200 and 8 MiB but for a call alone over it, in order, and no report's body is over 64 MiB; a run reads a conversation only once the calls it read before and has not sent fit in one report.";
 const j22 =
@@ -7741,8 +7741,24 @@ export const layer = (policy: Admission.Policy) =>
     name: "a step not finished does not wait to settle",
     law: "J19",
     file: cliRecord,
-    find: "    if (unfinished && !settled) {\n      return { calls, stopped: Option.none(), waiting: true, next };\n    }\n",
+    find: "    if (unfinished && !settled && row.idx > lastFinishedCall) {\n      return { calls, stopped: Option.none(), waiting: true, next };\n    }\n",
     replace: "",
+    killedBy: j19,
+  },
+  {
+    name: "a step not finished stops the reading though a finished model call follows it",
+    law: "J19",
+    file: cliRecord,
+    find: "    if (unfinished && !settled && row.idx > lastFinishedCall) {",
+    replace: "    if (unfinished && !settled) {",
+    killedBy: j19,
+  },
+  {
+    name: "a model's step not finished lets the reading go past a step not finished before it",
+    law: "J19",
+    file: cliRecord,
+    find: "      row.status === record.done && carriesUsage(row) ? row.idx : found,",
+    replace: "      carriesUsage(row) ? row.idx : found,",
     killedBy: j19,
   },
   {

@@ -3,7 +3,6 @@ import { Arbitrary, DateTime, Effect, Layer, Result, Schema } from "effect";
 import { TestClock } from "effect/testing";
 import * as ReadHubKeys from "#02-application/queries/read-hub-keys.query.ts";
 import { ReadProject } from "#02-application/queries/read-project.query.ts";
-import { fromStart, readingOf } from "#03-domain/antigravity-record.ts";
 import * as HubAddress from "#03-domain/hub-address.ts";
 import * as Paths from "#03-domain/paths.ts";
 import { bytesOf, type Limits } from "#03-domain/requests.ts";
@@ -12,6 +11,7 @@ import {
   conversationOf,
   Plan,
   plan,
+  stepTypes,
 } from "#05-tests/antigravity-records.ts";
 import * as InMemoryClientRecords from "#05-tests/fakes/in-memory-client-records.ts";
 import * as InMemoryFiles from "#05-tests/fakes/in-memory-files.ts";
@@ -86,9 +86,12 @@ type Case = typeof Case.Type;
  * what kills them whatever the seed: one of a second folder whose files
  * change while the first run copies them, one of seven calls that comes
  * at the second run, whose first report the hub refuses, one of two
- * calls too large to share a report, and one whose second model's step,
- * with no usage until done, is read past once settled at the third run and
- * finishes at the fourth, whose first report, holding it, the hub refuses.
+ * calls too large to share a report, one whose second model's step, with
+ * no usage until done, is read past at the first run, since the model's
+ * step after it is finished, and finishes at the fourth, whose first
+ * report, holding it, the hub refuses, and one that waits on its last
+ * model's step, generating with its usage, until it settles at the third
+ * run and is reported unfinished, a run before the step finishes.
  */
 const fixed: ReadonlyArray<Grown> = [
   {
@@ -130,6 +133,14 @@ const fixed: ReadonlyArray<Grown> = [
     shown: [4],
     finishing: [0, 0, 3],
     bare: true,
+    changingAt: [],
+  },
+  {
+    folder: 0,
+    plans: [plan("user"), plan("model"), plan("model")],
+    shown: [3],
+    finishing: [0, 0, 3],
+    bare: false,
     changingAt: [],
   },
 ];
@@ -177,13 +188,14 @@ const heldAt = (grown: Grown, index: number, run: number, end: boolean) => {
   };
 };
 
-/** The calls a conversation holds that a run reads without waiting for a step to settle. */
-const callsHeld = (index: number, held: InMemoryClientRecords.Conversation) =>
-  readingOf(
-    InMemoryClientRecords.recordOf(idOf(index), held, -1),
-    fromStart,
-    false,
-  ).calls.map(({ call }) => call);
+/** The calls a conversation holds, in order: its model's steps that are finished, whatever lies before them. */
+const callsHeld = (held: InMemoryClientRecords.Conversation) =>
+  held.steps.flatMap(({ idx, stepType, status }) =>
+    status === 3 &&
+    (stepType === stepTypes.model || stepType === stepTypes.compaction)
+      ? [`${held.trajectory}:${idx}`]
+      : [],
+  );
 
 interface Sent {
   readonly run: number;
@@ -269,7 +281,7 @@ const reportedOver = ({ calls, bytes, grown, runs }: Case) =>
           const now = heldAt(each, index, run, end);
           conversations.set(idOf(index), now);
           if (now.changing) changingIn.add(`${run}:${at}`);
-          for (const call of callsHeld(index, now)) held[at]?.add(call);
+          for (const call of callsHeld(now)) held[at]?.add(call);
         });
         records.folders.set(folder, conversations);
       }
@@ -306,7 +318,7 @@ const reportedOver = ({ calls, bytes, grown, runs }: Case) =>
         idOf(index),
         {
           folder: each.folder,
-          calls: callsHeld(index, heldAt(each, index, 0, true)),
+          calls: callsHeld(heldAt(each, index, 0, true)),
         },
       ]),
     );
@@ -323,7 +335,7 @@ const reportedOver = ({ calls, bytes, grown, runs }: Case) =>
 
 describe("request reporter laws", () => {
   it.effect.prop(
-    "J20: For any sequence of appends and runs whose reports are answered 200, refused, failed or never, a call is among those each run sends until a report holding it is answered 200, and among none after: a call reported unfinished among them, whatever its step becomes, and a late call from the first run after its step finishes; each call names as `after` a call before it in its conversation, stored before its report or earlier in it: the one just before it, but for a call read past a late one.",
+    "J20: For any sequence of appends and runs whose reports are answered 200, refused, failed or never, a call is among those each run sends from the first run that finds its step finished, whatever step not finished lies before it, until a report holding it is answered 200, and among none after: a call reported unfinished among them, whatever its step becomes, and a late call from the first run after its step finishes; each call names as `after` a call before it in its conversation, stored before its report or earlier in it: the one just before it, but for a call read past a late one.",
     { drawn: Arbitrary.schema(Case) },
     ({ drawn }) =>
       Effect.gen(function* () {

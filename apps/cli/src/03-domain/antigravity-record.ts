@@ -423,7 +423,8 @@ const workspaceOfRow = (row: RecordStep) =>
  * calls (`docs/specs/request-reporter/spec.md`, The Antigravity reader).
  * It first looks again at each step it went past: one now done with usage is
  * a model call, read before the newer ones. Unsettled, it stops at the first
- * step not finished and waits; settled, it reads through it.
+ * step not finished that no finished model call follows, and waits; settled,
+ * or once the client has gone on past it, it reads through it.
  */
 export const readingOf = (
   read: ClientRecord,
@@ -640,6 +641,11 @@ export const readingOf = (
     calls.push({ ...call.value, next });
   }
 
+  const lastFinishedCall = read.steps.reduce(
+    (found, row) =>
+      row.status === record.done && carriesUsage(row) ? row.idx : found,
+    -1,
+  );
   let last = from.last;
   let lastUsageStep = from.step;
   let items: Array<Step> = [];
@@ -652,7 +658,7 @@ export const readingOf = (
     if (Result.isFailure(parsed)) return stop(parsed.failure, at);
     const { step, metadata, payload } = parsed.success;
     const unfinished = isUnfinished(row);
-    if (unfinished && !settled) {
+    if (unfinished && !settled && row.idx > lastFinishedCall) {
       return { calls, stopped: Option.none(), waiting: true, next };
     }
     if (row.stepType === record.userMessage) {
