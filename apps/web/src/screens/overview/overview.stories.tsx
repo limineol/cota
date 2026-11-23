@@ -122,8 +122,13 @@ export const AnObservedPool: Story = {
 export const ReportedThroughLate: Story = {
   ...page("/", overviewOfPools(withAnObservedPool, reportedThrough.late)),
   play: async ({ canvas }) => {
-    await expect(await canvas.findByText("Late")).toBeVisible();
-    await expect(canvas.getByText("3h 12m ago")).toBeVisible();
+    const late = await canvas.findByText("Late");
+    await expect(late).toBeVisible();
+    // The fixture's time is the minute the stories were loaded in, and the
+    // page reads the clock, so the minutes may have moved on.
+    await expect(
+      late.closest('[data-slot="reported-through-line"]'),
+    ).toHaveTextContent(/3h \d+m ago$/);
   },
 };
 
