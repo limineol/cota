@@ -311,7 +311,7 @@ The quantities are the block components, drawn by the package itself, with no ch
 
 The shell and its controls:
 
-- `mark`: Cota's mark, a 4×4 pavement whose lit stones (`text`) trace one crest of a wave over unlit ones (`border-strong`); 20px in the sidebar, 28px on the sign-in screen.
+- `mark`: Cota's mark, a 4×4 pavement whose lit stones (`text`) trace one crest of a wave over unlit ones (`border-strong`); 20px in the sidebar, 28px on the sign-in screen. The page's icon (`favicon.svg`, and `apple-touch-icon.png` for a phone's home screen) is the mark on a tile of the dark theme's `bg`, in its colours, whatever the theme.
 - `sidebar`: the shell. From the `wide` breakpoint (761px) a 232px sidebar on `rail` holds the brand, the navigation and, in its footer, the theme, the sidebar's toggle and sign-out; collapsed, it is a 60px rail of icons whose labels show in tooltips. An item may write its `shortcut` quietly at its end, as Search does with the palette's. Below it, a 52px top bar opens the same sidebar as a drawer (`sheet`). The current page is `surface-3`. A skip link leads to `main`.
 - `segmented`: one of a few options, as a radio group; with `iconOnly`, each option's label is its name and its tooltip; `sm` is smaller, for a panel or a header's end, and scrolls sideways when its options do not fit; `xs` is smaller still, unbordered on `surface-2`, for the end of a field.
 - `alert`: a problem (`danger`) or a notice, announced as it appears, with an optional action such as Try again.
