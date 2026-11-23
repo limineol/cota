@@ -633,7 +633,7 @@ The shape a client's record holds a conversation in, which a reported request's 
 _Avoid_: protocol (a protocol is a wire format), source form (an import source's), format alone, schema
 
 **Report**:
-One delivery of a request reporter: model calls of one data folder, at most 200 and 8 MiB of them, the observed pool they bill and, when the run has read the folder to its end, how far that was. The hub answers it only once its calls are stored.
+One delivery of a request reporter: model calls of one data folder (at most 500, and a machine sends at most 200 and 8 MiB of them), the observed pool they bill and, when the run has read the folder to its end, how far that was. The hub answers it only once its calls are stored.
 _Avoid_: upload, sync, batch alone (the writer's batches), push
 
 **Report cursor**:
