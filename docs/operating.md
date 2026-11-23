@@ -2,7 +2,7 @@
 status: active
 scope: repository
 owner: limineol
-last_verified: 2026-11-19
+last_verified: 2026-11-23
 review_by: 2027-02-19
 supersedes: []
 code:
@@ -206,7 +206,7 @@ In a new shell, `claude`, `codex`, `opencode` and `pi` are the shims, which star
 - `cota route` says which pool a launch in this directory would bill, and why.
 - `cota --pool <pool> claude`, or `COTA_POOL=<pool>`, bills another pool for one launch.
 - `COTA=off claude` starts the client as if `cota` were not there.
-- `cota login <pool>` keeps a login for a Claude subscription other than the one Claude Code is signed in to (made with `claude setup-token`), for a route that names it.
+- `cota login <pool>` keeps a login for a Claude subscription other than the one Claude Code is signed in to (made with `claude setup-token`), for a route that names it. A session launched with it makes model requests only: it has no claude.ai connectors and no Remote Control. A connector needed in those projects is added to the machine as a server of the user's (`claude mcp add --scope user …`), which every pool has.
 - When the hub cannot be reached, a launch goes direct to the provider with the login its route would have used, and says so in one line. Those requests are neither logged nor diverted, and OpenCode and Pi cannot go direct: only the hub holds their keys.
 - `cota doctor` checks the configuration, the hub and its keys, the files' modes, the shims and `PATH`, the clients and their configuration, and the title reporter. Each check that failed or warned names its fix. It names where it found each client, and warns when that file is a script (another gateway's wrapper would take every session past the hub), when a `PATH` line comes after `cota`'s, and when the shims run a `cota` inside a Git checkout.
 - `cota leave` undoes the join: the title reporter's schedule, the hub's providers in the clients' files, the shims and their `PATH` line, and the keys.

@@ -2,7 +2,7 @@
 status: accepted
 scope: apps/cli
 owner: limineol
-last_verified: 2026-11-22
+last_verified: 2026-11-23
 review_by: 2027-02-17
 supersedes: []
 code:
@@ -128,7 +128,7 @@ OpenCode's and Pi's titles are not reported in milestone 4. Its behaviour, its d
 
 These were read from the prototype's code or the clients' public documentation, and no client or provider was run to see them. Each is checked by hand on a real machine when 4b is built, and recorded where the protocols spec records its facts.
 
-- **Claude Code**: `ANTHROPIC_CUSTOM_HEADERS` is one `Name: value` a line; `ANTHROPIC_AUTH_TOKEN` and `ANTHROPIC_API_KEY` win over `CLAUDE_CODE_OAUTH_TOKEN`, which wins over the `/login` login; a `claude setup-token` login in `CLAUDE_CODE_OAUTH_TOKEN` spends its subscription; with `ANTHROPIC_API_KEY` set, an interactive Claude Code may ask once whether to use the key; where its transcripts are on Windows.
+- **Claude Code**: `ANTHROPIC_CUSTOM_HEADERS` is one `Name: value` a line; `ANTHROPIC_AUTH_TOKEN` and `ANTHROPIC_API_KEY` win over `CLAUDE_CODE_OAUTH_TOKEN`, which wins over the `/login` login; a `claude setup-token` login in `CLAUDE_CODE_OAUTH_TOKEN` spends its subscription, and makes model requests only, so a session launched with one has no claude.ai connectors and no Remote Control, while servers configured on the machine still work (its documentation, read 2026-11-23); a command it runs is given `ANTHROPIC_BASE_URL`, `ANTHROPIC_CUSTOM_HEADERS` and `COTA_PROJECT` (seen on 2.1.330 on macOS, 2026-11-23, in a session on its own pool), and whether it is given `CLAUDE_CODE_OAUTH_TOKEN` is open (its documentation strips credentials from them only under `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1`; one session launched with a machine login was reported to run an inner `claude` with the own login, and nobody has repeated it); with `ANTHROPIC_API_KEY` set, an interactive Claude Code may ask once whether to use the key; where its transcripts are on Windows.
 - **Codex**: `-c model_provider=<id>` selects a table of `config.toml`, before a subcommand too, and a later `-c` of the owner's wins; `http_headers`, `env_http_headers`, `requires_openai_auth` and `name = "OpenAI"` behave as the prototype relied on; `codex resume` lists only the sessions of the provider it starts with; `session_index.jsonl`'s `id` is the `session-id` header the hub reads.
 - **OpenCode**: the global file's place on each system, whether it also reads an `opencode.jsonc` beside it, the `{file:…}` and `{env:…}` substitutions, and what an unset variable becomes in a header.
 - **Pi**: `models.json`'s fields as the prototype wrote them; whether a header's `$NAME` is read from the environment; how a `!` command runs on Windows.

@@ -110,6 +110,8 @@ For `cota <client> [args…]`, or the shim of `<client>`:
 
 Steps 1 to 7 are one decision with no IO (`03-domain/launch.ts`, `decide`): from the client, the environment and arguments given, the real client found, and, on a machine that has joined, its configuration, project, hub keys, machine logins, the override, the hub's answer or its absence by the deadline, and the kept answer, it gives exactly one of: start this command with these arguments and this environment (and one line to say first, going direct), or stop with this line and this exit status. Every line it gives is printed on stderr as the spec quotes it.
 
+**What a command the client runs is given** is the client's to decide, from the environment of step 7. `PATH` lacks the shims' directory there, so a client started by name inside a session is the real one: no second launch, no route asked, no login given (ADR-0022). Claude Code passes `ANTHROPIC_BASE_URL`, `ANTHROPIC_CUSTOM_HEADERS` and `COTA_PROJECT` on to the commands it runs (seen on 2.1.330), so a Claude Code started inside a session talks to the hub, to the outer session's pool and under its tags, and is logged there. Which login it sends in a session launched with a machine login is not confirmed (ADR-0022, Facts to confirm): where Claude Code keeps `CLAUDE_CODE_OAUTH_TOKEN` from the commands it runs, the inner client sends the login Claude Code is signed in to, the hub forwards it as that pool's, and the usage is the own subscription's while the request log says the pool.
+
 **Claude Code.**
 
 | | Subscription pool | Keyed pool |
@@ -232,6 +234,8 @@ A JSON file is written with two spaces of indent and a final line break; its key
 ## Machine logins
 
 `cota login <pool>` reads one login from standard input (its first line that is not empty) or a prompt that does not echo, refuses an empty one, asks the hub (`GET /api/machine`, with each hub key the machine keeps) that `<pool>` is among the pools they open and a subscription pool of `anthropic-messages`, and writes `logins/<pool>`, mode 0600 in a directory 0700, replacing any; it says `cota: kept the machine login for <pool>.` A refusal says why in one line (`<pool> is not a pool this machine's hub keys open`, `<pool> is a keyed pool of anthropic-messages; a machine login is for a subscription pool of anthropic-messages`, the hub not answering) and keeps nothing. `cota logout <pool>` removes it, or says there was none, both exiting 0; a `<pool>` that is not a pool's id (one path segment of letters, digits, `.`, `_`, `~` and `-`) is refused. Neither contacts a provider.
+
+**What a machine login does not carry.** It is `claude setup-token`'s login, which makes model requests only (Claude Code's documentation, Generate a long-lived token). A Claude Code session launched with one fetches no claude.ai connectors, neither that subscription's nor those of the login Claude Code is signed in to, and cannot start Remote Control; Claude Code says nothing of either. The MCP servers configured on the machine (`claude mcp add --scope user …`, a project's `.mcp.json`) work in every pool, and Claude Code connects once to a server that is also a connector at the same address: a connector needed in the projects routed to such a pool is added as a server of the user's. A session on the client's own pool keeps its connectors, since it is given no login.
 
 ## Doctor
 
