@@ -2,7 +2,7 @@
 status: active
 scope: repository
 owner: limineol
-last_verified: 2026-11-22
+last_verified: 2026-11-23
 review_by: 2027-02-13
 supersedes: []
 code: []
@@ -118,6 +118,8 @@ The owner decided on 2026-11-22 that the request log also holds what a machine r
 | 6e | `m6e-dashboard` | The reported mark in the sessions, a session's page, the transcript and the inspector, with what a reported session cannot show; reported through per machine, client and pool, and late; the read API's `origin` and `GET /api/reported-through` | Stories in both themes; the API's contract tests | ADR-0029; the specs `dashboard` and `api` |
 
 The cut differs from the first one drawn in one place: the record form's reading (its text for search, its renderer, its role rule and its first prompt) is 6c's, not the dashboard's, because it is the request log's own code and search's text is written when an item is stored, so items stored before it would have no text. 6e is the screens and the reads they need.
+
+**6a to 6e are merged.** Built: ADR-0029 and the specs `reported-requests` and `request-reporter`, both active; a request's `origin` and observed pools (6b); `POST /api/reported-requests`, the record form `antigravity-steps` and reported through in the hub store (6c); `cota requests` (`add`, `remove`, `show`, `report`, `schedule`), the Antigravity reader, the run's lock and doctor's `requests` check (6d), with what 6d found of ADR-0029's facts written into it; and the reported mark, what a reported request cannot show, and reported through with late on the overview (6e); held by laws L7 to L19 and J19 to J27. Not yet: no release holds it, so the install prompt's step and the upgrade's wait for the release that ships it (ADR-0028: the guides on `main` describe the latest release); no real conversation has been reported, which is the owner's to start; and the facts ADR-0029 still lists as open (the desktop app, sub-agents, automatic compaction, long conversations, other versions) are as they were.
 
 ## Parity with the prototype
 
