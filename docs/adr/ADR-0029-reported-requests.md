@@ -2,7 +2,7 @@
 status: accepted
 scope: repository
 owner: limineol
-last_verified: 2026-11-22
+last_verified: 2026-11-23
 review_by: 2027-02-22
 supersedes: []
 code: []
@@ -176,17 +176,17 @@ A reported request is priced by its pool's price for its model, as a subscriptio
 
 ### Facts to confirm when built
 
-Read by trial on one conversation on one machine; each is checked again in 6d, and the reader spec changes with what is found.
+Read by trial on one conversation on one machine; each was checked again in 6d (2026-11-23), on the four copies of that same throwaway conversation (no second conversation was run), against tokscale's public Antigravity parser (`antigravity_cli.rs`), a third party's public protocol definitions of Antigravity's language server, and T3 Code's public source, and with records and databases of the reader's own. What was found, and what the reader builds on (`docs/specs/request-reporter/spec.md`):
 
-- The usage's reading: which field is input not from cache, from cache, and output, and which of output's two parts is reasoning, against an independent parser such as tokscale's. Until confirmed, reasoning is reported as 0.
-- Which `status` values a finished step has, and what an unfinished or failed model call leaves.
-- That the database's name, `trajectory_meta`'s ids and `gen_metadata`'s call ids agree, and which one T3 Code keeps as an Antigravity thread's native id: if it is the database's name, the title reporter's T3 Code source already titles reported sessions.
-- Whether a step names the conversation's working directory, from which the project is read as a launch reads it; else the project is empty.
-- Whether the compaction's step names its model.
-- That no field of a step's `metadata` or `step_payload` holds anything of the sign-in: the record form keeps every field, read or not, so a field holding a token would be stored. The reader's fields are looked through on a throwaway conversation, by their shapes and never against the token file, before a real conversation is reported.
-- How a read-only open behaves on a live database with and without its `-wal` and `-shm`, and whether a copy can be torn by a concurrent checkpoint.
-- The desktop app's data folder and conversations, sub-agents, automatic compaction, long conversations, other versions.
-- On macOS, whether the reporter sends through `/usr/bin/curl` as the title reporter does, with a body of megabytes.
+- **The usage: confirmed, and reasoning is read.** `metadata` 9 is the step's usage: 2 input not from cache, 5 input from cache, 4 cache written, 3 output with its reasoning, 9 the reasoning and 10 the rest of the output (9 and 10 sum to 3); 1 is the model, a number. tokscale reads 2, 3, 4, 5, 9 and 10 the same way, and the third party's definitions name them so. Reasoning is reported from 9, and the cache written (never above 0 in the conversation) as written for the short time.
+- **Statuses: changed.** Every step's final `status` was 3 (done). A step's `metadata` 26 keeps its statuses as they went: a model's step 8 (generating) then 3, a tool's 1 (pending), 2 (running) then 3. The third party's definitions name 6 cancelled, 7 error, 9 waiting and 12 interrupted, none seen. A tool's step is written, pending, before the model's step that asked for it is finished, so a step that follows an unfinished one does not settle it: only its finishing, or 10 minutes without the files changing, does. A failed call was not seen: T3 Code's source ends an Antigravity turn whose model call failed on a step of type 17 (an error message), which the reader reads as an item, not a call.
+- **The ids: confirmed, but two of them.** The database's name is `trajectory_meta.cascade_id`, each step's `metadata` 20.4 and `gen_metadata`'s `cascade_id`: the conversation's id, the reported session. `trajectory_meta.trajectory_id` is another id, each step's 20.1, and the prefix of `gen_metadata`'s call ids (`<trajectory id>-<n>`): the call key's. T3 Code's public source opens `<data folder>/conversations/<ACP session id>.db`, so the id T3 Code holds for the session is the database's name; that it keeps it as the thread's native id, which would let the title reporter title reported sessions, was not seen, since T3 Code's database is not read for this. Open.
+- **The project: found.** Every user's message step holds the workspace it was sent in (`step_payload` 19.12.12, a `file://` URI). The project is read from the latest such step at or before the call, from that directory's own Git files, never by running `git`.
+- **The compaction's model: found indirectly.** Its step names no model and has no `gen_metadata` row, but its usage's 1 is the same number as the `gen_metadata` rows' model (their 1.3): its model is the name such a row of the same conversation gives that number, else none.
+- **Sign-in material: none seen, by shape, in one conversation.** No field of a step held anything shaped as a Google access or refresh token, an API key, a JWT or a bearer header; the long texts were paths and the conversation's own. Two fields hold opaque bytes, a tool call's 7 and the model output's 20.14, which the third party's definitions name the model's thought signatures, and the usage's 8 holds the provider's response headers (a session number seen). Open: judged by shape on one conversation, never against the token file.
+- **Opening the file: changed.** A read-only open of a database in WAL mode whose `-wal` and `-shm` are absent fails, wherever it is (fact 8); a read-only open of one being written opens its `-shm` to write and changes its bytes. So the reader never opens the client's database: it always copies the database and its `-wal`, never `-shm`, into a directory of its own, comparing their sizes and times before and after, and reads the copy. Against a writer checkpointing (truncating its `-wal`) every third write, 238 copies were made: none was torn, and 53 saw the files change while copying, which the reader reads again.
+- **Not tested still**: the desktop app's data folder and conversations, sub-agents, automatic compaction, long conversations, other versions of Antigravity. Open.
+- **`/usr/bin/curl` with a body of megabytes**: the reporter sends the body as a file curl reads (`--data-binary @<file>`); tested against a whole hub of the harness with a body of several megabytes (`apps/cli/src/01-presentation/requests.contract.test.ts`), not from a launchd job. Open for launchd, as ADR-0022's.
 
 ## Alternatives weighed
 
