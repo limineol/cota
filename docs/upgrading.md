@@ -34,30 +34,30 @@ It prints the version, whose notes are its page, `https://github.com/limineol/co
 Pull the release's hub image while the hub still runs, and download its Compose file, checked against its `SHA256SUMS`, to compare with yours:
 
 ```sh
-docker pull "ghcr.io/limineol/cota-hub:$VERSION"
-RELEASE="https://github.com/limineol/cota/releases/download/v$VERSION"
+docker pull "ghcr.io/limineol/cota-hub:$VERSION" &&
+RELEASE="https://github.com/limineol/cota/releases/download/v$VERSION" &&
 DOWNLOADS="$(mktemp -d)" && cd "$DOWNLOADS" &&
   curl -fsSLO "$RELEASE/compose.yaml" && curl -fsSLO "$RELEASE/SHA256SUMS" &&
   grep '  compose\.yaml$' SHA256SUMS | if command -v shasum >/dev/null; then shasum -a 256 -c -; else sha256sum -c -; fi &&
   diff compose.yaml "$HOME/cota-hub/compose.yaml"
 ```
 
-`docker image ls ghcr.io/limineol/cota-hub` lists the new image beside the one running now. After `compose.yaml: OK`, no output from `diff` means the Compose file did not change. The release's page gives the image's digest, and `gh attestation verify oci://ghcr.io/limineol/cota-hub:<version> --repo limineol/cota` shows it came from Cota's release workflow, if you want to check either.
+It stops at the first step that fails, and the hub keeps running: go on to step 3 only once the pull succeeded and `compose.yaml: OK` was printed. `docker image ls ghcr.io/limineol/cota-hub` lists the new image beside the one running now. No output from `diff` means the Compose file did not change. The release's page gives the image's digest, and `gh attestation verify oci://ghcr.io/limineol/cota-hub:<version> --repo limineol/cota` shows it came from Cota's release workflow, if you want to check either.
 
 ### 3. Keep what a rollback needs
 
-In the hub directory, stop the hub, so that nothing writes the hub store, and keep `.env` and a copy of the store in `previous/`, readable by you alone:
+In the hub directory, stop the hub, so that nothing writes the hub store, and keep `.env`, the Compose file and a copy of the store in `previous/`, readable by you alone:
 
 ```sh
 cd "$HOME/cota-hub"
 docker compose stop hub
-(umask 077 && mkdir -p previous && cp .env previous/.env && rm -rf previous/store && cp -Rp store previous/store)
+(umask 077 && mkdir -p previous && cp .env previous/.env && cp compose.yaml previous/compose.yaml && rm -rf previous/store && cp -Rp store previous/store)
 ```
 
-This replaces what an earlier upgrade kept there. If the Compose file changed, copy the old one into `previous/` too, and the release's into its place:
+This replaces what an earlier upgrade kept there. If the Compose file changed (step 2's `diff` printed something), put the release's in its place:
 
 ```sh
-cp compose.yaml previous/compose.yaml && cp "$DOWNLOADS/compose.yaml" compose.yaml
+cp "$DOWNLOADS/compose.yaml" compose.yaml
 ```
 
 ### 4. Name the new image and start it
@@ -97,19 +97,20 @@ The machines need nothing for a new hub image. A release whose notes say `cota` 
 | `cota.toml` and `secrets/` | Untouched, unless the release says to change them |
 | The hub store | Used by the new image, which may add steps to it; the copy in `previous/store` is as it was |
 | `.env` | The new image's name; the old `.env` is in `previous/.env` |
+| `compose.yaml` | The release's, if it changed; the one before is in `previous/compose.yaml` either way |
 | The old image | Kept until you remove it (`docker image rm ghcr.io/limineol/cota-hub:<version>`), so that a rollback can start it |
 
 ## Roll back
 
-In the hub directory, stop the hub, put back `.env` and the store the upgrade kept, and start it:
+In the hub directory, stop the hub, put back `.env`, the Compose file and the store the upgrade kept, and start it:
 
 ```sh
 docker compose stop hub
-cp previous/.env .env && rm -rf store && cp -Rp previous/store store
+cp previous/.env .env && cp previous/compose.yaml compose.yaml && rm -rf store && cp -Rp previous/store store
 docker compose up -d --wait
 ```
 
-If the upgrade put a new Compose file in place, put the old one back too, before `up`: `cp previous/compose.yaml compose.yaml`. Then check it as in step 5: the hub runs the old image, named by the tag and digest it ran before.
+Then check it as in step 5: the hub runs the old image, named by the tag and digest it ran before.
 
 The store is put back because a newer hub may have added a step to it, and an older hub refuses a store holding a step it does not know. So a rollback loses what the hub store gained since the upgrade:
 

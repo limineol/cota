@@ -78,6 +78,7 @@ VERSION="$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/lim
 RELEASE="https://github.com/limineol/cota/releases/download/v$VERSION"
 DOWNLOADS="$(mktemp -d)" && cd "$DOWNLOADS" &&
   curl -fsSLO "$RELEASE/compose.yaml" && curl -fsSLO "$RELEASE/cota.toml" && curl -fsSLO "$RELEASE/SHA256SUMS" &&
+  [ "$(grep -cE '  (compose\.yaml|cota\.toml)$' SHA256SUMS)" = 2 ] &&
   grep -E '  (compose\.yaml|cota\.toml)$' SHA256SUMS | if command -v shasum >/dev/null; then shasum -a 256 -c -; else sha256sum -c -; fi &&
   cp compose.yaml "$HOME/cota-hub/compose.yaml" && (umask 077 && cp cota.toml "$HOME/cota-hub/cota.toml") &&
   docker pull "ghcr.io/limineol/cota-hub:$VERSION" &&
@@ -88,7 +89,7 @@ Success: `compose.yaml: OK` and `cota.toml: OK`, the pull, and last `Cota <versi
 
 - `curl` says `Could not resolve host` or cannot connect: this machine does not reach GitHub. Its network is the owner's: tell them, and wait.
 - `curl` says `The requested URL returned error: 404`: no release has that version. Check `VERSION`.
-- A line ends `FAILED`: a file did not arrive as the release published it. Run the block again; if it fails again, stop and tell the owner, and do not go on.
+- A line ends `FAILED`, or it stops after the downloads having checked nothing: a file did not arrive as the release published it, or `SHA256SUMS` does not name both files. Run the block again; if it fails again, stop and tell the owner, and do not go on.
 - `docker pull` cannot connect to the Docker daemon: Docker is not running. Stop and tell the owner: never restart their Docker engine.
 
 `ghcr.io/limineol/cota-hub` is public: the pull needs no sign-in. The release's page gives the image's digest, which step 4 writes into `.env` from what was pulled, and the release's files and image carry GitHub's build provenance: the owner may check either (`gh attestation verify <file> --repo limineol/cota`, or `oci://ghcr.io/limineol/cota-hub:<version>` in place of the file). Neither is a step of yours.
@@ -128,7 +129,7 @@ EOF
 )
 ```
 
-Write in `VERSION` the version step 2 printed (The release, above). Success: it exits 0, and `.env`'s first line is `COTA_HUB_IMAGE=ghcr.io/limineol/cota-hub:<version>@sha256:<digest>`. If it exits 1 and writes nothing, that image is not on this machine: run step 2 again.
+Write in `VERSION` the version step 2 printed (The release, above). Success: it exits 0, and `.env`'s first line is `COTA_HUB_IMAGE=ghcr.io/limineol/cota-hub:<version>@sha256:<digest>`. If it exits 1 and writes nothing, that image is not on this machine: pull it (`docker pull "ghcr.io/limineol/cota-hub:$VERSION"`) and run this block again. Do not run step 2 again once `cota.toml` holds the owner's pools: its copy replaces the file.
 
 `COTA_BIND` is where the machines of question 3 reach the hub: `127.0.0.1`, this machine alone, behind a reverse proxy on this machine; this machine's address on a private network or a VPN the machines share; or `0.0.0.0`, every interface, for an `http` address on the owner's own network. Write the one question 3 needs, and in `COTA_PORT` the port of its address (behind a proxy, the port the proxy forwards to).
 

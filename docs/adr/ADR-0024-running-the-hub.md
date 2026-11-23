@@ -90,7 +90,7 @@ Both use Docker's `local` logging driver, which rotates its files; the default `
 
 The hub image is named in `.env` as `COTA_HUB_IMAGE`, by tag and digest once images are published, by the local tag `cota-hub:<commit>` until then. Changing the image is changing that line. An **upgrade**, in the hub directory:
 
-> Amended by ADR-0028: `.env` names a release's image by its tag and the digest of what was pulled, `ghcr.io/limineol/cota-hub:<version>@sha256:<digest>`, and a build of your own by its local tag. An upgrade pulls the new release's image before step 1, while the hub runs, and compares its Compose file with the release's; `docker image ls ghcr.io/limineol/cota-hub` lists the images a rollback can use.
+> Amended by ADR-0028: `.env` names a release's image by its tag and the digest of what was pulled, `ghcr.io/limineol/cota-hub:<version>@sha256:<digest>`, and a build of your own by its local tag. An upgrade pulls the new release's image before step 1, while the hub runs, and compares its Compose file with the release's; `docker image ls ghcr.io/limineol/cota-hub` lists the images a rollback can use. Step 1 keeps `compose.yaml` in `previous/` at every upgrade, and a rollback always puts it back.
 
 1. Keep what a rollback needs: `.env` into `previous/`, and, the hub stopped (`docker compose stop hub`) so that nothing writes the store and its WAL is folded in, a copy of `store/` into `previous/store/`, under `umask 077`. A release whose Compose file changed brings its own `compose.yaml`, and the old one goes into `previous/` too.
 2. Name the new image in `.env`, build or pull it, and `docker compose up -d --wait`.

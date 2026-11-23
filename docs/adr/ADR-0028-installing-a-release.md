@@ -49,7 +49,7 @@ Updating `cota` is installing another release's the same way. `cota update` stay
 
 ### The upgrade
 
-The upgrade guide moves the same way: find the version and read its release notes first; pull its image while the hub still runs; download its `compose.yaml`, checked, and compare it with the hub directory's; keep `.env` and the store as before; name the new image by its tag and the digest of what was pulled; start it; and, where the notes say `cota` changed, install the release's on each machine. The way back is what it was: the image before, by the `.env` before, and the store before.
+The upgrade guide moves the same way: find the version and read its release notes first; pull its image while the hub still runs; download its `compose.yaml`, checked, and compare it with the hub directory's; keep `.env`, the Compose file and the store in `previous/`, the Compose file every time and not only when it changed, so that the rollback puts all three back without asking which upgrade changed what; name the new image by its tag and the digest of what was pulled; start it; and, where the notes say `cota` changed, install the release's on each machine. The way back is what it was, with the Compose file before now always put back: the image before, by the `.env` before, and the store before.
 
 ### A build of your own
 

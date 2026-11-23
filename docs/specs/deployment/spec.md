@@ -89,8 +89,8 @@ The hub's store and archive are created by the hub at its first start. ClickHous
 
 ```sh
 docker compose stop hub
-(umask 077 && mkdir -p previous && cp .env previous/.env && rm -rf previous/store && cp -Rp store previous/store)
-# name the new image in .env, a release's by its tag and the digest of what was pulled (and, if its release says so, put its compose.yaml in place, the old one in previous/)
+(umask 077 && mkdir -p previous && cp .env previous/.env && cp compose.yaml previous/compose.yaml && rm -rf previous/store && cp -Rp store previous/store)
+# name the new image in .env, a release's by its tag and the digest of what was pulled (and, if its compose.yaml differs, put it in place)
 docker compose up -d --wait
 ```
 
@@ -100,7 +100,7 @@ Success: both services healthy, `/health` answers, and the hub's log names its p
 
 ```sh
 docker compose stop hub
-cp previous/.env .env && rm -rf store && cp -Rp previous/store store
+cp previous/.env .env && cp previous/compose.yaml compose.yaml && rm -rf store && cp -Rp previous/store store
 docker compose up -d --wait
 ```
 

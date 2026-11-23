@@ -26,7 +26,7 @@ On the hub's machine, in a checkout of the commit:
 docker build --build-arg COTA_REVISION="$(git rev-parse HEAD)" -t "cota-hub:$(git rev-parse --short=12 HEAD)" .
 ```
 
-It is named by its commit, and `docker image ls cota-hub` lists it. It takes a few minutes the first time.
+It is named by its commit, and `docker image ls cota-hub` lists it. It takes a few minutes the first time. Build from a checkout with nothing uncommitted (`git status --short` prints nothing): a second build at the same commit takes the tag from the first, and a rollback to that tag would then start the second.
 
 ## Installing with it
 
@@ -62,7 +62,7 @@ mkdir -p "$HOME/.local/bin"
 install -m 0755 apps/cli/dist/cota "$HOME/.local/bin/cota"
 ```
 
-The build prints `cli:build: bun-<system>-<arch> → <checkout>/apps/cli/dist/cota`. Then the install's steps for each machine go on from step 2, the join. One machine can build for all five systems instead, `bun run cli:build -- --all`, into `apps/cli/dist/` under a release's names (`cota-linux-x64`, `cota-windows-x64.exe`), for you to copy to each.
+The build prints `cli:build: bun-<system>-<arch> → <checkout>/apps/cli/dist/cota`. On Windows it makes `apps\cli\dist\cota.exe`, which you copy to `%LOCALAPPDATA%\Programs\cota\cota.exe` in place of the last two lines. Then the install's steps for each machine go on from step 2, the join. One machine can build for all five systems instead, `bun run cli:build -- --all`, into `apps/cli/dist/` under a release's names (`cota-linux-x64`, `cota-windows-x64.exe`), for you to copy to each.
 
 ## Upgrading it
 
@@ -72,6 +72,12 @@ The upgrade's steps, with a build in place of a release's: move the checkout to 
 diff deploy/compose.yaml "$HOME/cota-hub/compose.yaml"
 ```
 
+If it prints anything, step 3's copy takes the checkout's file, not a release's, after that step has kept the one before:
+
+```sh
+cp deploy/compose.yaml "$HOME/cota-hub/compose.yaml"
+```
+
 In step 4, name it by its local tag, from the checkout's root:
 
 ```sh
@@ -79,8 +85,8 @@ NEW="cota-hub:$(git rev-parse --short=12 HEAD)"
 (cd "$HOME/cota-hub" && umask 077 && grep -v '^COTA_HUB_IMAGE=' .env > .env.new && echo "COTA_HUB_IMAGE=$NEW" >> .env.new && mv .env.new .env)
 ```
 
-Keeping what a rollback needs, the check and the rollback are the upgrade's. Going from a build of your own to a release is an upgrade to that release; if the build's commit added a step to the hub store that the release does not have, that release's hub refuses the store, and the way back is the rollback.
+Keeping what a rollback needs, the check and the rollback are the upgrade's. No release notes say whether `cota` changed between your two commits: when it did, build and install it again on each machine as above, and run `~/.local/bin/cota doctor`. Going from a build of your own to a release is an upgrade to that release; if the build's commit added a step to the hub store that the release does not have, that release's hub refuses the store, and the way back is the rollback.
 
 ## How this was read
 
-On 2026-11-22, on macOS with OrbStack, against the deployment of Cota 0.1.0 that ADR-0028's proof brought up from the release, under a Compose project of its own: the image's build above, run as printed in a checkout of the commit that writes this recipe, then this page's upgrade to it, the deployment healthy on it, and the upgrade's rollback to 0.1.0 by its tag and digest. `cota`'s build and install above, run as printed with a throwaway home, printed its version. The first two blocks, installing with a build, are the install's own before Cota moved onto releases, which its rehearsal ran. Not run: Linux, `--all` copied to other machines, and an upgrade between two builds of your own.
+On 2026-11-22, on macOS with OrbStack, against the deployment of Cota 0.1.0 that ADR-0028's proof brought up from the release, under a Compose project of its own: the image's build above, run as printed in a checkout of the commit that writes this recipe, then this page's upgrade to it, the deployment healthy on it, and the upgrade's rollback to 0.1.0 by its tag and digest. `cota`'s build and install above, run as printed with a throwaway home, printed its version. The first two blocks, installing with a build, are the install's own before Cota moved onto releases, which its rehearsal ran. Not run: Linux, Windows, `--all` copied to other machines, an upgrade between two builds of your own, and the copy of a changed Compose file, since the two did not differ.
