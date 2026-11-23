@@ -22,6 +22,7 @@ Cota is a rewrite of a private prototype. The prototype is the reference for beh
 | 3 | **Dashboard** | `packages/ui` and `apps/web` on shadcn and Tailwind; `DESIGN.md` with bad and good pairs; first-run setup in the browser | Every screen as a story in both themes; design evals |
 | 4 | **Client and install** | `apps/cli`: join a machine, launch clients through the hub, report session titles, `doctor`; the install prompt for coding agents | Agent install evals in a clean container |
 | 5 | **Release** | The hub's image and its deployment by Compose, with an upgrade and a rollback; an import of the prototype's log; the memory skill and its evals; the docs whole, with recipes; published images, the repository made public | A fresh install from the README by an agent |
+| 6 | **Reported requests** | The request log also keeps the model calls of a client that cannot be pointed at the hub, Antigravity first, as a machine's `cota` reads them from the client's own record: observed pools, the hub's intake, the request reporter and its reader, and the dashboard's reported mark | Generated records reported through a whole hub, delivered again and in any cut, stored once; the reader confirmed on Antigravity's own record |
 
 ### Milestone 2 as a stack
 
@@ -104,6 +105,20 @@ Built (ADR-0026, the specs `memory-skill` and `memory-evals`): the skill, `skill
 
 Built, and run for `v0.1.0`: the release (ADR-0027). `.github/workflows/release.yml` runs on a tag `v<version>` on a commit of `main`, and on nothing else: it checks the tag against the version and `main`, builds `cota` for the five systems and starts each on a runner of its own system, pushes the hub image for both platforms as `ghcr.io/limineol/cota-hub:<version>`, attests the downloads and the image with GitHub's build provenance, and makes the GitHub release last, with the release notes, the binaries, `SHA256SUMS`, `compose.yaml` and `cota.toml`. The binaries' half is `.github/workflows/binaries.yml`, which CI runs on every pull request. Cota has one version, `0.1.0`, in both manifests and the Dockerfile, and its release notes are `docs/releases/0.1.0.md`; `tooling/release.test.ts` fails a version moved without its notes or in one place only. The tag `v0.1.0` was pushed on 2026-11-21 and every job passed; what was checked of the release afterwards is in ADR-0027. Built after it (ADR-0028): the install prompt and the upgrade guide take the latest release, whose version a line of theirs finds once by GitHub's `releases/latest`: the hub's machine downloads `compose.yaml` and `cota.toml`, checks them against `SHA256SUMS`, pulls the image and names it in `.env` by tag and digest; each machine downloads its system's `cota`, checked the same way, with no Git, Bun or checkout; a build of your own is a recipe. The install eval's world stands in for the release, its own registry as `ghcr.io` and its own `github.com` serving the working tree's build, and its clean machines have no checkout and no Bun on the owner's `PATH`. The hub's part of the prompt was followed by hand against 0.1.0 on a Mac, its image pulled for the first time. Next: the fresh install from the README by an agent.
 
+### Milestone 6 as a stack
+
+The owner decided on 2026-11-22 that the request log also holds what a machine reports of a client the hub never sees: Antigravity, which signs in with a Google subscription whose terms name third-party tools reaching it as grounds for suspending the account, and which has no setting found to point it at the hub. A machine's `cota` reads the record Antigravity writes of each conversation and reports each model call; the hub keeps it as a reported request, beside forwarded and imported ones, billing an observed pool. Its design (ADR-0029, and the `reported-requests` and `request-reporter` specs in draft) leads 6a's pull request. Each pull request is reviewed before the next is opened on top of it.
+
+| | Branch | Ships | Shown by | Decided in |
+| --- | --- | --- | --- | --- |
+| 6a | `docs/reported-requests` | The design: the vocabulary, ADR-0029 and the two specs in draft | The docs gates | ADR-0029 |
+| 6b | `m6b-origin` | The `Request` entity's `origin` (the relay's request forwarded, its behaviour unchanged); observed pools in the configuration, the `Pool` entity, admission, routes, quota and fallback; `observedPools` in `GET /api/machine` and `kind: "observed"` in `GET /api/pools`; the `google` price list | The relay's replays and every law as they are, and the observed pool's own laws (L15) | ADR-0029; the spec `reported-requests`, Observed pools, and its changes to `admission`, `routes`, `api`, `sign-in`, `quota-sources` and `fallback` |
+| 6c | `m6c-intake` | `POST /api/reported-requests` and `ReportRequests`: the checks, the id, what the log holds, the call before, storing before answering; the record form `antigravity-steps`, with its text, renderer, role rule and first prompt; reported through in the hub store | Laws L7 to L17, the property tier and the ClickHouse tier, deliveries repeated, cut and interrupted | ADR-0029; the spec `reported-requests`, and its changes to `request-log`, `sessions`, `api`, `sign-in` and `hub-store` |
+| 6d | `m6d-reporter` | First, the facts ADR-0029 lists to confirm, on a throwaway conversation; then `cota requests` (`add`, `remove`, `show`, `report`, `schedule`), the Antigravity reader, doctor's `requests` check, and the install prompt's step if the owner chooses it (open, recommended) | Laws J19 to J26 over generated records; contract tests against a whole hub; one real conversation reported, on the owner's go | ADR-0029; the spec `request-reporter`, and its changes to `cli` |
+| 6e | `m6e-dashboard` | The reported mark in the sessions, a session's page, the transcript and the inspector, with what a reported session cannot show; reported through per machine, client and pool, and late; the read API's `origin` and `GET /api/reported-through` | Stories in both themes; the API's contract tests | ADR-0029; the specs `dashboard` and `api` |
+
+The cut differs from the first one drawn in one place: the record form's reading (its text for search, its renderer, its role rule and its first prompt) is 6c's, not the dashboard's, because it is the request log's own code and search's text is written when an item is stored, so items stored before it would have no text. 6e is the screens and the reads they need.
+
 ## Parity with the prototype
 
 Every row is something the prototype does today.
@@ -140,14 +155,15 @@ Every row is something the prototype does today.
 - A Windows client (4).
 - Routes kept on the hub, so every machine agrees on which project bills which pool (4). Subscriptions by purpose, once a decided feature without a milestone, are routes: an employer's subscription is a pool only the routes of that employer's projects name (ADR-0023).
 - `doctor`, evals, and the verification tiers (0, 4, 5).
+- Requests a client wrote down, reported from each machine, for a client the hub cannot relay: Antigravity first, billing observed pools (6).
 
 ## Decided, not yet placed
 
 Features the owner has decided on. Each gets a milestone when it is planned in detail.
 
-- **Load balancing.** Several subscriptions with one provider share the requests between them, where today one is spent until the provider refuses it and its fallback pool takes over. Fallback becomes the in-order case of the same thing. This is where the owner's "account" (one subscription) and "pool" (a group of them) get their meanings; see the flagged ambiguity in `CONTEXT.md`.
+- **Load balancing.** Several subscriptions with one provider share the requests between them, where today one is spent until the provider refuses it and its fallback pool takes over. Fallback becomes the in-order case of the same thing. This is where the owner's "account" (one subscription) and "pool" (a group of them) get their meanings; see the flagged ambiguity in `CONTEXT.md`. An observed pool (6) is one sign-in, never shared between, so load balancing leaves it out.
 - **Rooms.** The agents working through the hub talk to each other in rooms. "Room" and "message" are kept for this: a conversation stays what one client has with one provider.
-- **Codex over a WebSocket.** Codex speaks Responses over a WebSocket to OpenAI's own provider and over HTTP through the hub, which refuses an upgrade (ADR-0006). Relaying the WebSocket means reading frames in both directions, diverting a refused login on an open connection, and storing a conversation whose requests carry only what is new. It is measured first: the same Codex session direct and through the hub.
+- **Codex over a WebSocket.** Codex speaks Responses over a WebSocket to OpenAI's own provider and over HTTP through the hub, which refuses an upgrade (ADR-0006). Relaying the WebSocket means reading frames in both directions, diverting a refused login on an open connection, and storing a conversation whose requests carry only what is new. It is measured first: the same Codex session direct and through the hub. A reported request's conversation is already built from the request before it and what is new (ADR-0029), which is the rule such requests would need.
 
 ## After parity
 

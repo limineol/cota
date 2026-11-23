@@ -59,19 +59,19 @@ The hub's own file of what changes while it runs and is not the request log: sig
 _Avoid_: database, settings, state, cache
 
 **Hub**:
-The Cota server. Every machine sends its clients' requests through it.
+The Cota server. Every machine sends its clients' requests through it, but for a client that cannot be pointed at it, whose requests the machine reports instead.
 _Avoid_: gateway (that is what the hub is, not what it is called), proxy, router, server
 
 **Machine**:
-A computer the owner works on. A request is tagged with the machine it came from.
+A computer the owner works on. A request is tagged with the machine it came from, or that reported it.
 _Avoid_: host (the tag's wire name only), device, node, box
 
 **Client**:
-A coding tool that makes requests: Claude Code, Codex, OpenCode, Pi.
+A coding tool that makes requests: Claude Code, Codex, OpenCode and Pi, which are launched through the hub, and Antigravity, which cannot be pointed at the hub and whose requests a machine reports. A client is launched or reported, on every machine, never both: its usage would count twice.
 _Avoid_: harness, agent, tool, app
 
 **Provider**:
-The company or server that answers a request: Anthropic, ChatGPT, Z.ai, OpenCode Go, a local model server.
+The company or server that answers a request: Anthropic, ChatGPT, Z.ai, OpenCode Go, Google, a local model server.
 _Avoid_: upstream (a direction, not a party), vendor, backend
 
 **Model**:
@@ -133,32 +133,36 @@ The pool a client's launch bills when none of its routes matches the project. A 
 _Avoid_: fallback (a fallback pool takes refused logins), catch-all, personal
 
 **Subscription pool**:
-A pool spent with a login: a Claude or ChatGPT subscription.
+A pool the hub forwards for that is spent with a login: a Claude or ChatGPT subscription. A subscription the hub only observes is an **observed pool**.
 
 **Keyed pool**:
 A pool spent with a key the hub holds, or with none: an API plan, or a local model server.
 _Avoid_: API pool, fleet pool
+
+**Observed pool**:
+A subscription the hub only observes: a pool the owner declares in the configuration that the hub never forwards for and holds no login or key for, which only reported requests bill, such as a Google subscription Antigravity is signed in to. No hub key's scope opens it, and no route, default pool, launch, fallback pool, quota reader or quota login names it.
+_Avoid_: passive pool, external pool, reported pool (a request is reported, a pool is not), shadow pool, watched pool, subscription pool alone (that is one the hub forwards for)
 
 **Held key**:
 The provider's key for a keyed pool. The hub holds it; no client ever sees it.
 _Avoid_: API key (a hub key is also a key), provider key, upstream key
 
 **Hub key scope**:
-What a hub key opens: the pools of one kind (subscription or keyed), or, for the reader scope, no pool at all but the request log through the hub's API. A hub key has one scope.
+What a hub key opens: the pools of one kind (subscription or keyed), or, for the reader scope, no pool at all but the request log through the hub's API. A hub key has one scope. No scope opens an observed pool, which nothing is forwarded to.
 _Avoid_: permission, role
 
 **Reader key**:
-A hub key of the reader scope: what an agent the owner trusts sends to read the request log through the API. It spends nothing and changes nothing but the session titles any hub key may report. A machine keeps one for its agents only when the owner gives it with `cota memory key`, and only `cota memory` sends it.
+A hub key of the reader scope: what an agent the owner trusts sends to read the request log through the API. It spends nothing and changes nothing but what any hub key may report: session titles and reported requests. A machine keeps one for its agents only when the owner gives it with `cota memory key`, and only `cota memory` sends it.
 _Avoid_: API key, read token, agent key
 
 **Tag**:
-A fact a client states about its request: the project, the machine, the client. Tags describe a request; they never decide who pays.
+A fact a client states about its request, or, for a reported request, the machine that reports it: the project, the machine, the client. Tags describe a request; they never decide who pays. A reported request's pool is named by its report, as a forwarded request's is by its path, never by a tag.
 _Avoid_: label, metadata, dimension
 
 ## Machines and the CLI
 
 **CLI**:
-`cota`, the one command a machine runs: it joins the machine to a hub, launches clients through the hub, keeps the machine's logins, configures the clients that read a configuration file, reports titles and runs doctor. In code it is `apps/cli`.
+`cota`, the one command a machine runs: it joins the machine to a hub, launches clients through the hub, keeps the machine's logins, configures the clients that read a configuration file, reports titles, reports the requests of the clients that cannot be launched through the hub, and runs doctor. In code it is `apps/cli`.
 _Avoid_: client (a client is a coding tool), agent, daemon, wrapper, shim (a shim is one of its parts)
 
 **Join**:
@@ -190,8 +194,12 @@ The last pool the hub answered a machine's launch of a client in a project, whic
 _Avoid_: cache, cached route, local route
 
 **Title reporter**:
-What reads the titles a machine's clients write for their sessions and sends the hub those that changed since it last sent them: `cota titles report`, run every 30 seconds by the machine's own scheduler.
+What reads the titles a machine's clients write for their sessions and sends the hub those that changed since it last sent them: `cota titles report`, run every 30 seconds by the machine's own scheduler. Its sibling, the **request reporter**, sends requests, not titles.
 _Avoid_: titles daemon, sync, watcher, agent
+
+**Request reporter**:
+What reads the client records of a machine's reported clients and sends the hub, in reports, each model call they hold that the hub has not answered it stored: `cota requests report`, run every 30 seconds by the machine's own scheduler. It keeps a report cursor per conversation, never a copy of what it sends.
+_Avoid_: sync, syncer, collector, exporter, shipper, agent, daemon, title reporter (that one sends titles)
 
 **Doctor**:
 `cota doctor`: runs every **check** of a machine and says, for each that fails, what is wrong and the command that fixes it.
@@ -327,8 +335,12 @@ The wire format a pool's provider speaks: Anthropic Messages, ChatGPT's Codex ba
 _Avoid_: API, format, dialect
 
 **Request**:
-One exchange with a provider: what the hub sent and what came back. A refused request that the hub sends again to the fallback pool is a second request, which names the first.
-_Avoid_: call, log, attempt, entry, turn (a turn is the client's word and can be several requests)
+One exchange with a provider. A **forwarded request** is what the hub sent and what came back; a **reported request** is one model call a machine read from its client's record; an **imported request** is one an import added. A refused request that the hub sends again to the fallback pool is a second request, which names the first.
+_Avoid_: call (a model call is a client record's, which a reported request is made from), log, attempt, entry, turn (a turn is the client's word and can be several requests)
+
+**Forwarded request**:
+A request the hub forwarded: what it sent the provider and what came back, with what only a hub in the path can know (the time to the first byte, the provider's status, the quota headers, the client's kept headers, the login's fingerprint, a refusal's reset, a divert, the bytes). Every request was one until requests were reported.
+_Avoid_: relayed request, proxied request, live request, real request
 
 **Operation**:
 What a request asks the provider to do: answer a conversation, count tokens, list models, search the web, make an image. Only an operation that answers a conversation has usage and a conversation.
@@ -347,7 +359,7 @@ What a request's usage comes to at the provider's list price. For a subscription
 _Avoid_: spend, price (a price is per token), bill
 
 **Request log**:
-The record of every request the hub forwarded, and of every conversation.
+The record of every request, forwarded by the hub, reported by a machine or imported, and of every conversation.
 _Avoid_: ledger, log, logs, history, database
 
 **Price list**:
@@ -363,7 +375,7 @@ Said of a batch the request log's repository answered it will not keep as it is.
 _Avoid_: refused (a refusal is a provider's), rejected, poison
 
 **Conversation item**:
-One piece of a conversation as the protocol carries it: a system block, a tool definition, a message, an output item. The request log keeps each item once per session.
+One piece of a conversation as the protocol carries it: a system block, a tool definition, a message, an output item; or, in a source form or a record form, as that form holds it (in `antigravity-steps`, one step). The request log keeps each item once per session.
 _Avoid_: message (some items are not messages), entry, chunk
 
 **Prompt size**:
@@ -403,7 +415,7 @@ _Avoid_: title, summary, first line
 ## Sessions
 
 **Session**:
-The requests a client sends under one session id: one coding session, with its main conversation and everything the client asked on the side. A request that carries no session id is a session of its own.
+The requests a client sends under one session id: one coding session, with its main conversation and everything the client asked on the side. A request that carries no session id is a session of its own. A reported session is one conversation of the client's record, under its id.
 _Avoid_: conversation (a session can hold several), thread, chat, run, sign-in
 
 **Request role**:
@@ -415,7 +427,7 @@ The requests of a session that share a system prompt, or, without one, a first c
 _Avoid_: session (a session can hold several threads), conversation (that is what was sent), chain
 
 **Compaction**:
-The client replacing a long conversation with a summary, to carry on in less context.
+The client replacing a long conversation with a summary, to carry on in less context. In a reported session the compaction is one of the client's steps, and the steps before it stay in the session's transcript, though the model was no longer sent them.
 _Avoid_: reset (a reset ends a quota window), truncation, summary (that is what a compaction produces)
 
 **Segment**:
@@ -423,7 +435,7 @@ A stretch of a session's main conversation between two compactions. A session's 
 _Avoid_: chapter, part (a part is a piece of a request body), window (a quota window), epoch
 
 **Transcript**:
-A request's conversation set out to be read: its items, in order, as messages, reasoning, tool calls and tool results. A transcript is a view; the request log keeps the items as the protocol carried them.
+A request's conversation set out to be read: its items, in order, as messages, reasoning, tool calls and tool results. A transcript is a view; the request log keeps the items as the protocol carried them, or in their source or record form.
 _Avoid_: history, log, chat, thread, conversation (the conversation is what was sent; the transcript is how it is shown)
 
 **Entry**:
@@ -509,7 +521,7 @@ The sum of a hash of every value of each row, over a table's rows of a day: equa
 _Avoid_: digest (an item's digest is something else), hash alone
 
 **Held**:
-Said of an archived or an imported row that the request log has: a request with its id, a request item with its request id, an equal title, or a copy of the conversation item at least as early.
+Said of an archived, an imported or a reported row that the request log has: a request with its id, a request item with its request id, an equal title, or a copy of the conversation item at least as early.
 _Avoid_: present, exists, duplicate
 
 **Restore**:
@@ -576,10 +588,10 @@ _Avoid_: source alone where a window source could be meant, upstream (a directio
 
 **Imported request**:
 A request the request log holds because an import added it, not because the hub forwarded it. Its id is made from the import source's own id for it, and its `protocol` names its **source form**.
-_Avoid_: legacy request, migrated request, historical request
+_Avoid_: legacy request, migrated request, historical request, reported request (a machine's, not an import's)
 
 **Source form**:
-The shape an import source holds a conversation in: `bifrost-responses`, the Responses-style items Bifrost logged for every client but a Chat Completions one, and `bifrost-chat`, the Chat Completions messages it logged for those. It is neither a wire protocol nor what the client sent: an imported request's items are kept in their source form, never converted into a protocol.
+The shape an import source holds a conversation in: `bifrost-responses`, the Responses-style items Bifrost logged for every client but a Chat Completions one, and `bifrost-chat`, the Chat Completions messages it logged for those. It is neither a wire protocol nor what the client sent: an imported request's items are kept in their source form, never converted into a protocol. A client's own form is not a source form but a **record form**.
 _Avoid_: protocol (a protocol is a wire format), format alone, dialect, schema
 
 **Pool map**:
@@ -593,6 +605,52 @@ _Avoid_: preview, simulation, check (a check is doctor's), rehearsal
 **Not carried**:
 Said of what an import cannot bring over, which its report says: a fact the import source never recorded (a login's fingerprint, an answer's quota headers), or a row it cannot read. A row not carried is counted with its reason, never left out unsaid.
 _Avoid_: dropped (the writer drops a request), set aside (the writer sets one aside), skipped, lost
+
+## Reported requests
+
+**Reported request**:
+A request the request log holds because a machine read it from its client's record and reported it, not because the hub forwarded it: one model call, with its usage, model, times, session, machine and project where the record names one, and the conversation items new since the call before it, kept in the record's form. The hub makes its id from its client, the record's own id for the call and the call's start, so a call is one request whoever reports it. It is marked reported for ever, by its `protocol`, which names a record form, and it never moves admission, a refusal, a parked login, a divert or a quota window: those are decided from what the hub saw itself.
+_Avoid_: synced request, observed request, imported request (an import's), relayed request, call alone
+
+**Client record**:
+What a client writes down about its own sessions on the machine it runs on, which a request reporter reads: for Antigravity, one SQLite database per conversation, of its steps and each model call's usage. It is the client's, with no published schema, and any update of the client can change it. It is not the requests the client sent: the system prompt and tool definitions are not in it.
+_Avoid_: transcript (that is the hub's view), log, history, session file, record alone where a request log's row could be meant
+
+**Data folder**:
+One folder of a client's records, which the client is started with and which also holds its sign-in: for Antigravity, `~/.gemini/antigravity-cli` for `agy`, `~/.gemini/antigravity` for its desktop app, or another a program that runs `agy` gives it. One data folder is one sign-in, so its reported requests bill one observed pool, which the machine's configuration names. Only its conversations are ever read.
+_Avoid_: profile, account, home, workspace, config directory
+
+**Step**:
+One row of an Antigravity conversation's record, in order: a user message, a model's output, a tool call with its arguments and result, a compaction. Steps are only ever added. In a reported session each step is one conversation item.
+_Avoid_: turn, event, message (a message is one kind of step), entry (an entry is a transcript's)
+
+**Model call**:
+One request a client made to its model, as its record says it: for Antigravity, a step that carries usage. A reported request is one model call. Its **call key** is the record's own id for it: the conversation's trajectory id and the index of that step.
+_Avoid_: generation, turn, completion, call alone outside the record
+
+**Record form**:
+The shape a client's record holds a conversation in, which a reported request's items are kept in and its `protocol` names: `antigravity-steps`, each item one step, its columns as the record has them and its protocol buffers written out field by field, without a schema. It is neither a protocol nor a source form, and is never converted into one.
+_Avoid_: protocol (a protocol is a wire format), source form (an import source's), format alone, schema
+
+**Report**:
+One delivery of a request reporter: model calls of one data folder (at most 500, and a machine sends at most 200 and 8 MiB of them), the observed pool they bill and, when the run has read the folder to its end, how far that was. The hub answers it only once its calls are stored.
+_Avoid_: upload, sync, batch alone (the writer's batches), push
+
+**Reporter**:
+The caller a report comes from: a hub key, by its name, or the owner. A reported request is kept under the reporter of its first report, and the reporter is no part of what the request is: the same model call reported by another reporter is the same request.
+_Avoid_: request reporter (the program on a machine, which sends reports), sender, source, machine (a tag the reporter states)
+
+**Call before**:
+The model call before a model call in its conversation. A report names it for each call (`after`), by its call key and its start, so that the hub makes the call's conversation from the call before's and what is new; a conversation's first call has none.
+_Avoid_: parent, previous request, follows (a diverted request follows the one refused)
+
+**Report cursor**:
+Where the request reporter stands in one conversation of a client's record: the last step it reported and the model call that step ended. It moves only on the hub's answer that the calls before it are stored, so the record itself is the reporter's outbox.
+_Avoid_: cursor alone (a search's cursor), offset (the title reporter's), checkpoint, watermark, queue
+
+**Reported through**:
+The time up to which a machine has reported what a client's record held, for each machine, client and observed pool: what the hub keeps of the latest report that read a data folder to its end, so that a machine that stopped reporting is seen.
+_Avoid_: last seen, heartbeat, lag, watermark, synced at
 
 ## Quota
 
@@ -681,7 +739,7 @@ _Avoid_: quick open, spotlight, omnibox, search alone (search is the request log
 - A **pool** has zero or more **quota windows**; each has one **window scope** and one **window source**, and is the newest observation of its scope and length.
 - A **quota reader** reads a pool's windows into a **quota reading**, with the pool's **held key** or its **quota login**. The **quota headers** of the pool's latest answers give windows without either.
 - A **quota login** is **refreshed** by the hub, one refresh at a time, and is **expired** once the provider refuses to refresh it. It never forwards a request.
-- A **pool** is a **subscription pool** or a **keyed pool**, and speaks one **protocol**. A **hub key** opens the pools of its **scope**.
+- A **pool** is a **subscription pool**, a **keyed pool** or an **observed pool**. A subscription or keyed pool speaks one **protocol**; an observed pool speaks none, and nothing is forwarded to it. A **hub key** opens the pools of its **scope**, and no scope opens an observed pool.
 - A **request** has one **operation** and one **outcome**; when it answers a conversation it has **usage**, a **cost** if its model has a price, and **conversation items**.
 - A reading endpoint counts a **selection** of **traffic**: in total, by a **dimension**, in **buckets**, as **facets**, or as **error groups**.
 - A **session** is one or more **requests**, each with one **request role**. Its main requests fall into **segments**, split at **compactions**; each segment is read as the **transcript** of its last successful request.
@@ -694,11 +752,12 @@ _Avoid_: quick open, spotlight, omnibox, search alone (search is the request log
 - A **deployment** runs one **hub image** by its **Compose file**, over one **hub directory** and ClickHouse's volume. An **upgrade** keeps the previous image's name and a copy of the hub store, and a **rollback** starts that image on that copy; neither touches the request log.
 - A **release** is one **version**: its tag, its **hub image**, its `cota` binaries and its **release notes** all say it. An **upgrade** moves a **deployment** to a release's hub image.
 - An **import** reads an **import source** day by day and adds the rows the request log does not **hold**: **imported requests**, whose items stay in their **source form**, each billing the pool its **pool map** names, with titles and display names. A **dry run** says what an import would add and what it would leave **not carried**, and adds nothing.
+- A **request** is a **forwarded request**, a **reported request** or an **imported request**, rows of one request log read by the same queries. A **request reporter** reads the **client records** of its machine's **data folders** on from each **report cursor**, and sends each **model call** in a **report** naming the **observed pool** its data folder bills; the hub stores it as a reported request whose items stay in their **record form**, leaves out what the log already **holds**, answers once it is stored, and keeps when the machine last read the folder to its end (**reported through**).
 - An agent with the **memory skill** reads the request log only through `cota memory`, which sends the machine's **reader key** for it, and reads a **transcript** a **transcript page** at a time. A **memory eval** asks an **answerer** each **question** against the request log of a **memory world**, and gives each answer a **verdict** by its **facts**.
 
 ## Flagged ambiguities
 
-- **Request** is used loosely for what a client sends. In the request log it is exact: one exchange with a provider. A client's request that is refused and diverted is two.
+- **Request** is used loosely for what a client sends. In the request log it is exact: one exchange with a provider. A client's request that is refused and diverted is two. A reported request is one **model call** of a client's record, which may not be exactly what the client sent: the record holds the client's steps, not its request bodies. Where it matters, say forwarded, reported or imported request.
 - **Session** is a client's conversation (a run of requests sharing a session id) and also the name providers give the 5-hour quota window, and, in most web software, what a browser holds after signing in. In code and copy, the quota window is the "5-hour window" (the plan's window 5 hours long), the browser's proof is a **sign-in**, and `session` alone means the client's session.
 - **Reader** is a hub key's scope (a **reader key**), inside the relay what reads an answer's stream as it passes (a protocol's reader, whose result is a reading), in the request log the port its reading queries read through (`RequestLogReader`), and in the quota module what reads a provider's usage endpoint (a **quota reader**). In copy, reader means the key; in the relay's code, the stream's reader; in the request log's code, `RequestLogReader` and its adapters, always by that name, while `reader` alone in its API definition is the key's scope; in the quota module's code, `QuotaReader` is the port and its adapters, and reader alone (`Readers.Reader`, `readerOf`, a read's `reader`) is a quota reader: which one a pool has, with its credential and period; in the quota API, as in every API definition, `reader` alone is the key's scope.
 - **Reading** is what the relay's protocol reader makes of an answer (`modules/relay/03-domain/reading.ts`), and what a quota reader got from a usage endpoint (a **quota reading**). In the relay's code reading alone is the protocol's; in the quota module's code and in the quota API (a window's `source: "reading"`, a pool's `reading`), reading alone is a quota reading; in copy and in other modules, say quota reading.
@@ -710,17 +769,21 @@ _Avoid_: quick open, spotlight, omnibox, search alone (search is the request log
 - **Name** is loose. A session's name is its **title**; the owner's name for an id is a **display name**; a hub key's and a pool's `name` and `id` are configuration.
 - **Limit** is an allowance (what a quota window holds) and, loosely, the event of running out. The event is a **refusal**. Never write "hit the limit" in code or copy; say which window is full, or that the provider refused.
 - **Account** is the owner's word for a subscription. It appears in copy where the owner expects it ("your work account"). The concept is a **pool**. A route names a pool, and a machine login is kept per pool, because today a pool is one subscription; when load balancing makes a pool a group of subscriptions, a route still names the pool, and a machine login belongs to one subscription of the group.
-- **Client** is a coding tool. `cota` is the **CLI**, never a client, though the milestone that ships it is "Client and install" and the roadmap's parity rows call the machine's side "Client".
+- **Client** is a coding tool, launched through the hub (Claude Code, Codex, OpenCode, Pi) or reported (Antigravity), never both. A forwarded request's client is its tag or its user agent, a reported request's is the report's. `cota` is the **CLI**, never a client, though the milestone that ships it is "Client and install" and the roadmap's parity rows call the machine's side "Client".
 - **Check** is one of doctor's (a **check** of a machine), and also the repository's gate, `bun run check`. In the CLI's code and copy, check alone is doctor's; the gate is always named by its command.
 - **Own** and **default** meet in one place: a client's **own pool** on a machine is the pool its own login spends, and is the client's **default pool** only when the machine's configuration does not name another. A launch to the default pool on a machine whose client is signed in elsewhere needs a machine login like any other.
 - **Pool** is also the owner's word for a group of accounts that share requests. Today a pool is one subscription, and the only grouping is a pool with its **fallback pool**. When load balancing is planned (`docs/roadmap.md`), an account becomes the single subscription and a pool the group, and this file changes first.
 - **Message** and **room** are kept for agents talking to each other through the hub (`docs/roadmap.md`). Nothing in a conversation is called a message: it is a **conversation item**.
 - **Day** in the archive is a calendar day in UTC. The traffic API's buckets of a day begin at midnight in the time zone the caller gives (`tz`). They never meet: the archive has no time zone.
 - **Archived** is said of a **day** whose manifest is in the archive, and is also a document's status (ADR-0005). In docs' front matter it is the status; everywhere else, the day.
-- **Protocol** is the wire format a pool's provider speaks, and the request log's `protocol` column says how to read a request's items. For a request the hub forwarded they are the same; for an **imported request** the column holds its **source form** (`bifrost-responses`, `bifrost-chat`), which no pool speaks. A pool's protocol is never a source form.
-- **Source** is a quota window's (a **window source**: a quota reading or the quota headers) and an import's (an **import source**: the prototype's log). Neither is ever source alone outside its module: say window source or import source.
+- **Protocol** is the wire format a pool's provider speaks, and the request log's `protocol` column says how to read a request's items. For a request the hub forwarded they are the same; for an **imported request** the column holds its **source form** (`bifrost-responses`, `bifrost-chat`), and for a **reported request** its **record form** (`antigravity-steps`), which no pool speaks. A pool's protocol is never a source or record form, and the column alone tells the three kinds of request apart.
+- **Source** is a quota window's (a **window source**: a quota reading or the quota headers) and an import's (an **import source**: the prototype's log). Neither is ever source alone outside its module: say window source or import source. What a request reporter reads is a **client record**, never a source, and the title reporter's code keeps its own `TitleSources` port by that name.
 - **Image** is a picture (a transcript's image part, a model's **image input**) and the container image a deployment runs. The second is always the **hub image**, or ClickHouse's image by that name.
 - **Set aside** is the writer's (a request a declined batch left alone, `docs/specs/request-log/spec.md`); what an import cannot bring over is **not carried**. **Dropped** is also the writer's.
 - **Memory** alone is not a term: the request log is the record, and the **memory skill** is how an agent reads it as its memory. `cota memory` is the CLI's command for that reading.
 - **Release** is a published version of Cota (a **release**), and also the name of the roadmap's milestone 5, which builds the deployment, the import, the memory skill and the docs as well as the first release. In code and copy, release alone is a published version.
 - **Import** is an import's alone. Putting archived rows back is a **restore**; going back to a previous hub image is a **rollback**; the hub store's own changes are its migrations' steps.
+- **Observed** is said of a quota window (when its numbers were observed: a quota reading's time, or the start of the request that carried the headers) and of a pool the hub only observes (an **observed pool**, a pool's kind `observed`). A window's `observed` is a time; a pool is observed or not.
+- **Step** is a step of a client's record (a **step** of an Antigravity conversation), a hub store migration's step (`sign-in/0001-sign-ins`), and loosely a series' bucket. In the hub store's code and spec step alone is a migration's; in the request reporter's and the record form's, a record's; a series' is a **bucket**.
+- **Cursor** is a search's (the page of hits after a given one, `stale-cursor`) and the request reporter's (a **report cursor**). In the request log's API cursor alone is a search's; on a machine it is always a report cursor.
+- **Report** is said of titles (a machine reports a session's title) and of requests (a **report** of model calls). A report alone is the request reporter's; titles are reported titles.

@@ -33,6 +33,8 @@ Three facts of Cota shape the answer. A subscription hub key rides in the enviro
 
 **What `cota` is not.** It is not a proxy: a launched client talks to the hub itself. It is not a daemon: nothing of it keeps running but a launched client's parent where it cannot replace itself with the client (below), and the title reporter, which runs and ends. It never contacts a provider, never reads a client's own login, and never holds a held key or a quota login. The one login it keeps is a **machine login** (`CONTEXT.md`): a `claude setup-token` login for a Claude subscription other than the one Claude Code is signed in to on that machine, given with `cota login <pool>`. It uses no keychain in milestone 4: its secrets are files only the user can read, as the prototype's were.
 
+> Amended by ADR-0029: the request reporter (`cota requests report`), which reports the model calls of the clients that cannot be launched through the hub, also runs and ends, scheduled as the title reporter is; its state (`requests.json`, `requests.error`) is in the state's directory beside the title reporter's, and the data folders it reads and the observed pool each bills are in `config.toml`.
+
 **The machine's files.** Written whole and atomically (a file beside the target, then a rename), with the modes below on macOS and Linux. On Windows the files inherit the user profile's permissions, which give the user, the administrators and the system access, and no one else.
 
 | What | macOS and Linux | Windows | Mode |
@@ -111,6 +113,8 @@ own_pool = "personal"
 OpenCode's and Pi's titles are not reported in milestone 4. Its behaviour, its doctor check and its laws are `docs/specs/title-reporter/spec.md`.
 
 **Doctor.** `cota doctor [--json]` runs every check and prints each with its outcome; a failed one says what is wrong and the command that fixes it, a warning what is worse than it should be. It exits 1 when a check failed, else 0. `--json` prints `{ ok, checks: [{ id, outcome, problem, fix }] }`. The checks, in order: the configuration reads; the hub answers `/health`; each hub key is known and of its scope (`GET /api/machine`); the machine's files have their modes; the shims are installed, call a `cota` that exists, and come first on `PATH` in a new login shell, and the `PATH` line is last; each client's real command is found (a warning when missing); each client's own pool, and each machine login's pool, is a pool the hub has, of the client's protocol; each configured client's file holds what `cota configure` would write now; the title reporter is scheduled, its last run was under 5 minutes ago, and `titles.error` is absent. The list, each check's id and its fix, are the CLI spec's, but for the title reporter's, which is its own spec's.
+
+> Amended by ADR-0029: doctor's last check is the request reporter's, `requests`, which is its own spec's (`docs/specs/request-reporter/spec.md`).
 
 **What Windows does differently**, in one place: a `.cmd` shim, and the user's `Path` in place of a shell's file; no `execve`, so `cota` waits as the client's parent; a real client installed by npm is a `.cmd`, which is started through `cmd.exe` with its arguments quoted for it (a known source of injection when arguments are not), so `cota` prefers a client's `.exe` when both exist; the machine's name from `COMPUTERNAME`; files guarded by the profile's permissions, not modes; Pi's key by `!"<cota>" hub-key keyed`, the command elsewhere's with the path in double quotes; and the title reporter's task triggered twice a minute.
 
