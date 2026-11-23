@@ -24,7 +24,7 @@ content-type: application/json
 ```
 
 - **Who may call it**: any known hub key, of any scope (`subscription`, `keyed` or `reader`), or the owner: the title endpoint's rule (`docs/specs/sign-in/spec.md`). A reporter is **its caller**: the hub key's name, or the owner. Nothing in the body names a reporter or a machine.
-- **The machine** is the `x-cota-machine` header, well-formed, trimmed and cut to 200 characters, as a title's machine is kept. A report without one, or with one that is empty once trimmed, is refused (`report-refused`).
+- **The machine** is the `x-cota-machine` header, well-formed, trimmed and cut to 200 characters, as a title's machine is kept. A report without one, or with one that is empty once trimmed, is refused (`report-refused`). It is a tag the caller states, as a forwarded request's and a title's machine are, and no hub key is bound to a machine: a hub key can report as any machine's name, so reported through says what the holders of the hub keys reported, and is no proof of which computer sent it.
 - **The group** is the request-log module's `reports` group, with `GET /api/reported-through` (Reported through), declared with `mayCall("any-hub-key")`.
 - **The body** is JSON of at most **64 MiB**, the group's own limit; every other endpoint keeps its 1 MiB (`docs/specs/api/spec.md`, Limits). Over it is 413 `body-too-large`.
 
@@ -42,7 +42,7 @@ content-type: application/json
 | Field | Type | Holds |
 | --- | --- | --- |
 | `call` | string, 1 to 255 characters | The call key: the record's own id for the model call. |
-| `after` | string or `null` | The call key of the model call before it in its conversation; `null` for its conversation's first. |
+| `after` | `{ call, startedAt }` or `null` | The model call before it in its conversation, by its call key and its start, the two the hub makes its id from (The id); `null` for its conversation's first. |
 | `session` | string, 1 to 255 characters | The conversation's id. |
 | `project` | string, 0 to 200 characters | The project, where the record names one. |
 | `clientVersion` | string, 0 to 200 characters | The client's version, where the record names one. |
@@ -69,9 +69,10 @@ The whole report is checked before anything is stored. A body that does not deco
 - `reasoning` is more than `output`;
 - an item is not one of the client's record form (below), or is nested deeper than 512 levels;
 - an item's place in its conversation is not after the call before's output: for `antigravity-steps`, its `idx` is not greater than every `idx` of the call before's parts, or a call's items are not in increasing `idx`, or its `output` is not one step after all of its `input`;
+- a call's call before, where the report holds it, is of another session, or the `startedAt` its `after` gives is not that call's;
 - a call has no `output`.
 
-Then the call before of each call is found: earlier in the report, else held in the log under the id this reporter would have made for `after` (The id). A call whose `after` is neither is `report-out-of-order` (409), naming it: its call before was never stored, which a machine whose cursor moved only on stored answers can only reach with lost or copied state.
+Then the call before of each call is found: earlier in the report, else held in the log under the id this reporter would have made for `after`'s call key and start (The id), in the call's own session: a request held under that id in another session is not its call before. A call whose `after` is neither is `report-out-of-order` (409), naming it: its call before was never stored, which a machine whose cursor moved only on stored answers can only reach with lost or copied state.
 
 Text is made well-formed as every text the request log writes is (`docs/specs/request-log/spec.md`, Well-formed text): each lone surrogate in a string field becomes U+FFFD; an item's content keeps it as its escape.
 
@@ -83,7 +84,7 @@ A reported request's id is a UUID version 7 (as every id of the request log, sta
 cota-report:<reporter>:<client>:<call key>
 ```
 
-where `<reporter>` is `key:<the hub key's name>`, or `owner`. So the same call, reported again by the same reporter, always has the same id; another reporter's calls, whatever their keys, never have an id this reporter's could; and an id made by an import (`cota-import:…`, `docs/specs/import/spec.md`) never equals one. A hub key renamed in the configuration reports under a new name, and its calls reported again would have new ids (ADR-0029, Consequences).
+where `<reporter>` is `key:<the hub key's name>`, or `owner`. So the same call, reported again by the same reporter with the same start, always has the same id. A call's start is part of what it is: the reader takes it from the step's own times, which a record that only grows never changes, and a call key reported with another start would be another request, which the request reporter never sends (`docs/specs/request-reporter/spec.md`, A model call, in the record). Another reporter's calls, whatever their keys, never have an id this reporter's could; and an id made by an import (`cota-import:…`, `docs/specs/import/spec.md`) never equals one. A hub key renamed in the configuration reports under a new name, and its calls reported again would have new ids (ADR-0029, Consequences).
 
 ## What the log already holds
 
@@ -243,6 +244,6 @@ L8, L12, L13 and L16 are property tests of the rules in `03-domain` over generat
 
 - **Reports from machines the owner did not give a hub key.** A report is a hub key's or the owner's.
 - **Splitting a declined report.** A report ClickHouse will not keep fails whole, and the reporter's run says so; the writer's splitting is for traffic the hub cannot ask again.
-- **Changing a reported request.** A call reported again with other values is held, and keeps the first.
+- **Changing a reported request.** A call reported again with other values, its key and its start the same, is held, and keeps the first.
 - **Reading Antigravity's quota**, and a quota login for an observed pool (ADR-0029, Left out).
 - **A report in another form than the client's.** The hub never converts items into a protocol.
