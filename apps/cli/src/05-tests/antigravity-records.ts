@@ -173,7 +173,7 @@ const metadataOf = (
   },
 ];
 
-/** The `step_payload` of a step: what the hub's table of fields reads for its kind, and fields of every wire type besides. */
+/** The `step_payload` of a step: what the hub's table of fields reads for its kind, and fields of every wire type besides. A tool's result is filled in, in place, when it is done, as a command that runs on past its tool call's wait has its. */
 const payloadOf = (plan: Plan, idx: number, status: number): Array<Built> => {
   const head: Array<Built> = [
     { number: 1, varint: BigInt(stepTypes[plan.kind]) },
@@ -225,7 +225,15 @@ const payloadOf = (plan: Plan, idx: number, status: number): Array<Built> => {
         ...head,
         {
           number: 140,
-          message: [{ number: 2, message: [{ number: 1, text: plan.text }] }],
+          message: [
+            {
+              number: 2,
+              message:
+                status === 3
+                  ? [{ number: 1, text: plan.text }]
+                  : [{ number: 5, text: "Running" }],
+            },
+          ],
         },
       ];
     case "compaction":

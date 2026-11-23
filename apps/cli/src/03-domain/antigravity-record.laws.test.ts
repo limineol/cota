@@ -74,36 +74,43 @@ const statusOf = (step: Step) => step.status;
 
 describe("the Antigravity reader's laws", () => {
   it.effect.prop(
-    "J19: For any record appended to step by step and read in runs cut anywhere (between steps, on an unfinished step, after a compaction), the model calls read run by run are those of reading the whole record once, with the same usage, model, times and output, but for a step reported unfinished, which stays as it was reported, and the order a late call is read in: a step read past while not finished and without usage, which later finishes with usage, is read by the first run after it finishes, before that run's newer calls; and each call names as `after` the call of the greatest step below its own among those read before it, its input every step between the two, so that a call read past a late one names the call before that late one and holds its step as it was.",
+    "J19: For any record appended to step by step, its steps finishing in place later or never, and read in runs cut anywhere (between steps, on an unfinished step, after a compaction), the model calls read run by run are those of reading the whole record once, with the same usage, model, times and output, but for a step reported unfinished, which stays as it was reported, a step read past while not finished, which the next call's input holds as it was read, and the order a late call is read in. A call whose step is finished is read by the first run that finds it so, whatever step not finished lies before it, and a run not settled reports a step unfinished only when a finished call follows it; a step read past while not finished and without usage, which later finishes with usage, is read by the first run after it finishes, before that run's newer calls; and each call names as `after` the call of the greatest step below its own among those read before it, its input every step between the two, so that a call read past a late one names the call before that late one and holds its step as it was.",
     {
       tail: Arbitrary.schema(Tail),
       cuts: Arbitrary.schema(
         Schema.Array(
           Schema.Struct({
-            at: Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 25 })),
+            at: Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 30 })),
             settled: Schema.Boolean,
           }),
         ).check(Schema.isMaxLength(8)),
       ),
       finishingAt: Arbitrary.schema(
         Schema.Array(
-          Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 8 })),
-        ).check(Schema.isMaxLength(25)),
+          Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 10 })),
+        ).check(Schema.isMaxLength(30)),
       ),
       bare: Arbitrary.schema(
-        Schema.Array(Schema.Boolean).check(Schema.isMaxLength(25)),
+        Schema.Array(Schema.Boolean).check(Schema.isMaxLength(30)),
       ),
     },
     ({ tail, cuts, finishingAt, bare }) =>
       Effect.sync(() => {
         // After every kind of step, a model's step and a compaction of
-        // another model, a tool's step between them, and a call after them.
+        // another model, a tool's step between them, and a call after them;
+        // then a command that runs on while the model answers, and ends
+        // later, its result filled in, and one that never ends, each with
+        // the model's answer after it.
         const plans = [
           ...every,
           plan("model"),
           plan("tool"),
           plan("compaction", { model: 1 }),
           plan("user"),
+          plan("model"),
+          plan("tool"),
+          plan("model"),
+          plan("tool"),
           plan("model"),
           ...tail,
         ];
@@ -114,44 +121,77 @@ describe("the Antigravity reader's laws", () => {
         // is the second call; and past the last model's step and compaction
         // the same way, the compaction finishing a run before the model's
         // step, so that its model is not read from the generation of a step
-        // not yet a call; then the generated ones.
+        // not yet a call; after each answer given while a command runs on,
+        // the first command ending in the second of those runs; then the
+        // generated ones.
         const runs = [
           { at: 1, settled: false },
           { at: 3, settled: false },
           { at: 8, settled: true },
           { at: 13, settled: true },
           { at: 13, settled: false },
+          { at: 15, settled: false },
+          { at: 17, settled: false },
           ...[...cuts].sort((one, other) => one.at - other.at),
         ];
+        const fixedSteps = 16;
+        const never = 15;
         const finishing = new Map([
           [3, 3],
           [5, 4],
           [8, 5],
           [10, 4],
+          [13, 6],
+          [never, Number.POSITIVE_INFINITY],
         ]);
         const finishesAt = plans.map(
           (_, idx) =>
-            finishing.get(idx) ?? (idx <= 12 ? 2 : (finishingAt[idx] ?? 0)),
+            finishing.get(idx) ??
+            (idx <= fixedSteps ? 2 : (finishingAt[idx] ?? 0)),
         );
         const bareAt = plans.map((_, idx) =>
-          finishing.has(idx) ? true : idx <= 12 ? false : (bare[idx] ?? false),
+          finishing.has(idx)
+            ? true
+            : idx <= fixedSteps
+              ? false
+              : (bare[idx] ?? false),
         );
+        const final = runs.length;
+        const allRuns = [...runs, { at: plans.length, settled: true }];
+        const statusAt = (index: number, idx: number) =>
+          (index === final && idx !== never) || index >= (finishesAt[idx] ?? 0)
+            ? 3
+            : unfinishedOf(plans[idx] ?? plan("other"));
+        const seenAt: Array<number> = [];
+        for (const run of allRuns) {
+          seenAt.push(
+            Math.max(seenAt.at(-1) ?? 0, Math.min(run.at, plans.length)),
+          );
+        }
+        /** Whether a run's record holds a model's step finished after a step. */
+        const finishedCallAfter = (index: number, step: number) =>
+          plans.some(
+            (each, idx) =>
+              idx > step &&
+              idx < (seenAt[index] ?? 0) &&
+              carriesUsage(each.kind) &&
+              statusAt(index, idx) === 3,
+          );
+        /** The first run whose record holds a step finished. */
+        const finishedIn = (step: number) =>
+          allRuns.findIndex(
+            (_, index) =>
+              step < (seenAt[index] ?? 0) && statusAt(index, step) === 3,
+          );
         let from = fromStart;
         const got: Array<{ readonly call: ModelCall; readonly run: number }> =
           [];
-        let seen = 0;
-        const final = runs.length;
-        [...runs, { at: plans.length, settled: true }].forEach((run, index) => {
-          seen = Math.max(seen, Math.min(run.at, plans.length));
-          const shown = plans.slice(0, seen);
+        allRuns.forEach((run, index) => {
+          const shown = plans.slice(0, seenAt[index]);
           const held = conversationOf(
             conversation,
             shown,
-            shown.map((each, idx) =>
-              index === final || index >= (finishesAt[idx] ?? 0)
-                ? 3
-                : unfinishedOf(each),
-            ),
+            shown.map((_, idx) => statusAt(index, idx)),
             1,
             bareAt,
           );
@@ -160,15 +200,18 @@ describe("the Antigravity reader's laws", () => {
             from,
             run.settled,
           );
-          if (!run.settled) {
-            expect(reading.calls.map(({ outcome }) => outcome)).not.toContain(
-              "error",
-            );
+          for (const call of reading.calls) {
+            if (call.outcome === "error" && !run.settled) {
+              expect({
+                step: call.step,
+                followed: finishedCallAfter(index, call.step),
+              }).toEqual({ step: call.step, followed: true });
+            }
           }
           got.push(...reading.calls.map((call) => ({ call, run: index })));
           from = reading.next;
         });
-        expect(from.passed).toEqual([]);
+        expect(from.passed.map(({ idx }) => idx)).toEqual([never]);
 
         const whole = readWhole(conversationOf(conversation, plans)).calls;
         expect(got.map(({ call }) => call.call).toSorted()).toEqual(
@@ -215,8 +258,17 @@ describe("the Antigravity reader's laws", () => {
               idx > since && idx < call.step ? [idx] : [],
             ),
           );
+          // A finished call is read by the first run that finds it finished,
+          // whatever step not finished lies before it.
+          if (call.outcome === "ok") {
+            expect({ step: call.step, run }).toEqual({
+              step: call.step,
+              run: finishedIn(call.step),
+            });
+          } else {
+            expect(run).toBeLessThanOrEqual(finishedIn(call.step));
+          }
           if (late[index] === true) {
-            expect(run).toBe(Math.min(final, finishesAt[call.step] ?? 0));
             const newer = got.findIndex(
               (each, at) => each.run === run && late[at] !== true,
             );
