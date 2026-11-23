@@ -244,6 +244,13 @@ export type Said =
     }
   | { readonly kind: "compaction"; readonly summary: string };
 
+/**
+ * A step's `status` when it is done. A tool's step of another status was read
+ * while it ran (`docs/specs/request-reporter/spec.md`, A step not finished):
+ * it has no result yet, and is a result with no text.
+ */
+const done = 3;
+
 const callOf = (fields: ReadonlyArray<Read>): ToolCall => ({
   id: textAt(fields, table.toolCall.id),
   name: Option.getOrElse(textAt(fields, table.toolCall.name), () => ""),
@@ -278,11 +285,15 @@ export const saidOf = (step: Step): Option.Option<Said> => {
       );
     case table.toolResult.stepType:
       return Option.map(
-        Option.flatMap(
-          Option.flatMap(messageAt(payload, table.toolResult.payload), (said) =>
-            messageAt(said, table.toolResult.result),
+        Option.orElse(
+          Option.flatMap(
+            Option.flatMap(
+              messageAt(payload, table.toolResult.payload),
+              (said) => messageAt(said, table.toolResult.result),
+            ),
+            (result) => textAt(result, table.toolResult.text),
           ),
-          (result) => textAt(result, table.toolResult.text),
+          () => (step.status === done ? Option.none() : Option.some("")),
         ),
         (text) => ({
           kind: "result",
