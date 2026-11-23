@@ -238,6 +238,7 @@ const filesOf = (drawn: Machine): Entries => {
                                 c1: {
                                   step: -1,
                                   call: null,
+                                  passed: [],
                                   stamps: null,
                                   waiting: null,
                                   notReported: { reason: "schema", step: null },

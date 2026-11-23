@@ -33,7 +33,7 @@ const configuration = {
   clients: { antigravity: { reported: folders } },
 };
 
-/** A conversation as it grows: its folder, its steps, how many it holds at each run, the run each step finishes in, and the runs its files change while copied. */
+/** A conversation as it grows: its folder, its steps, how many it holds at each run, the run each step finishes in, whether a model's step has no usage until it is done, and the runs its files change while copied. */
 const Grown = Schema.Struct({
   folder: Schema.Literals([0, 1]),
   plans: Schema.Array(Plan).check(Schema.isMaxLength(10)),
@@ -43,6 +43,7 @@ const Grown = Schema.Struct({
   finishing: Schema.Array(
     Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 6 })),
   ).check(Schema.isMaxLength(10)),
+  bare: Schema.Boolean,
   changingAt: Schema.Array(
     Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 6 })),
   ).check(Schema.isMaxLength(2)),
@@ -84,8 +85,10 @@ type Case = typeof Case.Type;
  * Conversations every case begins with, so that each law's mutants meet
  * what kills them whatever the seed: one of a second folder whose files
  * change while the first run copies them, one of seven calls that comes
- * at the second run, whose first report the hub refuses, and one of two
- * calls too large to share a report.
+ * at the second run, whose first report the hub refuses, one of two
+ * calls too large to share a report, and one whose second model's step,
+ * with no usage until done, is read past once settled at the third run and
+ * finishes at the fourth, whose first report, holding it, the hub refuses.
  */
 const fixed: ReadonlyArray<Grown> = [
   {
@@ -93,6 +96,7 @@ const fixed: ReadonlyArray<Grown> = [
     plans: [plan("user"), plan("model"), plan("tool"), plan("model")],
     shown: [4],
     finishing: [],
+    bare: false,
     changingAt: [0],
   },
   {
@@ -103,6 +107,7 @@ const fixed: ReadonlyArray<Grown> = [
     ],
     shown: [0, 15],
     finishing: [],
+    bare: false,
     changingAt: [],
   },
   {
@@ -116,11 +121,22 @@ const fixed: ReadonlyArray<Grown> = [
     ],
     shown: [23],
     finishing: [],
+    bare: false,
+    changingAt: [],
+  },
+  {
+    folder: 0,
+    plans: [plan("user"), plan("model"), plan("model"), plan("model")],
+    shown: [4],
+    finishing: [0, 0, 3],
+    bare: true,
     changingAt: [],
   },
 ];
 const fixedRuns: ReadonlyArray<Run> = [
   { answers: [], pause: 1 },
+  { answers: [503], pause: 1 },
+  { answers: [], pause: 11 },
   { answers: [503], pause: 1 },
 ];
 
@@ -150,7 +166,13 @@ const heldAt = (grown: Grown, index: number, run: number, end: boolean) => {
   );
   const finished = statuses.filter((status) => status === 3).length;
   return {
-    ...conversationOf(idOf(index), shown, statuses, count * 100 + finished),
+    ...conversationOf(
+      idOf(index),
+      shown,
+      statuses,
+      count * 100 + finished,
+      shown.map(() => grown.bare),
+    ),
     changing: !end && grown.changingAt.includes(run),
   };
 };
@@ -276,19 +298,32 @@ const reportedOver = ({ calls, bytes, grown, runs }: Case) =>
 
 describe("request reporter laws", () => {
   it.effect.prop(
-    "J20: For any sequence of appends and runs whose reports are answered 200, refused, failed or never, a call is among those each run sends until a report holding it is answered 200, and among none after, a call reported unfinished among them, whatever its step becomes; each report names as `after` the call stored before it, or one earlier in it.",
+    "J20: For any sequence of appends and runs whose reports are answered 200, refused, failed or never, a call is among those each run sends until a report holding it is answered 200, and among none after: a call reported unfinished among them, whatever its step becomes, and a late call from the first run after its step finishes; each call names as `after` a call before it in its conversation, stored before its report or earlier in it: the one just before it, but for a call read past a late one.",
     { drawn: Arbitrary.schema(Case) },
     ({ drawn }) =>
       Effect.gen(function* () {
         const { sent, stored, ended, changingIn, runs } =
           yield* reportedOver(drawn);
+        const bare = new Set(
+          [...fixed, ...drawn.grown].flatMap((each, index) =>
+            each.bare ? [idOf(index)] : [],
+          ),
+        );
         for (const { report, storedBefore } of sent) {
           const earlier = new Set<string>();
           for (const call of report.calls) {
             expect(storedBefore.has(call.call)).toBe(false);
+            // The call before it, as the record was when it was read: the
+            // one before it at the end, but for calls whose step was read
+            // past before it finished, which only a conversation whose
+            // model's steps have no usage until done has.
             const calls = ended.get(call.session)?.calls ?? [];
-            const before = calls[calls.indexOf(call.call) - 1];
-            expect(call.after?.call).toBe(before);
+            const at = calls.indexOf(call.call);
+            const before =
+              call.after === null ? -1 : calls.indexOf(call.after.call);
+            expect(before >= 0 || call.after === null).toBe(true);
+            expect(before).toBeLessThan(at);
+            if (!bare.has(call.session)) expect(before).toBe(at - 1);
             if (call.after !== null) {
               expect(
                 storedBefore.has(call.after.call) ||

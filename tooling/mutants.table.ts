@@ -383,9 +383,9 @@ const j16 =
 const j17 =
   "J17: For every set of keys and every answer of the hub to each, a join writes the configuration and keys only when the hub was reached and every key is known, none is a reader key and no two are of one scope; otherwise the machine's files are as they were.";
 const j19 =
-  "J19: For any record appended to step by step and read in runs cut anywhere (between steps, on an unfinished step, after a compaction), the model calls read run by run, each with its new items, are those of reading the whole record once, but for a step reported unfinished, which stays as it was reported.";
+  "J19: For any record appended to step by step and read in runs cut anywhere (between steps, on an unfinished step, after a compaction), the model calls read run by run are those of reading the whole record once, with the same usage, model, times and output, but for a step reported unfinished, which stays as it was reported, and the order a late call is read in: a step read past while not finished and without usage, which later finishes with usage, is read by the first run after it finishes, before that run's newer calls; and each call names as `after` the call of the greatest step below its own among those read before it, its input every step between the two, so that a call read past a late one names the call before that late one and holds its step as it was.";
 const j20 =
-  "J20: For any sequence of appends and runs whose reports are answered 200, refused, failed or never, a call is among those each run sends until a report holding it is answered 200, and among none after, a call reported unfinished among them, whatever its step becomes; each report names as `after` the call stored before it, or one earlier in it.";
+  "J20: For any sequence of appends and runs whose reports are answered 200, refused, failed or never, a call is among those each run sends until a report holding it is answered 200, and among none after: a call reported unfinished among them, whatever its step becomes, and a late call from the first run after its step finishes; each call names as `after` a call before it in its conversation, stored before its report or earlier in it: the one just before it, but for a call read past a late one.";
 const j21 =
   "J21: Every report holds calls of one folder, at most 200 and 8 MiB but for a call alone over it, in order, and no report's body is over 64 MiB.";
 const j22 =
@@ -7679,17 +7679,41 @@ export const layer = (policy: Admission.Policy) =>
     name: "a reading on loses the workspace of the message before its cursor",
     law: "J19",
     file: cliRecord,
-    find: "  let workspace = Option.flatMap(read.lastUserMessage, (row) =>\n    Option.flatMap(Option.fromNullOr(row.payload), (payload) =>\n      Option.flatMap(fieldsOf(payload), workspaceOf),\n    ),\n  );",
-    replace: "  let workspace: Option.Option<string> = Option.none();",
+    find: "  const workspaceBefore = Option.flatMap(read.lastUserMessage, workspaceOfRow);",
+    replace: "  const workspaceBefore: Option.Option<string> = Option.none();",
     killedBy: j19,
   },
   {
     name: "a step not finished does not wait to settle",
     law: "J19",
     file: cliRecord,
-    find: "    if (unfinished && !settled) {\n      return { calls, stopped: Option.none(), waiting: true };\n    }\n",
+    find: "    if (unfinished && !settled) {\n      return { calls, stopped: Option.none(), waiting: true, next };\n    }\n",
     replace: "",
     killedBy: j19,
+  },
+  {
+    name: "a step read past while not finished is never looked at again",
+    law: "J19",
+    file: cliRecord,
+    find: "  for (const { idx } of from.passed) {",
+    replace: "  for (const { idx } of from.passed.filter(() => false)) {",
+    killedBy: j19,
+  },
+  {
+    name: "a step read past keeps the call before it had though an earlier one became a late call",
+    law: "J19",
+    file: cliRecord,
+    find: "          : Option.isSome(late) && other.idx > idx && other.step < idx",
+    replace: "          : false",
+    killedBy: j19,
+  },
+  {
+    name: "a run reads a conversation only from its cursor's step",
+    law: "J20",
+    file: cliSendRequests,
+    find: "          readAfter(cursor.from),",
+    replace: "          cursor.from.step,",
+    killedBy: j20,
   },
   {
     name: "a report not stored does not stop its folder",

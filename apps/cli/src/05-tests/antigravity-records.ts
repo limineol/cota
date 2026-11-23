@@ -131,12 +131,13 @@ export const workspaces = ["/work/acme-api", "/work/café notes"] as const;
 export const carriesUsage = (kind: Plan["kind"]) =>
   kind === "model" || kind === "compaction";
 
-/** The `metadata` of a step: when it was made and finished, its usage when it carries one, and its conversation's ids. */
+/** The `metadata` of a step: when it was made and finished, its usage when it carries one and has it, and its conversation's ids. */
 const metadataOf = (
   plan: Plan,
   idx: number,
   trajectory: string,
   conversation: string,
+  usage: boolean,
 ): ReadonlyArray<Built> => [
   { number: 1, message: timeOf(BigInt(madeAt(idx))) },
   ...(plan.took === 0
@@ -145,7 +146,7 @@ const metadataOf = (
         { number: 7, message: timeOf(BigInt(madeAt(idx) + plan.took - 1)) },
         { number: 8, message: timeOf(BigInt(madeAt(idx) + plan.took)) },
       ]),
-  ...(carriesUsage(plan.kind)
+  ...(carriesUsage(plan.kind) && usage
     ? [
         {
           number: 9,
@@ -245,19 +246,20 @@ const payloadOf = (plan: Plan, idx: number, status: number): Array<Built> => {
   }
 };
 
-/** A step of a generated conversation, with the status given: 3 when done. */
+/** A step of a generated conversation, with the status given (3 when done), and without its usage when `usage` is false. */
 export const stepOf = (
   plan: Plan,
   idx: number,
   status: number,
   trajectory: string,
   conversation: string,
+  usage = true,
 ): RecordStep => ({
   idx,
   stepType: stepTypes[plan.kind],
   status,
   hasSubtrajectory: false,
-  metadata: encode(metadataOf(plan, idx, trajectory, conversation)),
+  metadata: encode(metadataOf(plan, idx, trajectory, conversation, usage)),
   payload: encode(payloadOf(plan, idx, status)),
 });
 
@@ -296,21 +298,34 @@ export const generationsOf = (
       : [],
   );
 
-/** A conversation as the in-memory client records keep it, its steps with the statuses given (3 where none is). */
+/**
+ * A conversation as the in-memory client records keep it, its steps with the
+ * statuses given (3 where none is); a step `bare` marks has no usage yet
+ * while it is not done.
+ */
 export const conversationOf = (
   conversation: string,
   plans: ReadonlyArray<Plan>,
   statuses: ReadonlyArray<number> = [],
   changedAt = 1,
+  bare: ReadonlyArray<boolean> = [],
 ): Conversation => {
   const trajectory = `trajectory-of-${conversation}`;
   return {
     trajectory,
     cascade: conversation,
     subAgent: false,
-    steps: plans.map((plan, idx) =>
-      stepOf(plan, idx, statuses[idx] ?? 3, trajectory, conversation),
-    ),
+    steps: plans.map((plan, idx) => {
+      const status = statuses[idx] ?? 3;
+      return stepOf(
+        plan,
+        idx,
+        status,
+        trajectory,
+        conversation,
+        status === 3 || bare[idx] !== true,
+      );
+    }),
     generations: generationsOf(plans, trajectory, conversation),
     stamps: {
       db: { size: 4096 * (plans.length + 1), changedAt },

@@ -23,6 +23,7 @@ import {
   fromStart,
   type ModelCall,
   type Reason,
+  readAfter,
   readingOf,
   type Step,
 } from "./antigravity-record.ts";
@@ -44,17 +45,7 @@ const every: ReadonlyArray<Plan> = [
 const Tail = Schema.Array(PlanSchema).check(Schema.isMaxLength(12));
 
 const readWhole = (held: Conversation, from: From = fromStart) =>
-  readingOf(recordOf(conversation, held, from.step), from, true);
-
-const fromAfter = (from: From, calls: ReadonlyArray<ModelCall>): From => {
-  const last = calls.at(-1);
-  return last === undefined
-    ? from
-    : {
-        step: last.step,
-        last: Option.some({ call: last.call, startedAt: last.startedAt }),
-      };
-};
+  readingOf(recordOf(conversation, held, readAfter(from)), from, true);
 
 /** A step's status while it is not finished: a model's step is generating, any other pending. */
 const unfinishedOf = (each: Plan) => (carriesUsage(each.kind) ? 8 : 1);
@@ -83,7 +74,7 @@ const statusOf = (step: Step) => step.status;
 
 describe("the Antigravity reader's laws", () => {
   it.effect.prop(
-    "J19: For any record appended to step by step and read in runs cut anywhere (between steps, on an unfinished step, after a compaction), the model calls read run by run, each with its new items, are those of reading the whole record once, but for a step reported unfinished, which stays as it was reported.",
+    "J19: For any record appended to step by step and read in runs cut anywhere (between steps, on an unfinished step, after a compaction), the model calls read run by run are those of reading the whole record once, with the same usage, model, times and output, but for a step reported unfinished, which stays as it was reported, and the order a late call is read in: a step read past while not finished and without usage, which later finishes with usage, is read by the first run after it finishes, before that run's newer calls; and each call names as `after` the call of the greatest step below its own among those read before it, its input every step between the two, so that a call read past a late one names the call before that late one and holds its step as it was.",
     {
       tail: Arbitrary.schema(Tail),
       cuts: Arbitrary.schema(
@@ -96,40 +87,58 @@ describe("the Antigravity reader's laws", () => {
       ),
       finishing: Arbitrary.schema(
         Schema.Array(
-          Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 4 })),
+          Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 6 })),
         ).check(Schema.isMaxLength(20)),
       ),
+      bare: Arbitrary.schema(
+        Schema.Array(Schema.Boolean).check(Schema.isMaxLength(20)),
+      ),
     },
-    ({ tail, cuts, finishing }) =>
+    ({ tail, cuts, finishing, bare }) =>
       Effect.sync(() => {
         const plans = [...every, ...tail];
-        // Runs cut after the first user's message, before its call, and on
-        // the tool's step while it and the call are not finished, then the
-        // generated ones.
+        // Runs cut after the first user's message, before its call, on the
+        // tool's step while it and the call are not finished, and past the
+        // second call and the compaction while they are not finished and
+        // have no usage yet, so that both are late and the compaction's call
+        // before is the second call; then the generated ones.
         const runs = [
           { at: 1, settled: false },
           { at: 3, settled: false },
+          { at: 8, settled: true },
           ...[...cuts].sort((one, other) => one.at - other.at),
         ];
         const finishesAt = plans.map((_, idx) =>
-          idx === 1 || idx === 2 ? 2 : (finishing[idx] ?? 0),
+          idx === 3 ? 3 : idx === 5 ? 4 : idx <= 7 ? 2 : (finishing[idx] ?? 0),
+        );
+        const bareAt = plans.map((_, idx) =>
+          idx === 3 || idx === 5
+            ? true
+            : idx <= 7
+              ? false
+              : (bare[idx] ?? false),
         );
         let from = fromStart;
-        const got: Array<ModelCall> = [];
+        const got: Array<{ readonly call: ModelCall; readonly run: number }> =
+          [];
         let seen = 0;
+        const final = runs.length;
         [...runs, { at: plans.length, settled: true }].forEach((run, index) => {
           seen = Math.max(seen, Math.min(run.at, plans.length));
-          const last = index === runs.length;
           const shown = plans.slice(0, seen);
           const held = conversationOf(
             conversation,
             shown,
             shown.map((each, idx) =>
-              last || index >= (finishesAt[idx] ?? 0) ? 3 : unfinishedOf(each),
+              index === final || index >= (finishesAt[idx] ?? 0)
+                ? 3
+                : unfinishedOf(each),
             ),
+            1,
+            bareAt,
           );
           const reading = readingOf(
-            recordOf(conversation, held, from.step),
+            recordOf(conversation, held, readAfter(from)),
             from,
             run.settled,
           );
@@ -138,29 +147,70 @@ describe("the Antigravity reader's laws", () => {
               "error",
             );
           }
-          got.push(...reading.calls);
-          from = fromAfter(from, reading.calls);
+          got.push(...reading.calls.map((call) => ({ call, run: index })));
+          from = reading.next;
         });
+        expect(from.passed).toEqual([]);
 
         const whole = readWhole(conversationOf(conversation, plans)).calls;
-        expect(got.map(({ call }) => call)).toEqual(
-          whole.map(({ call }) => call),
+        expect(got.map(({ call }) => call.call).toSorted()).toEqual(
+          whole.map(({ call }) => call).toSorted(),
         );
-        got.forEach((call, index) => {
-          const once = whole[index];
+        const writtenOut = new Map(
+          whole.flatMap(({ input, output }) =>
+            [...input, ...output].map((step) => [step.idx, step] as const),
+          ),
+        );
+        const steps = (items: ReadonlyArray<Step>) =>
+          items.map(({ idx }) => idx);
+        // A late call is one read after a call of a later step.
+        const late = got.map(({ call }, index) =>
+          got.slice(0, index).some((other) => other.call.step > call.step),
+        );
+        expect(late).toContain(true);
+        got.forEach(({ call, run }, index) => {
+          const once = whole.find((each) => each.call === call.call);
           if (once === undefined) return;
-          const steps = (items: ReadonlyArray<Step>) =>
-            items.map(({ idx }) => idx);
-          expect(steps(call.input)).toEqual(steps(once.input));
-          expect(steps(call.output)).toEqual(steps(once.output));
-          expect(call.after).toEqual(once.after);
-          expect(call.workspace).toEqual(once.workspace);
           expect(call.startedAt).toBe(once.startedAt);
+          expect(call.workspace).toEqual(once.workspace);
+          expect(steps(call.output)).toEqual(steps(once.output));
+          const before = got
+            .slice(0, index)
+            .map((each) => each.call)
+            .filter(({ step }) => step < call.step)
+            .reduce<Option.Option<ModelCall>>(
+              (found, each) =>
+                Option.exists(found, ({ step }) => step > each.step)
+                  ? found
+                  : Option.some(each),
+              Option.none(),
+            );
+          const since = Option.getOrElse(
+            Option.map(before, ({ step }) => step),
+            () => -1,
+          );
+          expect(call.after).toEqual(
+            Option.map(before, ({ call, startedAt }) => ({ call, startedAt })),
+          );
+          expect(steps(call.input)).toEqual(
+            plans.flatMap((_, idx) =>
+              idx > since && idx < call.step ? [idx] : [],
+            ),
+          );
+          if (late[index] === true) {
+            expect(run).toBe(Math.min(final, finishesAt[call.step] ?? 0));
+            const newer = got.findIndex(
+              (each, at) => each.run === run && late[at] !== true,
+            );
+            if (newer >= 0) expect(newer).toBeGreaterThan(index);
+          }
           if (call.outcome === "error") return;
           expect(call.output).toEqual(once.output);
-          call.input.forEach((item, at) => {
-            if (statusOf(item) === 3) expect(item).toEqual(once.input[at]);
-          });
+          for (const item of call.input) {
+            if (statusOf(item) === 3) {
+              expect(item).toEqual(writtenOut.get(item.idx));
+            }
+          }
           expect(call.usage).toEqual(once.usage);
           expect(call.model).toBe(once.model);
         });
@@ -257,7 +307,7 @@ describe("the Antigravity reader's laws", () => {
             valid,
             "rewritten",
             "whole",
-            { step: plans.length + 3, last: Option.none() },
+            { step: plans.length + 3, last: Option.none(), passed: [] },
           ],
           [
             atStep((step) => ({ ...step, hasSubtrajectory: true })),

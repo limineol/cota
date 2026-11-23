@@ -22,6 +22,7 @@ import { ReadProject } from "#02-application/queries/read-project.query.ts";
 import {
   type ModelCall,
   type Reading,
+  readAfter,
   readingOf,
 } from "#03-domain/antigravity-record.ts";
 import type {
@@ -166,6 +167,7 @@ export const layerOf = (
             calls: [],
             stopped: Option.some({ reason: "rewritten", step: Option.none() }),
             waiting: false,
+            next: cursor.from,
           };
           return Option.some<Read>({
             conversation: listed.conversation,
@@ -180,7 +182,7 @@ export const layerOf = (
           folder,
           listed.conversation,
           scratch,
-          cursor.from.step,
+          readAfter(cursor.from),
         );
         if (copied._tag === "Changing") return Option.none<Read>();
         if (copied._tag === "Schema") {
@@ -192,6 +194,7 @@ export const layerOf = (
               calls: [],
               stopped: Option.some({ reason: "schema", step: Option.none() }),
               waiting: false,
+              next: cursor.from,
             },
             written: [],
             stored: 0,
@@ -221,6 +224,7 @@ export const layerOf = (
                     step: Option.some(cut.step),
                   }),
                   waiting: false,
+                  next: reading.calls[tooLarge - 1]?.next ?? cursor.from,
                 },
           written: cut === undefined ? written : written.slice(0, tooLarge),
           stored: 0,
@@ -438,13 +442,7 @@ export const layerOf = (
                   if (entry === undefined || entry.call === undefined) continue;
                   entry.read.cursor = {
                     ...entry.read.cursor,
-                    from: {
-                      step: entry.call.step,
-                      last: Option.some({
-                        call: entry.call.call,
-                        startedAt: entry.call.startedAt,
-                      }),
-                    },
+                    from: entry.call.next,
                   };
                   entry.read.stored += 1;
                   cursors.set(entry.read.conversation, entry.read.cursor);
@@ -460,8 +458,7 @@ export const layerOf = (
                   Requests.cursorAfter(
                     read.cursor,
                     read.stamps,
-                    read.reading.waiting,
-                    read.reading.stopped,
+                    read.reading,
                     now,
                   ),
                 );

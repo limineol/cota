@@ -1,4 +1,4 @@
-import { Option } from "effect";
+import { Option, Result } from "effect";
 
 /** A field of a protocol buffer as read: its number, its wire type, and a varint's value or the bytes of the others. */
 export type Raw =
@@ -188,9 +188,9 @@ export interface ClientRecord {
   readonly cascade: string;
   readonly subAgent: boolean;
   readonly greatestStep: Option.Option<number>;
-  /** Every step after the cursor's, in order of `idx`. */
+  /** Every step after the one read after (`readAfter`), in order of `idx`. */
   readonly steps: ReadonlyArray<RecordStep>;
-  /** The last user's message at or before the cursor's step, for its workspace. */
+  /** The last user's message at or before the step read after, for its workspace. */
   readonly lastUserMessage: Option.Option<RecordStep>;
   /** Each `gen_metadata` row's `data`. */
   readonly generations: ReadonlyArray<Uint8Array | null>;
@@ -246,22 +246,37 @@ export interface ModelCall {
   readonly usage: Usage;
   readonly input: ReadonlyArray<Step>;
   readonly output: ReadonlyArray<Step>;
+  /** Where the conversation's reading starts once the hub stores this call and those read before it. */
+  readonly next: From;
 }
 
-/** What a reading of a conversation gave: its model calls in order, where it stopped and why, and whether it waits on a step not finished. */
+/** What a reading of a conversation gave: its model calls in order, where it stopped and why, whether it waits on a step not finished, and where the next reading starts once the hub stores every call. */
 export interface Reading {
   readonly calls: ReadonlyArray<ModelCall>;
   readonly stopped: Option.Option<Stop>;
   readonly waiting: boolean;
+  readonly next: From;
 }
 
-/** Where a conversation's reading starts: after the step of the last call stored, `-1` for none. */
-export interface From {
+/** A step a reading went past while it was not finished and carried no usage, with the step and key of the call before it: it may still finish as a model call. */
+export interface Passed {
+  readonly idx: number;
   readonly step: number;
   readonly last: Option.Option<After>;
 }
 
-export const fromStart: From = { step: -1, last: Option.none() };
+/** Where a conversation's reading starts: after the step of the last call stored (`-1` for none), with the steps it went past. */
+export interface From {
+  readonly step: number;
+  readonly last: Option.Option<After>;
+  readonly passed: ReadonlyArray<Passed>;
+}
+
+export const fromStart: From = { step: -1, last: Option.none(), passed: [] };
+
+/** The step after which a reading needs the record's steps: its cursor's, or an earlier one where a step it went past follows it. */
+export const readAfter = (from: From): number =>
+  Math.min(from.step, ...from.passed.map(({ step }) => step));
 
 export const unfinishedError = "cota_reported_unfinished";
 const unfinishedMessage =
@@ -386,11 +401,21 @@ const parsedOf = (row: RecordStep): Option.Option<Parsed> => {
   );
 };
 
+const isUnfinished = (row: RecordStep) =>
+  typeof row.status === "number" &&
+  record.unfinished.some((status) => status === row.status);
+
+const workspaceOfRow = (row: RecordStep) =>
+  Option.flatMap(Option.fromNullOr(row.payload), (payload) =>
+    Option.flatMap(fieldsOf(payload), workspaceOf),
+  );
+
 /**
  * Reads a conversation's record from where its cursor stands into its model
  * calls (`docs/specs/request-reporter/spec.md`, The Antigravity reader).
- * Unsettled, it stops at the first step not finished and waits; settled, it
- * reads through it.
+ * It first looks again at each step it went past: one now done with usage is
+ * a model call, read before the newer ones. Unsettled, it stops at the first
+ * step not finished and waits; settled, it reads through it.
  */
 export const readingOf = (
   read: ClientRecord,
@@ -398,10 +423,12 @@ export const readingOf = (
   settled: boolean,
 ): Reading => {
   const calls: Array<ModelCall> = [];
+  let next = from;
   const stop = (reason: Reason, step: Option.Option<number>): Reading => ({
     calls,
     stopped: Option.some({ reason, step }),
     waiting: false,
+    next,
   });
   if (
     read.cascade !== read.conversation ||
@@ -421,46 +448,38 @@ export const readingOf = (
   const generations = read.generations.flatMap((data) =>
     Option.toArray(generationOf(data)),
   );
-  let workspace = Option.flatMap(read.lastUserMessage, (row) =>
-    Option.flatMap(Option.fromNullOr(row.payload), (payload) =>
-      Option.flatMap(fieldsOf(payload), workspaceOf),
-    ),
-  );
-  let last = from.last;
-  let lastUsageStep = from.step;
-  let items: Array<Step> = [];
-
-  for (const row of read.steps) {
-    const at = Option.some(row.idx);
-    if (row.hasSubtrajectory) return stop("subtrajectory", at);
+  const workspaceBefore = Option.flatMap(read.lastUserMessage, workspaceOfRow);
+  /** The workspace of the last user's message at or before a step. */
+  const workspaceAt = (idx: number) =>
+    read.steps.reduce(
+      (found, row) =>
+        row.idx <= idx && row.stepType === record.userMessage
+          ? Option.orElse(workspaceOfRow(row), () => found)
+          : found,
+      workspaceBefore,
+    );
+  const parsedAt = (row: RecordStep): Result.Result<Parsed, Reason> => {
+    if (row.hasSubtrajectory) return Result.fail("subtrajectory");
     const parsed = parsedOf(row);
-    if (Option.isNone(parsed)) return stop("unreadable-step", at);
-    const { step, metadata, payload } = parsed.value;
-    const unfinished =
-      typeof row.status === "number" &&
-      record.unfinished.some((status) => status === row.status);
-    if (unfinished && !settled) {
-      return { calls, stopped: Option.none(), waiting: true };
-    }
-    if (row.stepType === record.userMessage) {
-      workspace = Option.orElse(workspaceOf(payload), () => workspace);
-    }
-    const usageField = lastOf(metadata, record.usage);
-    if (Option.isNone(usageField)) {
-      items.push(step);
-      continue;
-    }
-    if (!unfinished && row.status !== record.done) {
-      return stop("unknown-status", at);
-    }
+    return Option.isNone(parsed)
+      ? Result.fail("unreadable-step")
+      : Result.succeed(parsed.value);
+  };
+
+  /** The model call of a step that carries usage, or none when the step cannot be read as one. */
+  const callOf = (
+    row: RecordStep,
+    { step, metadata }: Parsed,
+    usageField: Raw,
+    before: Omit<Passed, "idx">,
+    input: ReadonlyArray<Step>,
+    workspace: Option.Option<string>,
+  ): Option.Option<Omit<ModelCall, "next">> => {
+    const unfinished = isUnfinished(row);
     const usage =
-      usageField.value.wire === 2
-        ? fieldsOf(usageField.value.value)
-        : Option.none();
+      usageField.wire === 2 ? fieldsOf(usageField.value) : Option.none();
     const startedAt = timeOf(metadata, record.madeAt);
-    if (Option.isNone(usage) || Option.isNone(startedAt)) {
-      return stop("unreadable-step", at);
-    }
+    if (Option.isNone(usage) || Option.isNone(startedAt)) return Option.none();
     const finishedAt = Option.getOrElse(
       Option.orElse(timeOf(metadata, record.completedAt), () =>
         timeOf(metadata, record.generatedAt),
@@ -483,16 +502,16 @@ export const readingOf = (
       finishedAt < startedAt.value ||
       finishedAt - startedAt.value > mostDuration
     ) {
-      return stop("unreadable-step", at);
+      return Option.none();
     }
     let generation: Option.Option<Generation> = Option.none();
-    let generationStep = lastUsageStep - 1;
+    let generationStep = before.step - 1;
     for (const each of generations) {
       if (Option.isNone(each.lastStep)) continue;
       const lastStep = each.lastStep.value;
       if (
         lastStep < row.idx &&
-        lastStep >= lastUsageStep &&
+        lastStep >= before.step &&
         lastStep > generationStep
       ) {
         generation = Option.some(each);
@@ -516,10 +535,10 @@ export const readingOf = (
       (text) => [...text].length <= longestRequestId,
     );
     const call = `${read.trajectory}:${row.idx}`;
-    if ([...call].length > longestKey) return stop("unreadable-step", at);
-    calls.push({
+    if ([...call].length > longestKey) return Option.none();
+    return Option.some({
       call,
-      after: last,
+      after: before.last,
       step: row.idx,
       session: read.conversation,
       workspace,
@@ -542,12 +561,113 @@ export const readingOf = (
         reasoning: Number(counts.reasoning),
         reported,
       },
-      input: items,
+      input,
       output: [step],
     });
+  };
+
+  // A step gone past is looked at again: still not finished, it is kept;
+  // done with usage, it is a model call after the call before it, and the
+  // call before the steps kept after it; otherwise it is forgotten.
+  let passed = from.passed;
+  for (const { idx } of from.passed) {
+    const each = passed.find((other) => other.idx === idx);
+    const row = read.steps.find((one) => one.idx === idx);
+    if (each === undefined || (row !== undefined && isUnfinished(row))) {
+      continue;
+    }
+    const drop = (late: Option.Option<After>) => {
+      passed = passed.flatMap((other) =>
+        other.idx === idx
+          ? []
+          : Option.isSome(late) && other.idx > idx && other.step < idx
+            ? [{ idx: other.idx, step: idx, last: late }]
+            : [other],
+      );
+      next = { ...next, passed };
+    };
+    if (row === undefined || row.status !== record.done) {
+      drop(Option.none());
+      continue;
+    }
+    const parsed: Array<Parsed> = [];
+    for (const step of read.steps) {
+      if (step.idx <= each.step || step.idx > idx) continue;
+      const one = parsedAt(step);
+      if (Result.isFailure(one)) {
+        return stop(one.failure, Option.some(step.idx));
+      }
+      parsed.push(one.success);
+    }
+    const own = parsed.at(-1);
+    const usageField = Option.flatMap(Option.fromUndefinedOr(own), (step) =>
+      lastOf(step.metadata, record.usage),
+    );
+    if (own === undefined || Option.isNone(usageField)) {
+      drop(Option.none());
+      continue;
+    }
+    const call = callOf(
+      row,
+      own,
+      usageField.value,
+      each,
+      parsed.slice(0, -1).map(({ step }) => step),
+      workspaceAt(idx),
+    );
+    if (Option.isNone(call)) return stop("unreadable-step", Option.some(idx));
+    drop(
+      Option.some({ call: call.value.call, startedAt: call.value.startedAt }),
+    );
+    calls.push({ ...call.value, next });
+  }
+
+  let last = from.last;
+  let lastUsageStep = from.step;
+  let items: Array<Step> = [];
+  let workspace = workspaceAt(from.step);
+  let goneBy: Array<Passed> = [];
+  for (const row of read.steps) {
+    if (row.idx <= from.step) continue;
+    const at = Option.some(row.idx);
+    const parsed = parsedAt(row);
+    if (Result.isFailure(parsed)) return stop(parsed.failure, at);
+    const { step, metadata, payload } = parsed.success;
+    const unfinished = isUnfinished(row);
+    if (unfinished && !settled) {
+      return { calls, stopped: Option.none(), waiting: true, next };
+    }
+    if (row.stepType === record.userMessage) {
+      workspace = Option.orElse(workspaceOf(payload), () => workspace);
+    }
+    const usageField = lastOf(metadata, record.usage);
+    if (Option.isNone(usageField)) {
+      items.push(step);
+      if (unfinished) goneBy.push({ idx: row.idx, step: lastUsageStep, last });
+      continue;
+    }
+    if (!unfinished && row.status !== record.done) {
+      return stop("unknown-status", at);
+    }
+    const call = callOf(
+      row,
+      parsed.success,
+      usageField.value,
+      { step: lastUsageStep, last },
+      items,
+      workspace,
+    );
+    if (Option.isNone(call)) return stop("unreadable-step", at);
+    last = Option.some({
+      call: call.value.call,
+      startedAt: call.value.startedAt,
+    });
+    passed = [...passed, ...goneBy];
+    next = { step: row.idx, last, passed };
+    calls.push({ ...call.value, next });
     items = [];
-    last = Option.some({ call, startedAt: startedAt.value });
+    goneBy = [];
     lastUsageStep = row.idx;
   }
-  return { calls, stopped: Option.none(), waiting: false };
+  return { calls, stopped: Option.none(), waiting: false, next };
 };

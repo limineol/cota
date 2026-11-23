@@ -4,6 +4,7 @@ import {
   type From,
   fromStart,
   type ModelCall,
+  type Reading,
   type Reason,
   reasons,
 } from "./antigravity-record.ts";
@@ -104,11 +105,11 @@ export const isSettled = (
 export const cursorAfter = (
   cursor: ReportCursor,
   stamps: Stamps,
-  waiting: boolean,
-  stopped: ReportCursor["notReported"],
+  { waiting, stopped, next }: Reading,
   now: number,
 ): ReportCursor => ({
   ...cursor,
+  from: next,
   stamps: Option.some(stamps),
   waiting: waiting
     ? Option.some(
@@ -128,10 +129,15 @@ const StampsFile = Schema.Struct({
   db: StampFile,
   wal: Schema.NullOr(StampFile),
 });
+const Step = Schema.Int.check(Schema.isGreaterThanOrEqualTo(-1));
+const CallFile = Schema.NullOr(
+  Schema.Struct({ call: Schema.String, startedAt: Schema.Finite }),
+);
 const CursorFile = Schema.Struct({
-  step: Schema.Int.check(Schema.isGreaterThanOrEqualTo(-1)),
-  call: Schema.NullOr(
-    Schema.Struct({ call: Schema.String, startedAt: Schema.Finite }),
+  step: Step,
+  call: CallFile,
+  passed: Schema.Array(
+    Schema.Struct({ idx: Step, step: Step, call: CallFile }),
   ),
   stamps: Schema.NullOr(StampsFile),
   waiting: Schema.NullOr(
@@ -194,6 +200,11 @@ export const stateOf = (text: Option.Option<string>): Option.Option<State> => {
                 from: {
                   step: cursor.step,
                   last: Option.fromNullOr(cursor.call),
+                  passed: cursor.passed.map((each) => ({
+                    idx: each.idx,
+                    step: each.step,
+                    last: Option.fromNullOr(each.call),
+                  })),
                 },
                 stamps: Option.map(Option.fromNullOr(cursor.stamps), stampsOf),
                 waiting: Option.map(
@@ -234,6 +245,11 @@ export const textOf = (state: State): string =>
               {
                 step: cursor.from.step,
                 call: Option.getOrNull(cursor.from.last),
+                passed: cursor.from.passed.map((each) => ({
+                  idx: each.idx,
+                  step: each.step,
+                  call: Option.getOrNull(each.last),
+                })),
                 stamps: Option.getOrNull(
                   Option.map(cursor.stamps, stampsFileOf),
                 ),
