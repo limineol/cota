@@ -7158,8 +7158,8 @@ export const layer = (policy: Admission.Policy) =>
     name: "a request's id is random, not its source id's",
     law: "Z5",
     file: importDomain,
-    find: ".update(`cota-import:bifrost:${sourceId}`)",
-    replace: ".update(crypto.randomUUID())",
+    find: "stampedIdOf(`cota-import:bifrost:${sourceId}`, startedAt)",
+    replace: "stampedIdOf(crypto.randomUUID(), startedAt)",
     killedBy: z5,
   },
   {
