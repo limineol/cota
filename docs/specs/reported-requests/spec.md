@@ -12,13 +12,26 @@ code:
   - apps/hub/src/shared/03-domain/client.ts
   - apps/hub/src/config/config.ts
   - apps/hub/src/modules/admission/03-domain/admission.ts
+  - apps/hub/src/modules/request-log/03-domain/report.ts
+  - apps/hub/src/modules/request-log/03-domain/stamped-id.ts
+  - apps/hub/src/modules/request-log/03-domain/antigravity-steps.ts
+  - apps/hub/src/modules/request-log/03-domain/stored-items.ts
+  - apps/hub/src/modules/request-log/02-application/commands/report-requests.command.ts
+  - apps/hub/src/modules/request-log/02-application/interfaces/reported-through.ts
+  - apps/hub/src/modules/request-log/02-application/interfaces/requests.repository.ts
+  - apps/hub/src/modules/request-log/04-infrastructure/persistence/sqlite/sqlite-reported-through.ts
+  - apps/hub/src/modules/request-log/04-infrastructure/persistence/clickhouse/clickhouse-requests.repository.ts
+  - apps/hub/src/modules/request-log/04-infrastructure/transcripts/antigravity-steps.ts
+  - apps/hub/src/modules/request-log/01-presentation/reports.api.ts
+  - apps/hub/src/modules/request-log/01-presentation/reports.handlers.ts
+  - apps/hub/src/shared/01-presentation/json-body.middleware.ts
 ---
 
 # Reported requests
 
 The hub's side of reported requests: the endpoint a machine reports model calls to, who may call it, what a report holds and its limits, how it is checked, the id the hub makes, what the log already holds, how a report is stored and answered, reported through, the record form the items are kept in, the observed pools reported requests bill, and what never happens to a reported request. ADR-0029 gives the reasons. The machine's side, the request reporter and the Antigravity reader, is `docs/specs/request-reporter/spec.md`; the request log's tables are `docs/specs/request-log/spec.md`.
 
-**Status.** Active in part. Milestone 6b built the `origin` of a request (`request.entity.ts`: a request is forwarded or reported, and `RecordRequest` takes a forwarded one only; nothing makes a reported request yet but tests) with the record form `antigravity-steps` (`record-form.ts`), observed pools (Observed pools, below, all of it), the second half of L15, and the rule that a forwarded request never claims a reported client (`client.ts`, `docs/specs/relay/spec.md`, R7). The rest is designed and not built: 6c builds the endpoint and everything a report does, 6e the dashboard's reading of it. Until then the sections before Observed pools are the design, and the laws not yet held are apart, under Laws to come, each moving into Laws as it is built, and it changes with what 6d confirms of Antigravity's record (ADR-0029, Facts to confirm when built). It belongs to the request-log module, the only module that knows the request log's tables, as the import does; an observed pool's configuration and what each module does with one are the configuration's, admission's, routes', quota's and fallback's.
+**Status.** Active but for reading reported through. Milestone 6b built the `origin` of a request (`request.entity.ts`: a request is forwarded or reported, and `RecordRequest` takes a forwarded one only) with the record form `antigravity-steps` (`record-form.ts`), observed pools (Observed pools, below, all of it), the second half of L15, and the rule that a forwarded request never claims a reported client (`client.ts`, `docs/specs/relay/spec.md`, R7). Milestone 6c built the endpoint and everything a report does: its checks, the id, what the log already holds, storing, the answer and its problems, keeping reported through, and the request log's reading of the record form; every law below is held. `GET /api/reported-through` and the dashboard's reading of reported requests are 6e's. The table of fields changes with what 6d confirms of Antigravity's record (ADR-0029, Facts to confirm when built). It belongs to the request-log module, the only module that knows the request log's tables, as the import does; an observed pool's configuration and what each module does with one are the configuration's, admission's, routes', quota's and fallback's.
 
 ## The endpoint
 
@@ -31,7 +44,7 @@ content-type: application/json
 
 - **Who may call it**: any known hub key, of any scope (`subscription`, `keyed` or `reader`), or the owner: the title endpoint's rule (`docs/specs/sign-in/spec.md`). A reporter is **its caller**: the hub key's name, or the owner. Nothing in the body names a reporter or a machine.
 - **The machine** is the `x-cota-machine` header, well-formed, trimmed and cut to 200 characters, as a title's machine is kept. A report without one, or with one that is empty once trimmed, is refused (`report-refused`). It is a tag the caller states, as a forwarded request's and a title's machine are, and no hub key is bound to a machine: a hub key can report as any machine's name, so reported through says what the holders of the hub keys reported, and is no proof of which computer sent it.
-- **The group** is the request-log module's `reports` group, with `GET /api/reported-through` (Reported through), declared with `mayCall("any-hub-key")`.
+- **The group** is the request-log module's `reports` group (`01-presentation/reports.api.ts`), declared with `mayCall("any-hub-key")`; `GET /api/reported-through` (Reported through) joins it in 6e.
 - **The body** is JSON of at most **64 MiB**, the group's own limit; every other endpoint keeps its 1 MiB (`docs/specs/api/spec.md`, Limits). Over it is 413 `body-too-large`.
 
 ## A report
@@ -73,12 +86,12 @@ The whole report is checked before anything is stored. A body that does not deco
 - `finishedAt` is before `startedAt`, or the call lasted more than 4,294,967,295 milliseconds;
 - `startedAt` or `through` is more than 5 minutes after the hub's clock, or before 2020;
 - `reasoning` is more than `output`;
-- an item is not one of the client's record form (below), or is nested deeper than 512 levels;
+- an item is not one of the client's record form (below), or is nested deeper than 512 levels (a step's shape is never that deep, so the form's check is the depth's too);
 - an item's place in its conversation is not after the call before's output: for `antigravity-steps`, its `idx` is not greater than every `idx` of the call before's parts, or a call's items are not in increasing `idx`, or its `output` is not one step after all of its `input`;
 - a call's call before, where the report holds it, is of another session, or the `startedAt` its `after` gives is not that call's;
 - a call has no `output`.
 
-Then the call before of each call is found: earlier in the report, else held in the log under the id made for `after`'s call key and start (The id), in the call's own session: a request held under that id in another session is not its call before. A call whose `after` is neither is `report-out-of-order` (409), naming it: the log does not hold its call before. A machine whose cursor moved only on stored answers reaches this only when its state is ahead of the log: the state came from a machine of another hub, or the log was put back to an earlier time. Reporting the folder again from its first call is then right (`docs/specs/request-reporter/spec.md`, `cota requests report`): what is held is left out, and nothing is stored twice.
+Then the call before of each call is found: earlier in the report, else held in the log under the id made for `after`'s call key and start (The id), in the call's own session, started at that start, with both its `requests` row and its `request_items` row and an `output` whose item is a step (`RequestsRepository.partsOf`): a request held under that id in another session is not its call before, and neither is one stored only in part, which the report sent again completes before any call after it is stored. A call whose `after` is neither is `report-out-of-order` (409), naming it: the log does not hold its call before. A machine whose cursor moved only on stored answers reaches this only when its state is ahead of the log: the state came from a machine of another hub, or the log was put back to an earlier time. Reporting the folder again from its first call is then right (`docs/specs/request-reporter/spec.md`, `cota requests report`): what is held is left out, and nothing is stored twice.
 
 Text is made well-formed as every text the request log writes is (`docs/specs/request-log/spec.md`, Well-formed text): each lone surrogate in a string field becomes U+FFFD; an item's content keeps it as its escape.
 
@@ -98,7 +111,7 @@ A report is delivered at least once: a machine whose answer was lost sends the s
 
 **Why the insert's token is not enough** (ADR-0029): a table remembers its last 1,000 inserts, and the relay's writer inserts every batch, so a delivery repeated after hours is out of that window; a second delivery is a new report, which a run reading on from a cursor that did not move may make of more calls or fewer, so its token differs; and a report stored in part comes back with other contents. The repository's `store` is still given the writer's token, made from the requests' ids, which does no harm: a table whose insert was stored has its rows held, and is left out.
 
-**One report at a time.** The command takes a lock for the whole of a report, from asking what is held to storing it, so that two deliveries of the same calls never both find them not held. A report waits for the one before it.
+**One report at a time.** The command takes a lock for the whole of a report, from asking what is held to storing it and keeping its reported through, so that two deliveries of the same calls never both find them not held. A report waits for the one before it.
 
 ## Storing
 
@@ -107,9 +120,9 @@ A report is delivered at least once: a machine whose answer was lost sends the s
 1. **Build each call's request.** Its columns are the table below; its conversation's `input` part is its call before's `input` and `output` followed by its own `input` items, and its `output` part its `output` items; it has no `system` or `tools` part; its layout is `steps`, a list, in the `input` part, with no overlay and empty params. The call before's parts come from this report, or from the log (its `request_items` row, by the id made for `after`).
 2. **Price it**: its pool's price for its model (`Prices`), then `Cost.of`, as the writer prices a request (`docs/specs/request-log/spec.md`, Writing). A model the price list does not know, and an empty model, give no price: no cost, never zero (`docs/specs/cost/spec.md`, C1).
 3. **Leave out what is held** (above), and a request whose values the repository cannot hold (`holds`), which refuses the report (`report-refused`, naming it) rather than store the rest without it.
-4. **Store** the new items, the requests' items and the requests through `RequestsRepository.store`, in that order, synchronously (`async_insert = 0`), so that no request is seen before its items. Its failures are the repository's: `RequestsRepositoryFailed` is `request-log-unavailable` (503) and the machine sends the report again; `RequestsRepositoryDeclined` is `request-log-unavailable` too, naming the code, and is never split: a report that ClickHouse will not keep as it is fails until the reporter's next run, and the reporter says so.
+4. **Store** the new items, the requests' items and the requests through `RequestsRepository.store`, in that order, synchronously (`async_insert = 0`), so that no request is seen before its items. Its failures are the repository's: `RequestsRepositoryFailed` is `request-log-unavailable` (503, as ClickHouse not reached) and the machine sends the report again; `RequestsRepositoryDeclined` is `request-log-unavailable` too, naming ClickHouse's error code and never its message, and is never split: a report that ClickHouse will not keep as it is fails until the reporter's next run, and the reporter says so.
 5. **Keep reported through** when the report has a `through` (below).
-6. **Answer** `200 { "stored": <calls stored>, "held": <calls already held> }`.
+6. **Answer** `200 { "stored": <calls stored>, "held": <calls already held> }`, each call counted by its `requests` row: a call whose items were held and whose request was not is stored.
 
 It never goes through `RecordRequest`'s queue, and a stored answer means the rows are in ClickHouse.
 
@@ -246,28 +259,27 @@ No pool may name an observed pool as its `fallback` (`the fallback pool "<id>" i
 
 | Id | Law | Held by |
 | --- | --- | --- |
+| L7 | **Only as itself.** For any report and any body, the stored requests' `hub_key` is the caller's hub key's name (empty for the owner) and their `machine` the caller's `x-cota-machine`, whatever the body holds. | property, contract |
+| L8 | **One call, one id.** A reported request's id is a function of its client, call key and start alone: equal for equal inputs whoever reports them, a UUID version 7 stamped with the start, and different for two clients or two call keys whatever their texts. | property |
+| L9 | **Delivered again, stored once.** For any sequence of reports, each delivered one or more times, by one reporter or several, in part, with others, or after a delivery stored in part, the log holds each call once, with the rows it would hold had each call been delivered once. | property, clickhouse |
+| L10 | **Stored before answered.** A report answered 200 has every one of its calls held in the log at the moment of the answer. | property, clickhouse |
+| L11 | **Refused is nothing stored.** A report answered with any problem but `request-log-unavailable` and `hub-store-unavailable` changes nothing in the log or the hub store. | property, contract |
+| L12 | **The call before, and what is new.** For any conversation reported in any cut of reports, each call's `input` part is the digests of every item of the calls before it and its own `input`, in order, and its `output` its own; each item is stored once per session. | property, clickhouse |
+| L13 | **A reported request is marked, and holds nothing forwarded.** Every stored reported request has a record form as its `protocol`, and every column the forwarded origin holds is its empty value of the columns table. | property |
+| L14 | **A report decides nothing.** Storing any report changes no answer of admission, parks no login, diverts no request and changes no quota window the pools group answers. | property |
 | L15 | **Observed pools are reported to, never forwarded to.** A report naming a pool that is not observed stores nothing, and no request admitted by the relay names an observed pool. | property, contract |
+| L16 | **Reported through never goes back.** For any sequence of reports, a machine's, client's and pool's `through` is the greatest any of their reports gave. | property |
+| L17 | **Priced as any request.** A reported request's cost is `Cost.of` of its usage at its pool's price for its model, and none where that has no price. | property |
 
-Of L15, the second half is built and held: a property test runs admission's `decide` over generated policies whose pools are of every kind, observed among them, and requests presenting any hub key (`apps/hub/src/modules/admission/03-domain/admission.laws.test.ts`), and a contract test sends a request to the harness's observed pool on each protocol's paths with every hub key, in `x-cota-key`, as the bearer token and in `x-api-key` (`apps/hub/src/modules/relay/01-presentation/observed-pools.contract.test.ts`): each is refused 403 and nothing is forwarded or recorded. The relay is also given only the pools it forwards for (`Pool.forwarded`), so its types hold no observed pool. The first half, with the endpoint, is 6c's, and its tests then join these.
+Each law has a mutant in `tooling/mutants.table.ts`. The tests that hold them:
 
-## Laws to come
+- **L8** is a property test of `Report.idOf` over generated call keys and starts, with one fixed example that holds the id's text, since a stored id is for ever (`03-domain/report.laws.test.ts`).
+- **L7, L9 to L13, L16 and L17** are property tests of `ReportRequests` over generated conversations, interleaved and cut into reports (`05-tests/reports.ts`), stored in the in-memory repository, which fails, declines, loses its answer after storing, or stops between `request_items` and `requests` as a generated list of faults says (`02-application/commands/report-requests.laws.test.ts`). L9 delivers each report until it is stored, sends runs of the calls sent so far again, by a reporter that may be another, and compares the log with one delivery of each call; L10 checks, at each answer, that its calls are held; L11 sends, after the reports before it, a report with each of eighteen defects (every check above, a pool of another kind or none, no machine, a `through` ahead, and a request the repository cannot hold) and compares the log and reported through before and after; L12 compares each call's `request_items` row with the conversation's digests; L13 reads each stored request's columns; L16 keeps reported through in a SQLite hub store of its own; L17 compares each call's cost with what `RecordRequest` gives a forwarded request of its pool, model and usage, under generated price lists and pool prices.
+- **L14** stores generated reports beside generated forwarded traffic and compares the quota sources' answers for every pool, the observed one among them, and every quota header name, with and without them (`02-application/commands/reports-decide-nothing.laws.test.ts`): admission decides from the policy alone, and the fallback and the pools group's windows read the request log only through the quota sources.
+- **L7, L11 and L15's first half** are also contract tests through the whole hub of the harness (`01-presentation/reports.contract.test.ts`): bodies naming other machines and keys, refused reports of every kind with their log and hub store compared before and after, and a report to each pool of another kind from every hub key.
+- **L9, L10 and L12** are also ClickHouse tests (`04-infrastructure/persistence/clickhouse/clickhouse-reported-requests.clickhouse.test.ts`): sampled reports sent to a scratch database, with a delivery interrupted between `request_items` and `requests` and one whose answer of `request_items` is lost, compared table by table with one delivery of each call into another.
 
-What 6c and later slices hold; not yet built, so not yet checked. Each moves into the table above, as `| <id> | <law> | <tiers> |`, when it is.
-
-| From | Id | Law | Held by |
-| --- | --- | --- | --- |
-| 6c | L7 | **Only as itself.** For any report and any body, the stored requests' `hub_key` is the caller's hub key's name (empty for the owner) and their `machine` the caller's `x-cota-machine`, whatever the body holds. | property, contract |
-| 6c | L8 | **One call, one id.** A reported request's id is a function of its client, call key and start alone: equal for equal inputs whoever reports them, a UUID version 7 stamped with the start, and different for two clients or two call keys whatever their texts. | property |
-| 6c | L9 | **Delivered again, stored once.** For any sequence of reports, each delivered one or more times, by one reporter or several, in part, with others, or after a delivery stored in part, the log holds each call once, with the rows it would hold had each call been delivered once. | property, clickhouse |
-| 6c | L10 | **Stored before answered.** A report answered 200 has every one of its calls held in the log at the moment of the answer. | property, clickhouse |
-| 6c | L11 | **Refused is nothing stored.** A report answered with any problem but `request-log-unavailable` and `hub-store-unavailable` changes nothing in the log or the hub store. | property, contract |
-| 6c | L12 | **The call before, and what is new.** For any conversation reported in any cut of reports, each call's `input` part is the digests of every item of the calls before it and its own `input`, in order, and its `output` its own; each item is stored once per session. | property, clickhouse |
-| 6c | L13 | **A reported request is marked, and holds nothing forwarded.** Every stored reported request has a record form as its `protocol`, and every column the forwarded origin holds is its empty value of the columns table. | property |
-| 6c | L14 | **A report decides nothing.** Storing any report changes no answer of admission, parks no login, diverts no request and changes no quota window the pools group answers. | property |
-| 6c | L16 | **Reported through never goes back.** For any sequence of reports, a machine's, client's and pool's `through` is the greatest any of their reports gave. | property |
-| 6c | L17 | **Priced as any request.** A reported request's cost is `Cost.of` of its usage at its pool's price for its model, and none where that has no price. | property |
-
-L8, L12, L13 and L16 are property tests of the rules in `03-domain` over generated reporters, call keys, starts, conversations and cuts into reports. L9 and L10 run `ReportRequests` over the in-memory repository, which fails or declines a generated part of its stores and loses a generated part of its answers after storing, over generated sequences of deliveries of generated reports, and compare the log after each with one delivery of each call; their ClickHouse half writes such sequences to a scratch database, a delivery interrupted between `items` and `requests` among them. L7, L11 and L15's first half are also contract tests through the whole hub of the harness, with bodies naming other machines, keys and pools. L14 runs generated reports beside generated forwarded traffic and compares admission's, the fallback's and the quota sources' answers with and without them. L17 compares with the writer's pricing over generated usages and pool prices. Each law gets a mutant.
+Of L15, the second half was built in 6b: a property test runs admission's `decide` over generated policies whose pools are of every kind, observed among them, and requests presenting any hub key (`apps/hub/src/modules/admission/03-domain/admission.laws.test.ts`), and a contract test sends a request to the harness's observed pool on each protocol's paths with every hub key, in `x-cota-key`, as the bearer token and in `x-api-key` (`apps/hub/src/modules/relay/01-presentation/observed-pools.contract.test.ts`): each is refused 403 and nothing is forwarded or recorded. The relay is also given only the pools it forwards for (`Pool.forwarded`), so its types hold no observed pool.
 
 ## Not built, on purpose
 
