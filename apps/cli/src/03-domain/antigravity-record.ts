@@ -147,6 +147,8 @@ export const record = {
   /** The `step_type` of a user's message, whose `step_payload` 19.12.12 is the workspace it was sent in. */
   userMessage: 14,
   workspace: [19, 12, 12],
+  /** The `step_type` of the model's output, a model call's step whether its usage is written yet or not. */
+  modelOutput: 15,
   /** In a step's `metadata`: when it was made, finished generating and completed, each `{ 1: seconds, 2: nanoseconds }`; its usage. */
   madeAt: 1,
   generatedAt: 7,
@@ -405,6 +407,12 @@ const isUnfinished = (row: RecordStep) =>
   typeof row.status === "number" &&
   record.unfinished.some((status) => status === row.status);
 
+const carriesUsage = (row: RecordStep) =>
+  Option.exists(
+    Option.flatMap(Option.fromNullOr(row.metadata), fieldsOf),
+    (metadata) => Option.isSome(lastOf(metadata, record.usage)),
+  );
+
 const workspaceOfRow = (row: RecordStep) =>
   Option.flatMap(Option.fromNullOr(row.payload), (payload) =>
     Option.flatMap(fieldsOf(payload), workspaceOf),
@@ -504,6 +512,15 @@ export const readingOf = (
     ) {
       return Option.none();
     }
+    // A generation row is another call's when a model's step lies between
+    // it and this one, finished or not, read as a call or not.
+    const anotherCall = (lastStep: number) =>
+      read.steps.some(
+        (other) =>
+          other.idx > lastStep &&
+          other.idx < row.idx &&
+          (other.stepType === record.modelOutput || carriesUsage(other)),
+      );
     let generation: Option.Option<Generation> = Option.none();
     let generationStep = before.step - 1;
     for (const each of generations) {
@@ -512,7 +529,8 @@ export const readingOf = (
       if (
         lastStep < row.idx &&
         lastStep >= before.step &&
-        lastStep > generationStep
+        lastStep > generationStep &&
+        !anotherCall(lastStep)
       ) {
         generation = Option.some(each);
         generationStep = lastStep;

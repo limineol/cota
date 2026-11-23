@@ -7692,6 +7692,14 @@ export const layer = (policy: Admission.Policy) =>
     killedBy: j19,
   },
   {
+    name: "a compaction's model is read from the generation of a model's step not read as a call",
+    law: "J19",
+    file: cliRecord,
+    find: "        lastStep > generationStep &&\n        !anotherCall(lastStep)\n",
+    replace: "        lastStep > generationStep\n",
+    killedBy: j19,
+  },
+  {
     name: "a step read past while not finished is never looked at again",
     law: "J19",
     file: cliRecord,

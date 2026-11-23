@@ -80,43 +80,61 @@ describe("the Antigravity reader's laws", () => {
       cuts: Arbitrary.schema(
         Schema.Array(
           Schema.Struct({
-            at: Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 20 })),
+            at: Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 25 })),
             settled: Schema.Boolean,
           }),
         ).check(Schema.isMaxLength(8)),
       ),
-      finishing: Arbitrary.schema(
+      finishingAt: Arbitrary.schema(
         Schema.Array(
-          Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 6 })),
-        ).check(Schema.isMaxLength(20)),
+          Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 8 })),
+        ).check(Schema.isMaxLength(25)),
       ),
       bare: Arbitrary.schema(
-        Schema.Array(Schema.Boolean).check(Schema.isMaxLength(20)),
+        Schema.Array(Schema.Boolean).check(Schema.isMaxLength(25)),
       ),
     },
-    ({ tail, cuts, finishing, bare }) =>
+    ({ tail, cuts, finishingAt, bare }) =>
       Effect.sync(() => {
-        const plans = [...every, ...tail];
+        // After every kind of step, a model's step and a compaction of
+        // another model, a tool's step between them, and a call after them.
+        const plans = [
+          ...every,
+          plan("model"),
+          plan("tool"),
+          plan("compaction", { model: 1 }),
+          plan("user"),
+          plan("model"),
+          ...tail,
+        ];
         // Runs cut after the first user's message, before its call, on the
-        // tool's step while it and the call are not finished, and past the
-        // second call and the compaction while they are not finished and
-        // have no usage yet, so that both are late and the compaction's call
-        // before is the second call; then the generated ones.
+        // tool's step while it and the call are not finished; past the second
+        // call and the compaction while they are not finished and have no
+        // usage yet, so that both are late and the compaction's call before
+        // is the second call; and past the last model's step and compaction
+        // the same way, the compaction finishing a run before the model's
+        // step, so that its model is not read from the generation of a step
+        // not yet a call; then the generated ones.
         const runs = [
           { at: 1, settled: false },
           { at: 3, settled: false },
           { at: 8, settled: true },
+          { at: 13, settled: true },
+          { at: 13, settled: false },
           ...[...cuts].sort((one, other) => one.at - other.at),
         ];
-        const finishesAt = plans.map((_, idx) =>
-          idx === 3 ? 3 : idx === 5 ? 4 : idx <= 7 ? 2 : (finishing[idx] ?? 0),
+        const finishing = new Map([
+          [3, 3],
+          [5, 4],
+          [8, 5],
+          [10, 4],
+        ]);
+        const finishesAt = plans.map(
+          (_, idx) =>
+            finishing.get(idx) ?? (idx <= 12 ? 2 : (finishingAt[idx] ?? 0)),
         );
         const bareAt = plans.map((_, idx) =>
-          idx === 3 || idx === 5
-            ? true
-            : idx <= 7
-              ? false
-              : (bare[idx] ?? false),
+          finishing.has(idx) ? true : idx <= 12 ? false : (bare[idx] ?? false),
         );
         let from = fromStart;
         const got: Array<{ readonly call: ModelCall; readonly run: number }> =
