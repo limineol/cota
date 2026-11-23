@@ -29,6 +29,7 @@ export const storeSteps: ReadonlyArray<HubStore.Step> = [
   ...DisplayNames.steps,
   ...Quota.steps,
   ...Routes.steps,
+  ...RequestLog.steps,
 ];
 
 /**
@@ -48,6 +49,7 @@ const api = (config: HubConfig.HubConfig, quota: Quota.Endpoints | undefined) =>
     Layer.provide([
       SignIn.callers,
       JsonBody.layer,
+      JsonBody.reportLayer,
       HttpApiMiddleware.layerProblemDetails({ includeDetails: true }),
     ]),
     Layer.provide(
@@ -60,6 +62,7 @@ const api = (config: HubConfig.HubConfig, quota: Quota.Endpoints | undefined) =>
       DisplayNames.layer({ models: RequestLog.modelNames }),
       Quota.layer({ pools: config.pools, endpoints: quota }),
       Routes.layer(config.pools),
+      RequestLog.reports(config.pools),
     ]),
   );
 

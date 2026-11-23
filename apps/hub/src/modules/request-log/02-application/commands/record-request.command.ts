@@ -64,6 +64,8 @@ interface SetAside {
 
 interface Made {
   readonly batch: Batch;
+  /** The requests of the batch, as they were taken. */
+  readonly kept: ReadonlyArray<Request.ForwardedRequest>;
   readonly token: string;
   readonly known: ReadonlyMap<string, ReadonlySet<Conversation.Digest>>;
   readonly trusted: ReadonlyArray<string>;
@@ -215,6 +217,7 @@ export const layer = (
         const items: Array<StoredItems.StoredItem> = [];
         const requestItems: Array<StoredItems.RequestItems> = [];
         const requests: Array<PricedRequest> = [];
+        const kept: Array<Request.ForwardedRequest> = [];
         for (const request of finished) {
           const session = known.get(request.session) ?? new Set();
           const made = yield* Effect.exit(valuesOf(request, session));
@@ -237,9 +240,11 @@ export const layer = (
           items.push(...made.value.items);
           requestItems.push(...made.value.requestItems);
           requests.push(made.value.priced);
+          kept.push(request);
         }
         return {
           batch: { items, requestItems, requests },
+          kept,
           token: tokenOf(requests.map(({ request }) => request.id)),
           known,
           trusted,
@@ -282,7 +287,7 @@ export const layer = (
         requests: ReadonlyArray<Request.ForwardedRequest>,
       ) {
         const made = yield* batchOf(requests);
-        const kept = made.batch.requests.map(({ request }) => request);
+        const kept = made.kept;
         if (kept.length === 0) return false;
         const result = yield* Effect.result(store(made));
         if (result._tag === "Success") {

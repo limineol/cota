@@ -91,6 +91,7 @@ describe("main", () => {
           ["owner_password"],
           ["passkeys"],
           ["quota_logins"],
+          ["reported_through"],
           ["route_lists"],
           ["routes"],
           ["sign_ins"],

@@ -5,12 +5,13 @@ import { PoolId } from "#shared/03-domain/ids.ts";
 import * as ItemText from "#shared/03-domain/item-text.ts";
 import type * as Price from "#shared/03-domain/price.ts";
 import type { ProtocolName } from "#shared/03-domain/protocol-name.ts";
-import * as Request from "#shared/03-domain/request.entity.ts";
+import type * as Request from "#shared/03-domain/request.entity.ts";
 import { compareText, cut } from "#shared/03-domain/text.ts";
 import type * as Usage from "#shared/03-domain/usage.ts";
 import * as Archive from "./archive.ts";
 import * as Cost from "./cost.ts";
 import type * as Session from "./session.ts";
+import { stampedIdOf } from "./stamped-id.ts";
 import type * as StoredItems from "./stored-items.ts";
 import type { SourceForm } from "./stored-protocol.ts";
 import * as Title from "./title.ts";
@@ -152,11 +153,6 @@ const jsonOf = (text: string): Option.Option<Schema.Json> => {
     : Option.none();
 };
 
-const hex = (bytes: Uint8Array) =>
-  [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-
-const mostMillis = 2n ** 48n - 1n;
-
 /**
  * A source request's id in the request log: a UUID version 7 whose time is
  * its start and whose other 74 bits are the first 74 of the SHA-256 of
@@ -165,24 +161,8 @@ const mostMillis = 2n ** 48n - 1n;
 export const requestIdOf = (
   sourceId: string,
   startedAt: DateTime.Utc,
-): Request.RequestId => {
-  const millis = BigInt(Math.max(0, DateTime.toEpochMillis(startedAt)));
-  const digest = new Bun.CryptoHasher("sha256")
-    .update(`cota-import:bifrost:${sourceId}`)
-    .digest();
-  const first80 = BigInt(`0x${hex(digest.subarray(0, 10))}`);
-  const random = first80 >> 6n;
-  const value =
-    (Order.min(Order.BigInt)(millis, mostMillis) << 80n) |
-    (7n << 76n) |
-    ((random >> 62n) << 64n) |
-    (2n << 62n) |
-    (random & (2n ** 62n - 1n));
-  const text = value.toString(16).padStart(32, "0");
-  return Request.RequestId.make(
-    `${text.slice(0, 8)}-${text.slice(8, 12)}-${text.slice(12, 16)}-${text.slice(16, 20)}-${text.slice(20)}`,
-  );
-};
+): Request.RequestId =>
+  stampedIdOf(`cota-import:bifrost:${sourceId}`, startedAt);
 
 /** The source's session key of a request: its session id, or `request:<its source id>`. */
 export const sessionKeyOf = (row: SourceRequest): string =>

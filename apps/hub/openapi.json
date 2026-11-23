@@ -5798,6 +5798,183 @@
           }
         }
       }
+    },
+    "/api/reported-requests": {
+      "post": {
+        "tags": ["reports"],
+        "operationId": "reports.reportRequests",
+        "parameters": [
+          {
+            "name": "x-cota-machine",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "security": [
+          {
+            "signIn": []
+          },
+          {
+            "hubKey": ["subscription", "keyed", "reader"]
+          },
+          {
+            "bearer": ["subscription", "keyed", "reader"]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "stored": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "held": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": ["stored", "held"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The report was not stored. | That pool is not an observed pool. | Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ReportRefusedProblemEncoded"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PoolNotObservedProblemEncoded"
+                    },
+                    {
+                      "$ref": "#/components/schemas/BadRequestProblemEncoded"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign in, or send a hub key the hub knows.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignInRequiredEncoded"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller may not call this endpoint. | A browser request from another site may not change anything.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/NotAllowedEncoded"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CrossSiteEncoded"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The hub has no such pool.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoSuchPoolProblemEncoded"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A call's call before was never stored.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOutOfOrderProblemEncoded"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The request body is over the API's limit.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BodyTooLargeEncoded"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "The API reads only JSON bodies.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnsupportedMediaTypeEncoded"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorProblemEncoded"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The request log is unavailable. | The hub store failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RequestLogProblemEncoded"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HubStoreProblemEncoded"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Report"
+              }
+            }
+          },
+          "required": true
+        }
+      }
     }
   },
   "components": {
@@ -5979,6 +6156,81 @@
         "required": ["type"],
         "additionalProperties": false
       },
+      "RequestLogProblemEncoded": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["urn:cota:request-log-unavailable"]
+          },
+          "status": {
+            "type": "number",
+            "enum": [503]
+          },
+          "title": {
+            "type": "string",
+            "enum": ["The request log is unavailable."]
+          }
+        },
+        "required": ["type"],
+        "additionalProperties": false
+      },
+      "NoSuchPoolProblemEncoded": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["urn:cota:no-such-pool"]
+          },
+          "status": {
+            "type": "number",
+            "enum": [404]
+          },
+          "title": {
+            "type": "string",
+            "enum": ["The hub has no such pool."]
+          }
+        },
+        "required": ["type"],
+        "additionalProperties": false
+      },
+      "ReportOutOfOrderProblemEncoded": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["urn:cota:report-out-of-order"]
+          },
+          "status": {
+            "type": "number",
+            "enum": [409]
+          },
+          "title": {
+            "type": "string",
+            "enum": ["A call's call before was never stored."]
+          }
+        },
+        "required": ["type"],
+        "additionalProperties": false
+      },
       "BadRequestProblemEncoded": {
         "type": "object",
         "properties": {
@@ -6034,6 +6286,243 @@
         "required": ["type"],
         "additionalProperties": false
       },
+      "PoolNotObservedProblemEncoded": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["urn:cota:pool-not-observed"]
+          },
+          "status": {
+            "type": "number",
+            "enum": [400]
+          },
+          "title": {
+            "type": "string",
+            "enum": ["That pool is not an observed pool."]
+          }
+        },
+        "required": ["type"],
+        "additionalProperties": false
+      },
+      "ReportRefusedProblemEncoded": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["urn:cota:report-refused"]
+          },
+          "status": {
+            "type": "number",
+            "enum": [400]
+          },
+          "title": {
+            "type": "string",
+            "enum": ["The report was not stored."]
+          }
+        },
+        "required": ["type"],
+        "additionalProperties": false
+      },
+      "Report": {
+        "type": "object",
+        "properties": {
+          "client": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": ["antigravity"]
+              }
+            ]
+          },
+          "pool": {
+            "type": "string",
+            "minLength": 1
+          },
+          "through": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "calls": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportedCall"
+            },
+            "maxItems": 500
+          }
+        },
+        "required": ["client", "pool", "through", "calls"],
+        "additionalProperties": false
+      },
+      "ReportedCall": {
+        "type": "object",
+        "properties": {
+          "call": {
+            "type": "string"
+          },
+          "after": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "call": {
+                    "type": "string"
+                  },
+                  "startedAt": {
+                    "type": "string"
+                  }
+                },
+                "required": ["call", "startedAt"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "session": {
+            "type": "string"
+          },
+          "project": {
+            "type": "string"
+          },
+          "clientVersion": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "startedAt": {
+            "type": "string"
+          },
+          "finishedAt": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": ["ok", "error", "cancelled"]
+          },
+          "errorType": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          },
+          "stopReason": {
+            "type": "string"
+          },
+          "providerRequestId": {
+            "type": "string"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportedUsage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "input": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "output": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "call",
+          "after",
+          "session",
+          "project",
+          "clientVersion",
+          "model",
+          "startedAt",
+          "finishedAt",
+          "outcome",
+          "errorType",
+          "errorMessage",
+          "stopReason",
+          "providerRequestId",
+          "usage",
+          "input",
+          "output"
+        ],
+        "additionalProperties": false
+      },
+      "ReportedUsage": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4294967295
+          },
+          "cacheRead": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4294967295
+          },
+          "cacheWriteShort": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4294967295
+          },
+          "cacheWriteLong": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4294967295
+          },
+          "output": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4294967295
+          },
+          "reasoning": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4294967295
+          },
+          "reported": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "input",
+          "cacheRead",
+          "cacheWriteShort",
+          "cacheWriteLong",
+          "output",
+          "reasoning",
+          "reported"
+        ],
+        "additionalProperties": false
+      },
       "PoolNotForClientProblemEncoded": {
         "type": "object",
         "properties": {
@@ -6079,31 +6568,6 @@
           "title": {
             "type": "string",
             "enum": ["The route names a pool this client cannot bill."]
-          }
-        },
-        "required": ["type"],
-        "additionalProperties": false
-      },
-      "NoSuchPoolProblemEncoded": {
-        "type": "object",
-        "properties": {
-          "detail": {
-            "type": "string"
-          },
-          "instance": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "enum": ["urn:cota:no-such-pool"]
-          },
-          "status": {
-            "type": "number",
-            "enum": [404]
-          },
-          "title": {
-            "type": "string",
-            "enum": ["The hub has no such pool."]
           }
         },
         "required": ["type"],
@@ -6850,31 +7314,6 @@
             "additionalProperties": false
           }
         ]
-      },
-      "RequestLogProblemEncoded": {
-        "type": "object",
-        "properties": {
-          "detail": {
-            "type": "string"
-          },
-          "instance": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "enum": ["urn:cota:request-log-unavailable"]
-          },
-          "status": {
-            "type": "number",
-            "enum": [503]
-          },
-          "title": {
-            "type": "string",
-            "enum": ["The request log is unavailable."]
-          }
-        },
-        "required": ["type"],
-        "additionalProperties": false
       },
       "Pool": {
         "type": "object",
@@ -10348,6 +10787,9 @@
     },
     {
       "name": "routes"
+    },
+    {
+      "name": "reports"
     }
   ]
 }

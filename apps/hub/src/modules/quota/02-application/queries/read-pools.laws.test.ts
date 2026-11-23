@@ -23,7 +23,7 @@ import {
   layer as readPools,
 } from "./read-pools.query.ts";
 
-let held: ReadonlyArray<PricedRequest> = [];
+let held: ReadonlyArray<PricedRequest<Request.ForwardedRequest>> = [];
 
 const overHeld = readPools(
   HashMap.fromIterable(QuotaLog.pools.map((pool) => [pool.id, pool])),
@@ -62,7 +62,10 @@ const readAt = Arbitrary.all({
   ),
 );
 
-const answered = (log: ReadonlyArray<PricedRequest>, at: DateTime.Utc) =>
+const answered = (
+  log: ReadonlyArray<PricedRequest<Request.ForwardedRequest>>,
+  at: DateTime.Utc,
+) =>
   Effect.gen(function* () {
     held = log;
     yield* TestClock.setTime(DateTime.toEpochMillis(at));
@@ -170,7 +173,7 @@ const latestOf = (requests: ReadonlyArray<Request.ForwardedRequest>) =>
 
 /** For each pool, the current header windows the spec says win, worked out from the log alone. */
 const expectedOf = (
-  log: ReadonlyArray<PricedRequest>,
+  log: ReadonlyArray<PricedRequest<Request.ForwardedRequest>>,
   pool: Pool.Pool,
   at: number,
 ): ReadonlyArray<Expected> => {
@@ -211,7 +214,7 @@ const asExpected = (window: Quota.Window): Expected => ({
 
 /** The windows the quota headers of the pool's requests that started when a window was observed give, by the spec's table. */
 const givenBy = (
-  log: ReadonlyArray<PricedRequest>,
+  log: ReadonlyArray<PricedRequest<Request.ForwardedRequest>>,
   pool: Pool.Pool,
   window: Quota.Window,
 ): ReadonlyArray<Expected> =>

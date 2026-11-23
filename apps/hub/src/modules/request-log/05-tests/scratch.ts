@@ -19,6 +19,7 @@ import type * as StoredItems from "#modules/request-log/03-domain/stored-items.t
 import * as ClickHouseRequests from "#modules/request-log/04-infrastructure/persistence/clickhouse/clickhouse-requests.repository.ts";
 import * as ClickHouse from "#modules/request-log/04-infrastructure/persistence/clickhouse/client.ts";
 import * as PriceLists from "#modules/request-log/04-infrastructure/prices/prices.ts";
+import type * as Request from "#shared/03-domain/request.entity.ts";
 
 /**
  * The ClickHouse the request log's tests run against: `compose.dev.yaml`'s, unless
@@ -148,7 +149,7 @@ export const pricedBy = (listOf: (asked: Asked) => string) =>
  * them, their items' digests and the sessions' items.
  */
 export const written = (
-  log: ReadonlyArray<PricedRequest>,
+  log: ReadonlyArray<PricedRequest<Request.ForwardedRequest>>,
   prices: Layer.Layer<Prices> = pricedBy(() => "anthropic"),
 ) =>
   Effect.gen(function* () {

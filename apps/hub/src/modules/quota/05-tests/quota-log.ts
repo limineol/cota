@@ -271,7 +271,7 @@ export const quotaLog = (maxLength: number) =>
     maxLength,
   }).pipe(
     Arbitrary.map((seeds) =>
-      seeds.map((generated, index): PricedRequest => {
+      seeds.map((generated, index): PricedRequest<Request.ForwardedRequest> => {
         const pool = pools[generated.pool] ?? pools[0];
         const protocol = pool?.protocol ?? "anthropic-messages";
         const at = hex(DateTime.toEpochMillis(generated.at), 12);

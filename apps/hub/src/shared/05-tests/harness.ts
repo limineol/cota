@@ -372,7 +372,7 @@ const hubOver = <Sql>(sql: Layer.Layer<Sql>, options: Options) =>
         quota: quotaEndpointsOf(fake.url),
       }).pipe(
         Layer.provide(options.recorder ?? RecordExchange.off),
-        Layer.provide(
+        Layer.provideMerge(
           options.store === undefined
             ? scratchStore
             : HubStore.layer({

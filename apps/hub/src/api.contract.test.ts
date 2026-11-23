@@ -26,6 +26,7 @@ const access: Readonly<Record<string, Access>> = {
   "PUT /api/session-titles": "any-hub-key",
   "GET /api/machine": "any-hub-key",
   "GET /api/route": "any-hub-key",
+  "POST /api/reported-requests": "any-hub-key",
   "GET /api/me": "reader",
   "GET /api/overview": "reader",
   "GET /api/series": "reader",

@@ -1,4 +1,4 @@
-import { Context, Deferred, Effect, Layer, Option } from "effect";
+import { Context, DateTime, Deferred, Effect, Layer, Option } from "effect";
 import {
   type PricedRequest,
   RequestsRepository,
@@ -23,6 +23,7 @@ export interface InMemory {
   readonly attempts: Array<Attempt>;
   readonly asked: Array<ReadonlyArray<string>>;
   readonly faults: Array<Fault>;
+  /** Whether asking what the log holds fails. */
   questionFails: boolean;
   /** Whether reading the request log fails, as when ClickHouse cannot be reached. */
   readingFails: boolean;
@@ -92,6 +93,7 @@ export const make = (ready = true) =>
             memory.attempts.push({ token, stored: false });
             return yield* new RequestsRepositoryDeclined({
               detail: "the batch was declined",
+              code: "117",
             });
           }
           const stored = fault !== "unreached" && !tokens.has(token);
@@ -111,6 +113,62 @@ export const make = (ready = true) =>
           return memory.items
             .filter((item) => sessions.includes(item.session))
             .map(({ session, digest }) => ({ session, digest }));
+        }),
+      held: (asked) =>
+        Effect.gen(function* () {
+          if (memory.questionFails) return yield* failed("no answer");
+          const within = (at: DateTime.Utc) =>
+            !DateTime.isLessThan(at, asked.from) &&
+            !DateTime.isGreaterThan(at, asked.to);
+          return {
+            requests: new Set(
+              asked.requests
+                .filter(({ id }) =>
+                  memory.requests.some(
+                    ({ request }) =>
+                      request.id === id && within(request.startedAt),
+                  ),
+                )
+                .map(({ id }) => id),
+            ),
+            requestItems: new Set(
+              asked.requests
+                .filter(({ id, session }) =>
+                  memory.requestItems.some(
+                    (each) => each.requestId === id && each.session === session,
+                  ),
+                )
+                .map(({ id }) => id),
+            ),
+          };
+        }),
+      partsOf: (id, session, startedAt) =>
+        Effect.gen(function* () {
+          if (memory.questionFails) return yield* failed("no answer");
+          const at = DateTime.toEpochMillis(startedAt);
+          const request = memory.requests.find(
+            ({ request }) =>
+              request.id === id &&
+              request.session === session &&
+              DateTime.toEpochMillis(request.startedAt) === at,
+          );
+          const requestItems = memory.requestItems.find(
+            (each) =>
+              each.requestId === id &&
+              each.session === session &&
+              DateTime.toEpochMillis(each.startedAt) === at,
+          );
+          if (request === undefined || requestItems === undefined) {
+            return Option.none();
+          }
+          const contents = contentsOf(session, requestItems.output);
+          const output = requestItems.output.flatMap((digest) => {
+            const content = contents.get(digest);
+            return content === undefined ? [] : [content];
+          });
+          return output.length === requestItems.output.length
+            ? Option.some({ requestItems, output })
+            : Option.none();
         }),
       conversationOf: (id) =>
         Effect.suspend(() =>

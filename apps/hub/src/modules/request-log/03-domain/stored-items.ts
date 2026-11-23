@@ -18,9 +18,10 @@ export interface RequestItems {
 }
 
 /**
- * A request as the request log keeps it, its columns, read back or imported:
- * its items are in the protocol or the source form it names, and an imported
- * one was admitted by no hub key.
+ * A request as the request log keeps it, its columns, read back, imported or
+ * reported: its items are in the protocol, the source form or the record form
+ * it names, an imported one was admitted by no hub key, and a reported one's
+ * `hubKey` is the key that reported it.
  */
 export type StoredRequest = Omit<Request.Request, "conversation" | "origin"> &
   Omit<Request.Forwarded, "_tag" | "protocol" | "hubKey"> & {
@@ -28,12 +29,58 @@ export type StoredRequest = Omit<Request.Request, "conversation" | "origin"> &
     readonly hubKey: HubKeyName | "";
   };
 
-/** A forwarded request's columns: its origin's fields beside the rest, without its conversation. */
+/** What a request that was not forwarded holds in the columns only a hub in the path can fill: each one's empty value (ADR-0029). */
+export const nothingForwarded: Omit<
+  Request.Forwarded,
+  "_tag" | "protocol" | "hubKey"
+> = {
+  firstByteMs: Option.none(),
+  sessionSource: "",
+  userAgent: "",
+  divertedFrom: Option.none(),
+  follows: Option.none(),
+  loginFingerprint: Option.none(),
+  refusalReset: Option.none(),
+  purpose: "",
+  servedModel: "",
+  stream: false,
+  upstreamStatus: 0,
+  serviceTier: "",
+  rateLimits: {},
+  clientHeaders: {},
+  errorBody: "",
+  requestBytes: 0,
+  responseBytes: 0,
+  readingComplete: true,
+};
+
+/**
+ * A request's columns, without its conversation: a forwarded one's origin
+ * beside the rest; a reported one's record form as its protocol, the key that
+ * reported it as its hub key, and nothing forwarded.
+ */
 export const storedOf = ({
   conversation: _,
-  origin: { _tag, ...forwarded },
+  origin,
   ...request
-}: Request.ForwardedRequest): StoredRequest => ({ ...request, ...forwarded });
+}: Request.Request): StoredRequest => {
+  if (origin._tag === "forwarded") {
+    const { _tag, ...forwarded } = origin;
+    return { ...request, ...forwarded };
+  }
+  return {
+    ...request,
+    ...nothingForwarded,
+    protocol: origin.form,
+    hubKey: Option.getOrElse(origin.reportedBy, () => "" as const),
+  };
+};
+
+/** How a request's items are read: the protocol a forwarded one was sent in, or a reported one's record form. */
+export const protocolOf = (request: Request.Request): StoredProtocol =>
+  request.origin._tag === "forwarded"
+    ? request.origin.protocol
+    : request.origin.form;
 
 export interface StoredItem extends Conversation.Item {
   readonly session: string;
@@ -134,7 +181,7 @@ const parts = ["system", "tools", "input", "output"] as const;
  */
 export const newItems = (
   known: ReadonlySet<Conversation.Digest>,
-  request: Request.ForwardedRequest,
+  request: Request.Request,
 ): ReadonlyArray<StoredItem> => {
   if (Option.isNone(request.conversation)) return [];
   const conversation = request.conversation.value;
@@ -147,7 +194,7 @@ export const newItems = (
       stored.push({
         ...item,
         session: request.session,
-        protocol: request.origin.protocol,
+        protocol: protocolOf(request),
         firstSeen: request.startedAt,
         requestId: request.id,
         part,

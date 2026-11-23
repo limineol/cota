@@ -119,7 +119,7 @@ export const requestLog = (maxLength: number) =>
     maxLength,
   }).pipe(
     Arbitrary.map((seeds) =>
-      seeds.map((generated, index): PricedRequest => {
+      seeds.map((generated, index): PricedRequest<Request.ForwardedRequest> => {
         const at = hex(generated.at, 12);
         const reported = generated.usage.reported;
         return {

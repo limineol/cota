@@ -27,6 +27,7 @@ import * as Generated from "#modules/request-log/05-tests/traffic.ts";
 import * as RequestLog from "#modules/request-log/module.ts";
 import type * as Conversation from "#shared/03-domain/conversation.ts";
 import { PoolId } from "#shared/03-domain/ids.ts";
+import type * as Request from "#shared/03-domain/request.entity.ts";
 import { compareText } from "#shared/03-domain/text.ts";
 import * as Harness from "#shared/05-tests/harness.ts";
 import * as ClickHouseRequestLogReader from "./clickhouse-request-log-reader.ts";
@@ -164,7 +165,7 @@ const someParts: ReadonlyArray<ReadonlyArray<Conversation.Part>> = [
  */
 const sessionsOf = (
   reader: RequestLogReader["Service"],
-  log: ReadonlyArray<PricedRequest>,
+  log: ReadonlyArray<PricedRequest<Request.ForwardedRequest>>,
 ) =>
   Effect.gen(function* () {
     const sessions = [
@@ -298,7 +299,9 @@ const runningAfter = (marker: string, within: number) =>
  * about a session's items failing, so that it writes again every item its
  * requests carry: later copies, in later requests, of items already stored.
  */
-const writtenTwice = (log: ReadonlyArray<PricedRequest>) =>
+const writtenTwice = (
+  log: ReadonlyArray<PricedRequest<Request.ForwardedRequest>>,
+) =>
   Effect.gen(function* () {
     const { faults } = yield* Scratch.Scratch;
     const half = Math.floor(log.length / 2);

@@ -57,3 +57,30 @@ export class StaleCursorProblem extends HttpApiError.Problem<StaleCursorProblem>
     title: "The cursor does not continue this search.",
   },
 ) {}
+
+export class ReportRefusedProblem extends HttpApiError.Problem<ReportRefusedProblem>()(
+  "ReportRefusedProblem",
+  {
+    type: "urn:cota:report-refused",
+    status: 400,
+    title: "The report was not stored.",
+  },
+) {}
+
+export class PoolNotObservedProblem extends HttpApiError.Problem<PoolNotObservedProblem>()(
+  "PoolNotObservedProblem",
+  {
+    type: "urn:cota:pool-not-observed",
+    status: 400,
+    title: "That pool is not an observed pool.",
+  },
+) {}
+
+export class ReportOutOfOrderProblem extends HttpApiError.Problem<ReportOutOfOrderProblem>()(
+  "ReportOutOfOrderProblem",
+  {
+    type: "urn:cota:report-out-of-order",
+    status: 409,
+    title: "A call's call before was never stored.",
+  },
+) {}
