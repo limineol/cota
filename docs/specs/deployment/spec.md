@@ -100,11 +100,11 @@ Success: both services healthy, `/health` answers, and the hub's log names its p
 
 ```sh
 docker compose stop hub
-cp previous/.env .env && cp previous/compose.yaml compose.yaml && rm -rf store && cp -Rp previous/store store
-docker compose up -d --wait
+cp previous/.env .env && cp previous/compose.yaml compose.yaml && rm -rf store && cp -Rp previous/store store &&
+  docker compose up -d --wait
 ```
 
-It loses what the hub store gained since the upgrade (sign-ins, passkeys, display names, routes, quota logins given or refreshed), and keeps every request in the request log. A release that changes ClickHouse's image upgrades it in a step of its own, never with the hub's.
+It stops at the first step that fails, the hub stopped: the image before never starts on a store the rollback did not put back. It loses what the hub store gained since the upgrade (sign-ins, passkeys, display names, routes, quota logins given or refreshed), and keeps every request in the request log. A release that changes ClickHouse's image upgrades it in a step of its own, never with the hub's.
 
 ## Moving a hub's machines onto a new one
 

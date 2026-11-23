@@ -106,11 +106,13 @@ In the hub directory, stop the hub, put back `.env`, the Compose file and the st
 
 ```sh
 docker compose stop hub
-cp previous/.env .env && cp previous/compose.yaml compose.yaml && rm -rf store && cp -Rp previous/store store
-docker compose up -d --wait
+cp previous/.env .env && cp previous/compose.yaml compose.yaml && rm -rf store && cp -Rp previous/store store &&
+  docker compose up -d --wait
 ```
 
-Then check it as in step 5: the hub runs the old image, named by the tag and digest it ran before.
+It stops at the first step that fails, with the hub stopped, so that the old image never starts on a store the rollback did not put back: right what failed and run the block again. Then check it as in step 5: the hub runs the old image, named by the tag and digest it ran before.
+
+A `previous/` kept by this guide as it was at Cota 0.1.0 holds the Compose file only when that upgrade changed it. If it holds none, or one older than `previous/.env`, which an earlier upgrade left, the Compose file in place is the one that ran before: leave `cp previous/compose.yaml compose.yaml &&` out of the line.
 
 The store is put back because a newer hub may have added a step to it, and an older hub refuses a store holding a step it does not know. So a rollback loses what the hub store gained since the upgrade:
 

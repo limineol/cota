@@ -129,7 +129,7 @@ EOF
 )
 ```
 
-Write in `VERSION` the version step 2 printed (The release, above). Success: it exits 0, and `.env`'s first line is `COTA_HUB_IMAGE=ghcr.io/limineol/cota-hub:<version>@sha256:<digest>`. If it exits 1 and writes nothing, that image is not on this machine: pull it (`docker pull "ghcr.io/limineol/cota-hub:$VERSION"`) and run this block again. Do not run step 2 again once `cota.toml` holds the owner's pools: its copy replaces the file.
+Write in `VERSION` the version step 2 printed (The release, above). Success: it exits 0, and `.env`'s first line is `COTA_HUB_IMAGE=ghcr.io/limineol/cota-hub:<version>@sha256:<digest>`. If it exits 1 and writes nothing, that image is not on this machine: pull it (`docker pull ghcr.io/limineol/cota-hub:<version>`, with the version step 2 printed) and run this block again. Do not run step 2 again once `cota.toml` holds the owner's pools: its copy replaces the file.
 
 `COTA_BIND` is where the machines of question 3 reach the hub: `127.0.0.1`, this machine alone, behind a reverse proxy on this machine; this machine's address on a private network or a VPN the machines share; or `0.0.0.0`, every interface, for an `http` address on the owner's own network. Write the one question 3 needs, and in `COTA_PORT` the port of its address (behind a proxy, the port the proxy forwards to).
 

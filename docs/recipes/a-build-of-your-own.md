@@ -66,27 +66,28 @@ The build prints `cli:build: bun-<system>-<arch> → <checkout>/apps/cli/dist/co
 
 ## Upgrading it
 
-The upgrade's steps, with a build in place of a release's: move the checkout to the new commit and build the image as above in place of step 2's pull, and compare the Compose file with the checkout's:
+The upgrade's steps, with a build in place of a release's, in one terminal, as the upgrade's own are: move the checkout to the new commit and build the image as above in place of step 2's pull, then, still in the checkout, keep its path and compare the Compose file with the checkout's:
 
 ```sh
-diff deploy/compose.yaml "$HOME/cota-hub/compose.yaml"
+CHECKOUT="$(git rev-parse --show-toplevel)"
+diff "$CHECKOUT/deploy/compose.yaml" "$HOME/cota-hub/compose.yaml"
 ```
 
 If it prints anything, step 3's copy takes the checkout's file, not a release's, after that step has kept the one before:
 
 ```sh
-cp deploy/compose.yaml "$HOME/cota-hub/compose.yaml"
+cp "$CHECKOUT/deploy/compose.yaml" "$HOME/cota-hub/compose.yaml"
 ```
 
-In step 4, name it by its local tag, from the checkout's root:
+In step 4, name it by its local tag:
 
 ```sh
-NEW="cota-hub:$(git rev-parse --short=12 HEAD)"
+NEW="cota-hub:$(git -C "$CHECKOUT" rev-parse --short=12 HEAD)" &&
 (cd "$HOME/cota-hub" && umask 077 && grep -v '^COTA_HUB_IMAGE=' .env > .env.new && echo "COTA_HUB_IMAGE=$NEW" >> .env.new && mv .env.new .env)
 ```
 
-Keeping what a rollback needs, the check and the rollback are the upgrade's. No release notes say whether `cota` changed between your two commits: when it did, build and install it again on each machine as above, and run `~/.local/bin/cota doctor`. Going from a build of your own to a release is an upgrade to that release; if the build's commit added a step to the hub store that the release does not have, that release's hub refuses the store, and the way back is the rollback.
+Step 3 left the terminal in the hub directory, where step 4's `docker compose up -d --wait` and the check run. Keeping what a rollback needs, the check and the rollback are the upgrade's. No release notes say whether `cota` changed between your two commits: when it did, build and install it again on each machine as above, and run `~/.local/bin/cota doctor` (on Windows, `%LOCALAPPDATA%\Programs\cota\cota.exe doctor`). Going from a build of your own to a release is an upgrade to that release; if the build's commit added a step to the hub store that the release does not have, that release's hub refuses the store, and the way back is the rollback.
 
 ## How this was read
 
-On 2026-11-22, on macOS with OrbStack, against the deployment of Cota 0.1.0 that ADR-0028's proof brought up from the release, under a Compose project of its own: the image's build above, run as printed in a checkout of the commit that writes this recipe, then this page's upgrade to it, the deployment healthy on it, and the upgrade's rollback to 0.1.0 by its tag and digest. `cota`'s build and install above, run as printed with a throwaway home, printed its version. The first two blocks, installing with a build, are the install's own before Cota moved onto releases, which its rehearsal ran. Not run: Linux, Windows, `--all` copied to other machines, an upgrade between two builds of your own, and the copy of a changed Compose file, since the two did not differ.
+On 2026-11-22, on macOS with OrbStack, against the deployment of Cota 0.1.0 that ADR-0028's proof brought up from the release, under a Compose project of its own: the image's build above, run as printed in a checkout of the commit that writes this recipe, then this page's upgrade to it, the deployment healthy on it, and the upgrade's rollback to 0.1.0 by its tag and digest. `cota`'s build and install above, run as printed with a throwaway home, printed its version. The first two blocks, installing with a build, are the install's own before Cota moved onto releases, which its rehearsal ran. The upgrade's blocks have since kept the checkout's path in `CHECKOUT`: as they are printed now, the comparison, the copy of a changed Compose file and `.env`'s new line were run on 2026-11-22 from the hub directory of a throwaway home, without Docker. Not run: Linux, Windows, `--all` copied to other machines, an upgrade between two builds of your own, and a deployment started on a changed Compose file, since the two did not differ.
