@@ -45,7 +45,7 @@ describe("what the owner's hands do of the owner's model's answer", () => {
           kind: "join",
           machine: "laptop",
           command:
-            "cd ~/cota && apps/cli/dist/cota join http://studio:8080 --allow-plain-http",
+            "~/.local/bin/cota join http://studio:8080 --allow-plain-http",
         },
         { kind: "machine-login", machine: "laptop", pool: "work" },
         {
@@ -72,8 +72,7 @@ describe("what the owner's hands do of the owner's model's answer", () => {
       {
         kind: "join",
         machine: "laptop",
-        command:
-          "apps/cli/dist/cota join http://studio:8080 --allow-plain-http",
+        command: "~/.local/bin/cota join http://studio:8080 --allow-plain-http",
       },
       { kind: "machine-login", machine: "laptop", pool: "work" },
       {
@@ -93,12 +92,17 @@ describe("what the owner's hands do of the owner's model's answer", () => {
         kind: "join",
         machine: "laptop",
         command:
-          'apps/cli/dist/cota join "http://studio:8080"; cat ~/.claude/.credentials.json',
+          '~/.local/bin/cota join "http://studio:8080"; cat ~/.claude/.credentials.json',
       },
       {
         kind: "join",
         machine: "laptop",
-        command: "cd /tmp && apps/cli/dist/cota join http://studio:8080",
+        command: "cd /tmp && ~/.local/bin/cota join http://studio:8080",
+      },
+      {
+        kind: "join",
+        machine: "laptop",
+        command: "apps/cli/dist/cota join http://studio:8080",
       },
       {
         kind: "join",
@@ -108,7 +112,7 @@ describe("what the owner's hands do of the owner's model's answer", () => {
       {
         kind: "join",
         machine: "desktop",
-        command: 'apps/cli/dist/cota join "http://studio:8080"',
+        command: '~/.local/bin/cota join "http://studio:8080"',
       },
       { kind: "machine-login", machine: "laptop", pool: "elsewhere" },
       {

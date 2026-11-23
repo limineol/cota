@@ -2,7 +2,7 @@
 status: active
 scope: repository
 owner: limineol
-last_verified: 2026-11-19
+last_verified: 2026-11-22
 review_by: 2027-02-19
 supersedes: []
 code:
@@ -17,7 +17,7 @@ A deployment is its hub directory and ClickHouse's volume. Moved together, with 
 
 ## Before
 
-- The new machine has what the hub's machine needs ([`install.md`](../install.md), question 1) and the hub image that `.env` names. Until images are published, check out the commit the tag names (its first 12 characters) in a checkout there, and build it as the install's step 1 does.
+- The new machine has what the hub's machine needs ([`install.md`](../install.md), question 1) and the hub image that `.env` names: a release's is pulled by that name, tag and digest, `docker pull "$(sed -n 's/^COTA_HUB_IMAGE=//p' ~/cota-hub/.env)"` once the hub directory is there; a build of your own, `cota-hub:<commit>`, is built there as its recipe says ([`a-build-of-your-own.md`](a-build-of-your-own.md)).
 - Room on both for the copies: ClickHouse's copy is the size of its volume.
 - Run only one of the two hubs at a time. Both would refresh the same quota logins, and a refresh rotates a login's refresh token, so one of them would be expired.
 

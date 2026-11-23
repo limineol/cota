@@ -1,7 +1,6 @@
 import { Schema } from "effect";
 import type { Machine, Owner, Ran } from "./installer.ts";
 import { routedClients, type Task } from "./tasks.ts";
-import { checkout } from "./world.ts";
 
 /** What the scripted owner takes a message to ask. */
 export type Intent =
@@ -229,7 +228,6 @@ export const ownersHands = (options: {
         );
         return said(
           await on(intent.machine).run(intent.command, {
-            cwd: checkout,
             stdin: keys.stdout,
           }),
         );
@@ -239,7 +237,6 @@ export const ownersHands = (options: {
           await on(intent.machine).run(
             `~/.local/bin/cota login ${intent.pool}`,
             {
-              cwd: checkout,
               stdin: `${secrets.machineLoginOf(intent.pool)}\n`,
             },
           ),

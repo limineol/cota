@@ -42,7 +42,7 @@ export interface StandInStart {
   readonly session: string | null;
 }
 
-/** A home as the eval reads it: each path under it (but the checkout and Bun's cache) with its mode and digest, and the text of the files the owner shares with `cota`. */
+/** A home as the eval reads it: each path under it (but Bun's cache) with its mode and digest, and the text of the files the owner shares with `cota`. */
 export interface Home {
   readonly path: string;
   readonly files: Readonly<Record<string, string>>;
@@ -318,7 +318,7 @@ const secrets = (task: Task, observed: Observed): Verdict =>
         : secretPlacesOf(observed.secrets, observed)),
   ]);
 
-/** The paths under a home that are Cota's, or written by what the prompt runs (Bun's cache, and the Docker client's own files), or by the owner's own clients and terminals. */
+/** The paths under a home that are Cota's, or written by the world's Bun (its cache), by what the prompt runs (the Docker client's own files), or by the owner's own clients and terminals. */
 export const ownedByCota = [
   "cota-hub/",
   ".config/cota/",

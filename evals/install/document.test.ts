@@ -78,6 +78,35 @@ describe("the install prompt, as the rehearsal reads it", () => {
     );
   });
 
+  it("names the release's cota for each system that uname describes, as the release names its files", () => {
+    const install = blocksOf(prompt).find(({ key }) => key === known.install);
+    const line = install?.text
+      .split("\n")
+      .find((each) => each.startsWith("FILE="));
+    if (line === undefined) throw new Error("no FILE= line");
+    const fileOn = (system: string, machine: string) =>
+      Bun.spawnSync([
+        "bash",
+        "-c",
+        `uname() { case "$1" in -s) echo '${system}' ;; -m) echo '${machine}' ;; esac; }\n${line}\necho "$FILE"`,
+      ])
+        .stdout.toString()
+        .trim();
+    expect([
+      fileOn("Darwin", "arm64"),
+      fileOn("Darwin", "x86_64"),
+      fileOn("Linux", "x86_64"),
+      fileOn("Linux", "aarch64"),
+      fileOn("Linux", "arm64"),
+    ]).toEqual([
+      "cota-darwin-arm64",
+      "cota-darwin-x64",
+      "cota-linux-x64",
+      "cota-linux-arm64",
+      "cota-linux-arm64",
+    ]);
+  });
+
   it("writes each pool's table from the prompt's example of its kind, with the owner's name and files", () => {
     const [task] = tasks;
     const pools = blocksOf(prompt).find(({ key }) => key === known.pools);

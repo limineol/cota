@@ -6,7 +6,7 @@ Cota is a hub you run yourself for the AI coding subscriptions and API plans you
 
 It is for a developer with more than one subscription, or more than one machine, who will run two containers and wants one place to see and search all of it.
 
-[Cota 0.1.0](https://github.com/limineol/cota/releases/tag/v0.1.0) is the first release: the hub image for both platforms, and `cota` for macOS, Linux and Windows. The install guide does not use it yet, and still builds both from this repository. [The state of the project](#the-state-of-the-project) says what has been run, and where.
+[Cota 0.1.0](https://github.com/limineol/cota/releases/tag/v0.1.0) is the first release: the hub image for both platforms, and `cota` for macOS, Linux and Windows. The install guide installs the latest release, with nothing of this repository on your machines. [The state of the project](#the-state-of-the-project) says what has been run, and where.
 
 ```text
    laptop                   desktop                  any other machine
@@ -38,19 +38,20 @@ Not built yet: sharing requests across several subscriptions of one provider (lo
 
 ## Install
 
-Open a coding agent (Claude Code or Codex) on the machine that will run the hub, in a checkout of this repository, and ask it:
+Open a coding agent (Claude Code or Codex) on the machine that will run the hub, and ask it:
 
 ```text
-Install Cota for me: follow docs/install.md in this checkout.
+Install Cota for me: follow https://raw.githubusercontent.com/limineol/cota/main/docs/install.md
 ```
 
-[`docs/install.md`](docs/install.md) is written for the agent. It asks you, in one message, where the hub runs, which subscriptions and plans it uses, the address your machines reach it at, and which machines join. It then builds the hub image, makes the hub directory and its secrets, starts the hub and its ClickHouse with Docker Compose, and joins each machine. It stops for what only you do: typing each provider's key, setting the owner password in the browser with the setup code, logins for a second subscription, and the routes. It never reads a client's login, and never puts a secret in a command. It is plain steps with their commands, so you can follow it yourself instead. An agent has followed it to a working install in a test world of Linux containers (`docs/verification.md`); no agent has yet installed it on a stranger's machines.
+[`docs/install.md`](docs/install.md) is written for the agent. It asks you, in one message, where the hub runs, which subscriptions and plans it uses, the address your machines reach it at, and which machines join. It then takes the latest release: it downloads its Compose file and configuration and pulls its hub image, each checked, makes the hub directory and its secrets, starts the hub and its ClickHouse with Docker Compose, and on each machine downloads `cota`, checked, and joins it. It stops for what only you do: typing each provider's key, setting the owner password in the browser with the setup code, logins for a second subscription, and the routes. It never reads a client's login, and never puts a secret in a command. It is plain steps with their commands, so you can follow it yourself instead. An agent followed its earlier version, which built Cota from a checkout, to a working install in a test world of Linux containers, and a scripted installer follows this one there (`docs/verification.md`); no agent has yet installed it on a stranger's machines.
 
 ## What it needs
 
-- **The hub's machine**: one that stays on and that every other machine can reach, with Docker and its Compose plugin, Git and [Bun](https://bun.sh). The hub image is built for Linux on arm64 and amd64; it has been built and run on arm64 only, under OrbStack on macOS and in a Docker engine inside a Linux container. Docker Desktop, and Linux running Docker itself, have not run it.
-- **Each machine**: macOS or Linux, with Bun to build `cota`, and whichever of Claude Code, Codex, OpenCode and Pi you use. `cota` has run on macOS and on Ubuntu; its Windows parts are built and their pure parts tested, but on Windows it has only been started (`cota --version`, in CI).
-- **A quota login for Claude** is given from a Mac, since it is read from the macOS keychain.
+- **The hub's machine**: one that stays on and that every other machine can reach, with Docker and its Compose plugin and `curl`, reaching GitHub (`github.com`, and `ghcr.io` for the hub image). The hub image is published for Linux on arm64 and amd64; it has been run on arm64 only, under OrbStack on macOS (0.1.0's, pulled from the release) and in a Docker engine inside a Linux container. Docker Desktop, and Linux running Docker itself, have not run it.
+- **Each machine**: macOS or Linux, with `curl`, and whichever of Claude Code, Codex, OpenCode and Pi you use; on Windows, `cota` is downloaded by hand. `cota` has run on macOS and on Ubuntu; its Windows parts are built and their pure parts tested, but on Windows it has only been started (`cota --version`, in CI).
+- **A quota login** is given with a script that is not part of a release: from a checkout of this repository, with Git and [Bun](https://bun.sh), and for Claude from a Mac, since it is read from the macOS keychain.
+- **A commit no release holds** is yours to build: [`docs/recipes/a-build-of-your-own.md`](docs/recipes/a-build-of-your-own.md).
 - **HTTPS** is your own reverse proxy's: the hub speaks plain HTTP. Passkeys need it. [`docs/recipes/https.md`](docs/recipes/https.md) has a Caddy and an nginx configuration.
 
 ## Logins and secrets
@@ -93,7 +94,7 @@ Cota is a rewrite, in the open, of a private hub its author used. Everything tha
 What has been run, and where:
 
 - Every gate (types, lints, tests, proofs, mutants, the dashboard's stories, and the slow tier: the deployment's test and the evals' rehearsals) passes on one Mac, Apple silicon, with OrbStack, and in the repository's CI workflow, on GitHub's Linux runners, for every pull request and push to `main`.
-- The deployment, on that Mac under OrbStack, and in a Docker engine inside an Ubuntu container in the install evals. The recipes were each read against a deployment there (each says how).
+- The deployment, on that Mac under OrbStack, and in a Docker engine inside an Ubuntu container in the install evals. The recipes were each read against a deployment there (each says how). The install prompt's hub, and its `cota` for that Mac, were followed by hand against the published 0.1.0, and so were its upgrade and rollback (ADR-0028); the install eval follows it in CI against a stand-in of the release that holds the tree's own build.
 - `cota`, on macOS and in Ubuntu containers. On Windows it has only been started: CI runs `cota --version` there, and nothing else of it has run.
 - Claude Code, as the installer, passed every criterion of the install eval in three of eight runs, the last of them on the deployment the prompt installs now; the others failed on the eval's own faults or ended before they were done ([the install evals spec's Results](docs/specs/install-evals/spec.md#results)). The memory skill's commands find every answer in their scripted eval; no agent has been given the skill yet.
 

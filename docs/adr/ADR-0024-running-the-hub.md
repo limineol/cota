@@ -2,7 +2,7 @@
 status: accepted
 scope: repository
 owner: limineol
-last_verified: 2026-11-21
+last_verified: 2026-11-22
 review_by: 2027-02-18
 supersedes: []
 code:
@@ -34,6 +34,8 @@ Cota is fewer moving parts: the hub is one process that relays, logs, archives, 
 - **What it runs.** `WORKDIR /app`, `COTA_CONFIG=/etc/cota/cota.toml`, and the command `bun run hub`. The root `package.json` is in it so that `bun run archive:restore` and `bun run import` (ADR-0025) run from the same image, with `docker compose run --rm hub …`, against the same configuration and network.
 - **Its user.** The image's own user is not root: Bun's image has a user `bun` (uid 1000) but runs as root, so the Dockerfile sets `USER bun`, and the image's entrypoint refuses to start the hub as uid 0, whoever names that user. The Compose file runs the hub as the owner's own user and group, `COTA_UID` and `COTA_GID` in the hub directory's `.env`, written at install from `id -u` and `id -g`: the files of the hub directory stay the owner's, mode 0600 and 0700, and the hub can read them without a `chown`, on Linux as through macOS's container engines. The hub never runs as uid 0.
 - **How it is built.** `Dockerfile` and `.dockerignore` at the repository's root, so a checkout builds it with `docker build -t cota-hub:<commit> .`. The build stage runs on the builder's own platform; the final stage only copies files onto the base image and runs nothing, so the same files serve every platform and building for another needs no emulation.
+
+  > Amended by ADR-0028: an owner pulls a release's image, `ghcr.io/limineol/cota-hub:<version>`, and builds one only for a commit no release holds, by the recipe of a build of your own.
 - **Platforms: `linux/amd64` and `linux/arm64`.** The machine a single owner keeps on is as likely an Apple silicon Mac (whose container engine runs arm64 Linux) or a small arm64 board as an amd64 server, and ClickHouse's and Bun's images exist for both. Since the final stage runs nothing, two platforms cost one build stage and two copies. Other platforms are not built.
 - **In CI.** 5a adds a job that builds the image for both platforms without pushing it or loading it anywhere (`--output type=cacheonly`). The deployment's slow test (`docs/specs/deployment/spec.md`) builds the image for the runner's platform itself, in the verify job's slow tier, on the runner's Docker, so that what it runs is the working tree it tests. Publishing (a registry, its name, tags per version) is milestone 5's release slice, which is a public action and the owner's to start.
 
@@ -88,6 +90,8 @@ Both use Docker's `local` logging driver, which rotates its files; the default `
 
 The hub image is named in `.env` as `COTA_HUB_IMAGE`, by tag and digest once images are published, by the local tag `cota-hub:<commit>` until then. Changing the image is changing that line. An **upgrade**, in the hub directory:
 
+> Amended by ADR-0028: `.env` names a release's image by its tag and the digest of what was pulled, `ghcr.io/limineol/cota-hub:<version>@sha256:<digest>`, and a build of your own by its local tag. An upgrade pulls the new release's image before step 1, while the hub runs, and compares its Compose file with the release's; `docker image ls ghcr.io/limineol/cota-hub` lists the images a rollback can use. Step 1 keeps `compose.yaml` in `previous/` at every upgrade, and a rollback always puts it back.
+
 1. Keep what a rollback needs: `.env` into `previous/`, and, the hub stopped (`docker compose stop hub`) so that nothing writes the store and its WAL is folded in, a copy of `store/` into `previous/store/`, under `umask 077`. A release whose Compose file changed brings its own `compose.yaml`, and the old one goes into `previous/` too.
 2. Name the new image in `.env`, build or pull it, and `docker compose up -d --wait`.
 3. Check: `/health` answers, and the hub's log names its pools.
@@ -101,6 +105,8 @@ Every image is kept until the owner removes it: `docker image ls cota-hub` lists
 ### What `docs/install.md` becomes
 
 The hub's part of the install prompt runs the deployment, and the machines' part does not change. Its question 1 asks for a machine with Docker that stays on, and whether Cota may run its Compose project there (Bun is still needed on every machine that builds `cota`, the hub's own included). Its steps: make the hub directory; build the hub image from the checkout (until images are published, then pull it); copy `deploy/compose.yaml` and `deploy/cota.toml`; write `.env` (the image, `id -u` and `id -g`, the bind address from question 3, the port); make the secrets, the ClickHouse password among them; add the pools to `cota.toml`; `docker compose up -d --wait`; check `$HUB/health`; and hand the hub to the owner, who reads the setup code with `docker compose logs hub`. "Keeping it running across restarts" stops being the owner's choice of service manager: the restart policy keeps it, as long as the machine starts its container engine at boot, which on macOS is the owner's setting of their engine. The path where the owner already runs ClickHouse stays, as `[clickhouse]` naming theirs and `docker compose up -d --no-deps hub`. The README's install line points to the same prompt, and its "Try the hub" stays what it is, a hub in a checkout against `compose.dev.yaml`, for development.
+
+> Amended by ADR-0028: the prompt takes the latest release. Its question 1 asks for Docker, `curl` and GitHub, and no Git, Bun or checkout; its hub's steps download the release's `compose.yaml` and `cota.toml`, checked against its `SHA256SUMS`, in place of copying them, and pull its image in place of building it; and each machine downloads the release's `cota`, checked the same way, in place of building it.
 
 ### Not Cota's
 

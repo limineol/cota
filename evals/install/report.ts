@@ -14,7 +14,7 @@ const firstLine = (text: string, most = 160) => {
 const entryLine = (entry: Entry, at: number) =>
   entry.kind === "message"
     ? `${at + 1}. ${entry.from === "installer" ? "The installer said" : "The owner answered"}: ${cell(firstLine(entry.text))}`
-    : `${at + 1}. ${entry.actor === "installer" ? "The installer" : "The owner"} ran ${code(firstLine(entry.command))} on ${entry.machine}${entry.cwd.endsWith("/cota") ? ", in the checkout" : ""}${entry.stdin ? ", with standard input" : ""}: ${entry.exitCode === null ? "stopped at its time limit" : `exit ${entry.exitCode}`}`;
+    : `${at + 1}. ${entry.actor === "installer" ? "The installer" : "The owner"} ran ${code(firstLine(entry.command))} on ${entry.machine}${entry.stdin ? ", with standard input" : ""}: ${entry.exitCode === null ? "stopped at its time limit" : `exit ${entry.exitCode}`}`;
 
 const dollars = (usd: number) => `$${usd.toFixed(2)}`;
 
@@ -34,7 +34,7 @@ export const reportOf = (run: Run): string => {
   return [
     `# Install eval, ${run.startedAt.slice(0, 10)}: \`${run.task}\` by the ${run.installer}`,
     "",
-    `Commit \`${run.commit}\`${run.dirty ? ", without the working tree's changes" : ""}. The ${run.installer} ran ${count("installer")} commands and sent the owner ${messages} messages; the owner ran ${count("owner")} commands. It took ${run.minutes.toFixed(1)} minutes, of at most ${run.limitMinutes}, and ended ${run.ending === "done" ? "saying it was done" : run.ending === "unfinished" ? cell(unfinishedOf(run.error ?? "")) : run.ending === "stopped" ? `stopped at its limit of ${cell(run.error ?? "its time")}` : `failing${run.error === null ? "" : `: ${cell(run.error)}`}`}.`,
+    `Commit \`${run.commit}\`${run.dirty ? ", with the working tree's changes" : ""}. The ${run.installer} ran ${count("installer")} commands and sent the owner ${messages} messages; the owner ran ${count("owner")} commands. It took ${run.minutes.toFixed(1)} minutes, of at most ${run.limitMinutes}, and ended ${run.ending === "done" ? "saying it was done" : run.ending === "unfinished" ? cell(unfinishedOf(run.error ?? "")) : run.ending === "stopped" ? `stopped at its limit of ${cell(run.error ?? "its time")}` : `failing${run.error === null ? "" : `: ${cell(run.error)}`}`}.`,
     ...(run.spend.length === 0
       ? []
       : [

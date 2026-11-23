@@ -2,7 +2,7 @@
 status: active
 scope: repository
 owner: limineol
-last_verified: 2026-11-21
+last_verified: 2026-11-22
 review_by: 2027-02-15
 supersedes: []
 code:
@@ -216,12 +216,16 @@ What the owner wants installed, written as the owner would say it (where the hub
 _Avoid_: scenario, fixture, spec
 
 **World**:
-One install eval's own Compose project, `cota-install-<run>`: its **clean machines**, the hub's with a Docker engine of its own that runs the **deployment**, and its fake provider, on a network of its own, made before the installer starts and removed whole after the criteria are read.
+One install eval's own Compose project, `cota-install-<run>`: its **clean machines**, the hub's with a Docker engine of its own that runs the **deployment**, its **world's release** and its fake provider, on a network of its own, made before the installer starts and removed whole after the criteria are read.
 _Avoid_: environment, sandbox, stack
 
 **Clean machine**:
-A container with what a developer's Linux machine has (a shell, `git`, `curl`, `openssl`, `cron` and Bun), a user without root, the owner's own files, a checkout of Cota, and **stand-in** clients, but nothing of Cota installed.
+A container with what a developer's Linux machine has (a shell, `git`, `curl`, `openssl` and `cron`), a user without root, the owner's own files, and **stand-in** clients, but nothing of Cota: no checkout, and no Bun on the owner's `PATH` (the world's own runs the stand-ins).
 _Avoid_: VM, box, fresh machine
+
+**World's release**:
+What stands in for Cota's latest release in a world: a registry of the world's as `ghcr.io`, holding the working tree's hub image under the tree's version, and a server of the world's as `github.com`, serving the tree's `cota`, Compose file and configuration as that version's release, both over `https` with the run's CA. The install prompt's commands run against it as written and install the tree.
+_Avoid_: fake release, mirror, mock registry
 
 **Stand-in**:
 A program in the place of Claude Code or Codex that records what it was given and, asked, sends one request as the client would. No eval and no test runs a real client.
@@ -523,7 +527,7 @@ The container image that runs the hub: Bun, the hub's code and its production de
 _Avoid_: image alone where a picture could be meant (a transcript's image part, a model's image input), container (a container runs the image), build, release
 
 **Compose file**:
-`compose.yaml` in the hub directory: the hub and ClickHouse as services, what each mounts, the address the hub is published on, their restart policy and health checks. The repository ships it as `deploy/compose.yaml`, and the owner's copy is the one that runs.
+`compose.yaml` in the hub directory: the hub and ClickHouse as services, what each mounts, the address the hub is published on, their restart policy and health checks. The repository keeps it as `deploy/compose.yaml`, a release publishes it as `compose.yaml`, and the owner's copy is the one that runs.
 _Avoid_: stack file, manifest (a manifest is an archived day's), recipe
 
 **Hub directory**:
@@ -537,6 +541,10 @@ _Avoid_: update (`bun run prices:update` updates price lists), migrate (a migrat
 **Rollback**:
 Going back after an upgrade: the previous hub image started again on the copy of the hub store the upgrade kept. The request log is not rolled back: it keeps what the newer image logged.
 _Avoid_: revert, downgrade, restore (a restore is the archive's)
+
+**Build of your own**:
+A hub image and a `cota` built from a checkout, for a commit no release holds, by the recipe that says how; its hub image is named by its local tag, `cota-hub:<commit>`. The install and the upgrade take a release instead.
+_Avoid_: dev build, custom release, local release (a release is only what a tag publishes)
 
 **Recipe**:
 Documented steps for something around a deployment that is the owner's and not Cota's: HTTPS and a reverse proxy, keeping the hub on a private network, copying the hub directory elsewhere. Cota documents a recipe and never runs or ships one.

@@ -2,7 +2,7 @@
 status: accepted
 scope: apps/cli
 owner: limineol
-last_verified: 2026-11-21
+last_verified: 2026-11-22
 review_by: 2027-02-17
 supersedes: []
 code:
@@ -117,6 +117,8 @@ OpenCode's and Pi's titles are not reported in milestone 4. Its behaviour, its d
 **Left to milestone 5**: publishing `cota` (where, and under which npm name, is the owner's), signing it for macOS and Windows, `cota update`, and keeping a machine's clients' configuration current without the owner running `cota configure`.
 
 > Amended by ADR-0027: publishing `cota` is a release's: the five binaries as downloads of the GitHub release of each version's tag, named for their systems, with `SHA256SUMS` and build provenance, and no npm package. Signing it for macOS and Windows, `cota update`, and keeping the clients' configuration current stay left.
+
+> Amended by ADR-0028: a machine installs `cota` from the latest release, its system's file found from `uname -s` and `uname -m`, checked against `SHA256SUMS` and installed as `~/.local/bin/cota`, with no Bun, Git or checkout; updating it is installing another release's the same way. Building it from a checkout is the recipe of a build of your own.
 
 ### Facts to confirm when built
 

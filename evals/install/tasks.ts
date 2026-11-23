@@ -71,11 +71,11 @@ export interface Task {
 
 const studioAndLaptop: Task = {
   id: "studio-and-laptop",
-  ask: "Please install Cota for me, on my machines studio and laptop, as its install document below says. Each of them has a checkout of Cota in ~/cota.",
-  words: `1. The hub runs on studio, the machine you are on; it stays on, and every machine reaches it. It has Docker, Git and Bun, and Cota's checkout in ~/cota; you may run Cota's Compose project in its Docker. I do not run a ClickHouse of my own.
+  ask: "Please install Cota for me, on my machines studio and laptop, as its install document below says.",
+  words: `1. The hub runs on studio, the machine you are on; it stays on, and every machine reaches it. It has Docker and curl, and reaches GitHub; you may run Cota's Compose project in its Docker. I do not run a ClickHouse of my own.
 2. Pools: my Claude Max for work is "work", and my own Claude Pro is "personal", which is work's fallback; my ChatGPT subscription is "chatgpt", for Codex; and my Z.ai coding plan is "zai".
 3. The machines reach the hub at http://studio:8080. It is plain http on my own network, and I accept that.
-4. Join studio and laptop, each with its checkout of Cota in ~/cota. Both have Claude Code and Codex, neither OpenCode nor Pi. Claude Code is signed in to personal on both; on laptop I also work on acme's projects, so give laptop a machine login for work. Acme's projects (acme/*) bill work and everything else personal; Codex bills chatgpt.`,
+4. Join studio and laptop; each has curl and reaches GitHub. Both have Claude Code and Codex, neither OpenCode nor Pi. Claude Code is signed in to personal on both; on laptop I also work on acme's projects, so give laptop a machine login for work. Acme's projects (acme/*) bill work and everything else personal; Codex bills chatgpt.`,
   hub: {
     machine: "studio",
     address: "http://studio:8080",

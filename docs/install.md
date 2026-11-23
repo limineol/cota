@@ -2,15 +2,16 @@
 status: active
 scope: repository
 owner: limineol
-last_verified: 2026-11-19
-review_by: 2027-02-15
+last_verified: 2026-11-22
+review_by: 2027-02-20
 supersedes: []
 code:
-  - Dockerfile
   - deploy/compose.yaml
   - deploy/cota.toml
   - examples/cota.example.toml
   - apps/cli/src/cli.ts
+  - apps/cli/build.ts
+  - .github/workflows/release.yml
 ---
 
 # Installing Cota
@@ -33,39 +34,65 @@ Cota is one hub for every AI coding subscription and API plan its owner has: Cla
 
 Ask these together, in one message, before you run anything:
 
-1. **Where does the hub run?** One machine that stays on, that every other machine reaches, with Docker (and its `docker compose`), Git and [Bun](https://bun.sh) installed, and a checkout of Cota. Ask whether you may run Cota's Compose project there, `cota`: the hub and its own ClickHouse, in two containers of their Docker engine. If they already run a ClickHouse for Cota, ask for it too.
+1. **Where does the hub run?** One machine that stays on, that every other machine reaches, with Docker (and its `docker compose`) and `curl`, and that reaches GitHub (`github.com`, and `ghcr.io`, where the hub image is). Ask whether you may run Cota's Compose project there, `cota`: the hub and its own ClickHouse, in two containers of their Docker engine. If they already run a ClickHouse for Cota, ask for it too.
 2. **Which pools?** One for each subscription and each API plan the hub should use:
    - each Claude subscription (Pro or Max), by the name the owner wants for it, and which one is the fallback of which;
    - a ChatGPT subscription, for Codex;
    - each API plan: an Anthropic API key, OpenRouter, Z.ai, OpenCode Go, or a server of their own (an OpenAI-compatible URL).
 3. **The hub's address as the machines reach it**, such as `http://studio.lan:8080`, a VPN address, or `https://cota.example.com` behind a proxy the owner already runs. An `http` address that is not this machine's own is sent in the clear, hub keys included: say so, and ask whether they accept it. The proxy and the private network are the owner's; [`recipes`](recipes/README.md) has what each needs.
-4. **Which machines join**, and on each, which of Claude Code, Codex, OpenCode and Pi are installed.
+4. **Which machines join**, and on each, which of Claude Code, Codex, OpenCode and Pi are installed. Each needs `curl` and to reach `github.com`.
 
 Write down the answers. Every step below names what it uses.
 
-## The hub
+## The release
 
-Run these on the hub's machine, in its checkout of Cota (the one this file came from, or the one the owner names). Every command runs from the checkout's root. The hub runs from the **hub directory**, `~/cota-hub`, which holds its Compose file, its configuration, its secrets, its store and its archive.
+Cota is installed from its latest release on GitHub, [limineol/cota](https://github.com/limineol/cota/releases): the hub image, `cota` for each system, and the deployment's Compose file and configuration, all of one version. Nothing of Cota's source is needed, and neither Git nor Bun.
 
-### 1. Build the hub image
+The hub's step 2 finds that version, with the line every block that needs it begins with:
 
-The hub image holds the hub and its dashboard, built from this checkout and named by its commit:
-
-```sh
-docker build --build-arg COTA_REVISION="$(git rev-parse HEAD)" -t "cota-hub:$(git rev-parse --short=12 HEAD)" .
+```text
+VERSION="$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/limineol/cota/releases/latest | sed 's|.*/tag/v||')"
 ```
 
-Success: it exits 0, and `docker image ls cota-hub` lists the image. It takes a few minutes the first time. If Docker does not answer, stop and tell the owner: never restart their Docker engine.
+GitHub sends `releases/latest` on to the latest release's page, whose address ends `/tag/v<version>`, and the line keeps what follows `v`. Run it as it is that once. In every later block, on every machine, write the version it found in its place, `VERSION=<version>`, so that the whole install is one release even if another is published meanwhile. To install another release than the latest, write its version there from the start.
 
-### 2. Make the hub directory
+## The hub
+
+Run these on the hub's machine, from any directory. The hub runs from the **hub directory**, `~/cota-hub`, which holds its Compose file, its configuration, its secrets, its store and its archive.
+
+### 1. Make the hub directory
 
 ```sh
 mkdir -p "$HOME/cota-hub" && chmod 700 "$HOME/cota-hub"
 (umask 077 && mkdir -p "$HOME/cota-hub/secrets" "$HOME/cota-hub/store" "$HOME/cota-hub/archive")
-cp deploy/compose.yaml "$HOME/cota-hub/compose.yaml"
 ```
 
-Success: all three exit 0. The hub's container writes `store/` (the hub store) and `archive/` (the request log's daily copy), and reads `secrets/` and the configuration, as the owner's own user.
+Success: both exit 0. The hub's container writes `store/` (the hub store) and `archive/` (the request log's daily copy), and reads `secrets/` and the configuration, as the owner's own user.
+
+### 2. Get the release
+
+Download the release's Compose file and configuration, check them against its `SHA256SUMS`, put them in the hub directory, and pull its hub image:
+
+```sh
+VERSION="$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/limineol/cota/releases/latest | sed 's|.*/tag/v||')"
+RELEASE="https://github.com/limineol/cota/releases/download/v$VERSION"
+DOWNLOADS="$(mktemp -d)" && cd "$DOWNLOADS" &&
+  curl -fsSLO "$RELEASE/compose.yaml" && curl -fsSLO "$RELEASE/cota.toml" && curl -fsSLO "$RELEASE/SHA256SUMS" &&
+  [ "$(grep -cE '  (compose\.yaml|cota\.toml)$' SHA256SUMS)" = 2 ] &&
+  grep -E '  (compose\.yaml|cota\.toml)$' SHA256SUMS | if command -v shasum >/dev/null; then shasum -a 256 -c -; else sha256sum -c -; fi &&
+  cp compose.yaml "$HOME/cota-hub/compose.yaml" && (umask 077 && cp cota.toml "$HOME/cota-hub/cota.toml") &&
+  docker pull "ghcr.io/limineol/cota-hub:$VERSION" &&
+  cd "$HOME" && rm -rf "$DOWNLOADS" && echo "Cota $VERSION"
+```
+
+Success: `compose.yaml: OK` and `cota.toml: OK`, the pull, and last `Cota <version>`: that is the version every later block names (The release, above). On a failure it stops where it failed:
+
+- `curl` says `Could not resolve host` or cannot connect: this machine does not reach GitHub. Its network is the owner's: tell them, and wait.
+- `curl` says `The requested URL returned error: 404`: no release has that version. Check `VERSION`.
+- A line ends `FAILED`, or it stops after the downloads having checked nothing: a file did not arrive as the release published it, or `SHA256SUMS` does not name both files. Run the block again; if it fails again, stop and tell the owner, and do not go on.
+- `docker pull` cannot connect to the Docker daemon: Docker is not running. Stop and tell the owner: never restart their Docker engine.
+
+`ghcr.io/limineol/cota-hub` is public: the pull needs no sign-in. The release's page gives the image's digest, which step 4 writes into `.env` from what was pulled, and the release's files and image carry GitHub's build provenance: the owner may check either (`gh attestation verify <file> --repo limineol/cota`, or `oci://ghcr.io/limineol/cota-hub:<version>` in place of the file). Neither is a step of yours.
 
 ### 3. Make the secrets
 
@@ -87,11 +114,13 @@ A Claude subscription that is another's fallback needs a kept login the same way
 
 ### 4. Write `.env` and the configuration
 
-`.env` names the image of step 1, the owner's user and group, which the hub runs as, and the address and port the hub is published on. It holds no secret:
+`.env` names the image of step 2 by its tag and its digest, read from the image that was pulled, so that the deployment runs those bytes and no others; then the owner's user and group, which the hub runs as, and the address and port the hub is published on. It holds no secret:
 
 ```sh
+VERSION="$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/limineol/cota/releases/latest | sed 's|.*/tag/v||')"
+IMAGE="$(docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' "ghcr.io/limineol/cota-hub:$VERSION" | grep -m 1 '^ghcr.io/limineol/cota-hub@sha256:')" &&
 (umask 077 && cat > "$HOME/cota-hub/.env" <<EOF
-COTA_HUB_IMAGE=cota-hub:$(git rev-parse --short=12 HEAD)
+COTA_HUB_IMAGE=ghcr.io/limineol/cota-hub:$VERSION@${IMAGE#*@}
 COTA_UID=$(id -u)
 COTA_GID=$(id -g)
 COTA_BIND=127.0.0.1
@@ -100,15 +129,11 @@ EOF
 )
 ```
 
+Write in `VERSION` the version step 2 printed (The release, above). Success: it exits 0, and `.env`'s first line is `COTA_HUB_IMAGE=ghcr.io/limineol/cota-hub:<version>@sha256:<digest>`. If it exits 1 and writes nothing, that image is not on this machine: pull it (`docker pull ghcr.io/limineol/cota-hub:<version>`, with the version step 2 printed) and run this block again. Do not run step 2 again once `cota.toml` holds the owner's pools: its copy replaces the file.
+
 `COTA_BIND` is where the machines of question 3 reach the hub: `127.0.0.1`, this machine alone, behind a reverse proxy on this machine; this machine's address on a private network or a VPN the machines share; or `0.0.0.0`, every interface, for an `http` address on the owner's own network. Write the one question 3 needs, and in `COTA_PORT` the port of its address (behind a proxy, the port the proxy forwards to).
 
-Then the configuration. [`deploy/cota.toml`](../deploy/cota.toml) is the deployment's: the hub inside its container, its ClickHouse, its store and archive, and the three hub keys of step 3, each secret a file of `secrets/` as the container sees it, `/etc/cota/secrets/<name>`. Copy it:
-
-```sh
-(umask 077 && cp deploy/cota.toml "$HOME/cota-hub/cota.toml")
-```
-
-Then append one `[pools.<id>]` table for each pool of question 2, copied from [`examples/cota.example.toml`](../examples/cota.example.toml)'s table of the same kind: `work` and `personal` for Claude subscriptions (with `fallback` and `kept_login` where the owner named one), `chatgpt` for Codex, and `anthropic`, `openrouter`, `zai`, `opencode-go` or `local` for an API plan. Name a pool by the owner's name for it, in letters, digits and `-`. Every secret is `{ file = "/etc/cota/secrets/<name>" }`, naming a file of step 3 as the container sees it, never the secret itself and never `{ env = … }`. For example:
+Then the configuration. `cota.toml`, which step 2 put in the hub directory, is the deployment's: the hub inside its container, its ClickHouse, its store and archive, and the three hub keys of step 3, each secret a file of `secrets/` as the container sees it, `/etc/cota/secrets/<name>`. Append to it one `[pools.<id>]` table for each pool of question 2, as in the example below, or as in the table of the same kind in Cota's example configuration ([`examples/cota.example.toml`](https://github.com/limineol/cota/blob/main/examples/cota.example.toml)): `work` and `personal` for Claude subscriptions (with `fallback` and `kept_login` where the owner named one), `chatgpt` for Codex, and `anthropic`, `openrouter`, `zai`, `opencode-go` or `local` for an API plan. Name a pool by the owner's name for it, in letters, digits and `-`. Every secret is `{ file = "/etc/cota/secrets/<name>" }`, naming a file of step 3 as the container sees it, never the secret itself and never `{ env = … }`. For example:
 
 ```toml
 [pools.work]
@@ -150,7 +175,8 @@ cd "$HOME/cota-hub" && docker compose logs hub | grep -c 'cota hub listening'
 Success: `{"status":"ok"}` and `1`. The log's line names every pool. On a failure, `docker compose logs hub` (or `clickhouse`), run in `~/cota-hub`, says why:
 
 - `up` says a variable such as `COTA_UID` is not set: `.env` lacks it (step 4).
-- `up` says a `bind source path does not exist`: a file or folder of steps 2 to 4 is missing.
+- `up` says a `bind source path does not exist`: a file or folder of steps 1 to 4 is missing.
+- `up` pulls the hub image, or says it cannot find it: `COTA_HUB_IMAGE` in `.env` is not the image step 2 pulled. Write `.env` again (step 4).
 - `clickhouse` exits saying `ClickHouse's password file /etc/cota/secrets/clickhouse is missing or empty`: make it (step 3).
 - The hub stopped, and its log says the configuration does not read: it prints every problem with its place, such as `at ["pools"]["zai"]["key"]`. Fix those in `cota.toml` and run `docker compose restart hub` in `~/cota-hub`. A secret file that `cannot be read` or `is empty` is the owner's to fill (step 3).
 - `the request log could not create its tables; it will try again`, again and again: ClickHouse is not reachable at the `url` of `[clickhouse]`. With the deployment's own, check that `cota-clickhouse-1` is healthy.
@@ -168,20 +194,26 @@ Stop until the owner says they are signed in. A restart of the hub before then m
 
 ## Each machine
 
-Do this on every machine of question 4, the hub's own included. On each, in a checkout of Cota:
+Do this on every machine of question 4, the hub's own included.
 
-### 1. Build `cota`, and install it
+### 1. Install `cota`
+
+Download this system's `cota` from the same release, check it against the release's `SHA256SUMS`, and install it:
 
 ```sh
-bun install
-bun run cli:build
-mkdir -p "$HOME/.local/bin"
-install -m 0755 apps/cli/dist/cota "$HOME/.local/bin/cota"
+VERSION="$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/limineol/cota/releases/latest | sed 's|.*/tag/v||')"
+FILE="cota-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/x64/; s/aarch64/arm64/')"
+RELEASE="https://github.com/limineol/cota/releases/download/v$VERSION"
+DOWNLOADS="$(mktemp -d)" && cd "$DOWNLOADS" &&
+  curl -fsSLO "$RELEASE/$FILE" && curl -fsSLO "$RELEASE/SHA256SUMS" &&
+  grep "  $FILE\$" SHA256SUMS | if command -v shasum >/dev/null; then shasum -a 256 -c -; else sha256sum -c -; fi &&
+  mkdir -p "$HOME/.local/bin" && install -m 0755 "$FILE" "$HOME/.local/bin/cota" &&
+  cd "$HOME" && rm -rf "$DOWNLOADS" && ~/.local/bin/cota --version
 ```
 
-Success: the build prints `cli:build: bun-<system>-<arch> → <checkout>/apps/cli/dist/cota`, and `~/.local/bin/cota` is that program. Every command below runs it as `~/.local/bin/cota`, never the checkout's: the shims, the title reporter's schedule and Pi's key command name the `cota` that joined, and one inside the checkout changes or goes with a rebuild, a switch of branch or a `git clean` there. `~/.local/bin` need not be on `PATH`. To update `cota` later, build it again, install it the same way, and run doctor (step 3).
+Write in `VERSION` the version the hub's step 2 printed (The release, above). Success: `cota-<system>-<arch>: OK` and, last, that version. `FILE` is the release's name for this system's `cota`: `cota-darwin-arm64`, `cota-darwin-x64`, `cota-linux-x64` or `cota-linux-arm64`. A `404` for it means the release has no `cota` for this system. Every command below runs it as `~/.local/bin/cota`: the shims, the title reporter's schedule and Pi's key command name the `cota` that joined, so it stays where it is. `~/.local/bin` need not be on `PATH`. To update `cota` later, install another release's the same way ([`upgrading.md`](upgrading.md)), and run doctor (step 3).
 
-On Windows the build makes `apps\cli\dist\cota.exe`, and its place is `%LOCALAPPDATA%\Programs\cota\cota.exe`, Windows' place for a program installed for one user, under the `%LOCALAPPDATA%` that holds Cota's state and shims there (ADR-0022): copy it there, and run it from there in place of `~/.local/bin/cota`.
+On Windows the release's `cota` is `cota-windows-x64.exe`, and its place is `%LOCALAPPDATA%\Programs\cota\cota.exe`, Windows' place for a program installed for one user, under the `%LOCALAPPDATA%` that holds Cota's state and shims there (ADR-0022). Download it and `SHA256SUMS` from `https://github.com/limineol/cota/releases/download/v<version>/`, check its SHA-256 (PowerShell's `Get-FileHash` gives it, in capitals) against its line of `SHA256SUMS`, copy it there, and run it from there in place of `~/.local/bin/cota`.
 
 ### 2. Join the hub
 
@@ -263,7 +295,7 @@ Success: `cota: kept the machine login for personal.` A pool that is not a Claud
 
 A quota login lets the hub read a Claude or ChatGPT subscription pool's usage the way Claude Code and Codex show it: every window, the per-model ones included, and the plan's name, current even while nobody uses the pool. Without one, the dashboard shows such a pool's windows only from the quota headers of the latest answers that carried them. It is an OAuth login of the owner's subscription, one per pool, and optional. It is the owner's to give, not yours: it takes the owner password and their browser signed in to the subscription. Do not run the command yourself.
 
-Once the hub is set up and a machine is built (step 1 of Each machine), tell the owner, for each Claude or ChatGPT subscription pool they want read: on a machine of question 4 that has that pool's client (Claude Code or Codex) and a browser signed in to that subscription, in its checkout of Cota, run `COTA_HUB_URL=<hub> bun run quota:connect <pool>` in their own terminal, adding `--email <their address>` for a Claude pool, and `--allow-plain-http` where the join needed it. A Claude login is read from the macOS keychain, so a Claude pool's is connected from a Mac. On a joined machine the script runs the real client, never `cota`'s shim of it. It asks for the owner password without showing it, has the client sign in in a throwaway directory, sends the login to the hub, and deletes every copy left on the machine. The dashboard's Settings → Quota logins shows each pool's command and whether the hub keeps its login.
+Its connect script is not part of a release: it runs from a checkout of Cota, with Git and [Bun](https://bun.sh). Once the hub is set up, tell the owner, for each Claude or ChatGPT subscription pool they want read: on a machine of question 4 that has that pool's client (Claude Code or Codex) and a browser signed in to that subscription, in a checkout of Cota at the release's tag (`git clone --branch v<version> https://github.com/limineol/cota`, then `bun install` in it), run `COTA_HUB_URL=<hub> bun run quota:connect <pool>` in their own terminal, adding `--email <their address>` for a Claude pool, and `--allow-plain-http` where the join needed it. A Claude login is read from the macOS keychain, so a Claude pool's is connected from a Mac. On a joined machine the script runs the real client, never `cota`'s shim of it. It asks for the owner password without showing it, has the client sign in in a throwaway directory, sends the login to the hub, and deletes every copy left on the machine. The dashboard's Settings → Quota logins shows each pool's command and whether the hub keeps its login.
 
 Success: `The hub now reads <pool>'s quota windows with <account>'s login.`
 

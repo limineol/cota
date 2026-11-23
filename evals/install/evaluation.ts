@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -229,7 +229,7 @@ export const evaluate = async (options: {
     say(`${made.project}: the ${installer.name} installs Cota for ${task.id}`);
     const { ending, error } = await within(
       installer.install({
-        prompt: git("show", `${commit}:docs/install.md`),
+        prompt: readFileSync(join(root, "docs", "install.md"), "utf8"),
         machines: [...recorded(made, task, "installer", transcript).values()],
         owner: talking(owner, transcript),
         stop: stop.signal,
