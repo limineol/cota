@@ -422,7 +422,9 @@ layer(Harness.layer())("a session's detail", (it) => {
           outputTokens: 7,
           costUsd: null,
           durationMs: request?.durationMs,
-          firstByteMs: Option.getOrNull(request?.firstByteMs ?? Option.none()),
+          firstByteMs: Option.getOrNull(
+            request?.origin.firstByteMs ?? Option.none(),
+          ),
           tools: toolCount,
           divertedFrom: null,
           follows: null,

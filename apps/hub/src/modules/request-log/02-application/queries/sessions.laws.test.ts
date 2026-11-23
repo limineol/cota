@@ -181,7 +181,7 @@ layer(overHeld)("the sessions list over the in-memory reader", (it) => {
             Option.fromUndefinedOr(from?.logged),
             (request) =>
               Option.flatMap(request.conversation, ({ input }) =>
-                FirstPrompt.firstPromptOf(request.protocol, input),
+                FirstPrompt.firstPromptOf(request.origin.protocol, input),
               ),
           );
 

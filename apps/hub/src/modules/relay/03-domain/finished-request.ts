@@ -81,7 +81,7 @@ export const unanswered = (
   refusalReset: Option.none(),
 });
 
-export const of = (start: Start, ending: Ending): Request.Request => {
+export const of = (start: Start, ending: Ending): Request.ForwardedRequest => {
   const { description, headers } = start;
   const started = DateTime.toEpochMillis(start.startedAt);
   const model = Option.getOrElse(description.model, () => "");
@@ -92,54 +92,57 @@ export const of = (start: Start, ending: Ending): Request.Request => {
   return {
     id: start.id,
     startedAt: start.startedAt,
-    firstByteMs: Option.map(ending.firstByteAt, (at) =>
-      Math.max(at - started, 0),
-    ),
     durationMs: Math.max(ending.endedAt - started, 0),
     session: Option.match(description.session, {
       onNone: () => `request:${start.id}`,
       onSome: ({ id }) => id,
     }),
-    sessionSource: Option.match(description.session, {
-      onNone: () => "",
-      onSome: ({ source }) => source,
-    }),
     machine: tagOf(headers, "x-cota-machine"),
     project: tagOf(headers, "x-cota-project"),
     client: client.client,
     clientVersion: client.version,
-    userAgent,
-    hubKey: start.hubKey,
     pool: start.pool.id,
-    divertedFrom: start.divertedFrom,
-    follows: start.follows,
-    loginFingerprint: start.loginFingerprint,
-    refusalReset: ending.refusalReset,
     provider: start.pool.provider,
-    protocol: start.protocol,
     operation: description.operation,
-    purpose: description.purpose,
     model,
-    servedModel: servedModel === model ? "" : servedModel,
-    stream: ending.stream,
     outcome: ending.outcome,
-    upstreamStatus: ending.upstreamStatus,
     errorType: ending.errorType,
     errorMessage: ending.errorMessage,
     stopReason: ending.reading.stopReason,
     usage: ending.reading.usage,
-    serviceTier: ending.reading.serviceTier || description.serviceTier,
     providerRequestId: ending.answerHeaders.providerRequestId,
-    rateLimits: ending.answerHeaders.rateLimits,
-    clientHeaders: description.headers,
     conversation: Option.flatMap(start.conversationRules, (rules) =>
       Option.flatMap(start.body, (body) =>
         Conversation.read(rules, body, ending.reading.output),
       ),
     ),
-    errorBody: ending.errorBody,
-    requestBytes: start.requestBytes,
-    responseBytes: ending.responseBytes,
-    readingComplete: ending.readingComplete,
+    origin: {
+      _tag: "forwarded",
+      protocol: start.protocol,
+      hubKey: start.hubKey,
+      firstByteMs: Option.map(ending.firstByteAt, (at) =>
+        Math.max(at - started, 0),
+      ),
+      sessionSource: Option.match(description.session, {
+        onNone: () => "",
+        onSome: ({ source }) => source,
+      }),
+      userAgent,
+      divertedFrom: start.divertedFrom,
+      follows: start.follows,
+      loginFingerprint: start.loginFingerprint,
+      refusalReset: ending.refusalReset,
+      purpose: description.purpose,
+      servedModel: servedModel === model ? "" : servedModel,
+      stream: ending.stream,
+      upstreamStatus: ending.upstreamStatus,
+      serviceTier: ending.reading.serviceTier || description.serviceTier,
+      rateLimits: ending.answerHeaders.rateLimits,
+      clientHeaders: description.headers,
+      errorBody: ending.errorBody,
+      requestBytes: start.requestBytes,
+      responseBytes: ending.responseBytes,
+      readingComplete: ending.readingComplete,
+    },
   };
 };

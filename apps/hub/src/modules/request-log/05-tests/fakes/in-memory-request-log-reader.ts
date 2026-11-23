@@ -7,7 +7,7 @@ import {
 import type { PricedRequest } from "#modules/request-log/02-application/interfaces/requests.repository.ts";
 import * as Search from "#modules/request-log/03-domain/search.ts";
 import * as Session from "#modules/request-log/03-domain/session.ts";
-import type * as StoredItems from "#modules/request-log/03-domain/stored-items.ts";
+import * as StoredItems from "#modules/request-log/03-domain/stored-items.ts";
 import * as Traffic from "#modules/request-log/03-domain/traffic.ts";
 import type * as Conversation from "#shared/03-domain/conversation.ts";
 import type * as Request from "#shared/03-domain/request.entity.ts";
@@ -69,11 +69,14 @@ const noUsage: Traffic.UsageSums = {
 };
 
 /** The order of a session's requests: by when they started, then by id. */
-const byStart = (one: Request.Request, other: Request.Request): number =>
+const byStart = (
+  one: StoredItems.StoredRequest,
+  other: StoredItems.StoredRequest,
+): number =>
   millis(one.startedAt) - millis(other.startedAt) ||
   compareText(one.id, other.id);
 
-const sumsOf = (priced: ReadonlyArray<PricedRequest>): Traffic.Sums => {
+const sumsOf = (priced: ReadonlyArray<Session.RequestRecord>): Traffic.Sums => {
   let usage = noUsage;
   let cost = 0n;
   let unpricedRequests = 0;
@@ -107,10 +110,12 @@ const percentilesOf = (
 
 const distinct = (values: ReadonlyArray<string>) => new Set(values).size;
 
-const errorsOf = (priced: ReadonlyArray<PricedRequest>) =>
+const errorsOf = (priced: ReadonlyArray<Session.RequestRecord>) =>
   priced.filter(({ request }) => request.outcome === "error").length;
 
-const latest = (priced: ReadonlyArray<PricedRequest>): Request.Request =>
+const latest = (
+  priced: ReadonlyArray<Session.RequestRecord>,
+): StoredItems.StoredRequest =>
   priced
     .map(({ request }) => request)
     .reduce((best, each) =>
@@ -120,7 +125,9 @@ const latest = (priced: ReadonlyArray<PricedRequest>): Request.Request =>
         : best,
     );
 
-const totalsOf = (priced: ReadonlyArray<PricedRequest>): Traffic.Totals => {
+const totalsOf = (
+  priced: ReadonlyArray<Session.RequestRecord>,
+): Traffic.Totals => {
   const requests = priced.map(({ request }) => request);
   const outcome = (value: Request.Outcome) =>
     requests.filter((request) => request.outcome === value).length;
@@ -147,11 +154,14 @@ const totalsOf = (priced: ReadonlyArray<PricedRequest>): Traffic.Totals => {
 };
 
 const groupBy = <K>(
-  priced: ReadonlyArray<PricedRequest>,
-  keyOf: (request: Request.Request) => K,
+  priced: ReadonlyArray<Session.RequestRecord>,
+  keyOf: (request: StoredItems.StoredRequest) => K,
   identity: (key: K) => string = String,
 ) => {
-  const groups = new Map<string, { key: K; priced: Array<PricedRequest> }>();
+  const groups = new Map<
+    string,
+    { key: K; priced: Array<Session.RequestRecord> }
+  >();
   for (const each of priced) {
     const key = keyOf(each.request);
     const group = groups.get(identity(key));
@@ -193,11 +203,11 @@ const sessionOrder =
 
 const sessionRowOf = (
   id: string,
-  priced: ReadonlyArray<PricedRequest>,
+  priced: ReadonlyArray<Session.RequestRecord>,
 ): Session.SessionRow => {
   const requests = priced.map(({ request }) => request);
   const starts = requests.map(({ startedAt }) => millis(startedAt));
-  const valuesOf = (value: (request: Request.Request) => string) =>
+  const valuesOf = (value: (request: StoredItems.StoredRequest) => string) =>
     sortedText(requests.map(value).filter((each) => each !== ""));
   return {
     id,
@@ -227,7 +237,11 @@ export const make = (
   fails: () => boolean = () => false,
   bounds: Search.Bounds = Search.bounds,
 ) => {
-  const requests = () => held().requests;
+  const requests = () =>
+    held().requests.map(({ request, cost }) => ({
+      request: StoredItems.storedOf(request),
+      cost,
+    }));
 
   const itemOf = (session: string, digest: Conversation.Digest) =>
     held().items.find(
@@ -561,7 +575,7 @@ export const make = (
           Option.fromUndefinedOr(
             requests().find(({ request }) => request.id === id),
           ),
-          ({ request: { conversation: _, ...request }, cost }) => ({
+          ({ request, cost }) => ({
             record: { request, cost },
             params: Option.map(
               Option.fromUndefinedOr(

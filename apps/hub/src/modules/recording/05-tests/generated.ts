@@ -1041,18 +1041,18 @@ const itemsOf = (items: ReadonlyArray<Conversation.Item>) =>
   items.map(({ type, role }) => [type, role]);
 
 /** What a scrubbed exchange must keep of the request the original logged. */
-export const shapeOf = (request: Request.Request) => ({
+export const shapeOf = ({ origin, ...request }: Request.ForwardedRequest) => ({
   operation: request.operation,
   outcome: request.outcome,
-  upstreamStatus: request.upstreamStatus,
-  stream: request.stream,
+  upstreamStatus: origin.upstreamStatus,
+  stream: origin.stream,
   model: request.model,
-  purpose: request.purpose,
+  purpose: origin.purpose,
   stopReason: request.stopReason,
   errorType: request.errorType,
-  sessionSource: request.sessionSource,
-  refused: Option.isSome(request.refusalReset),
-  readingComplete: request.readingComplete,
+  sessionSource: origin.sessionSource,
+  refused: Option.isSome(origin.refusalReset),
+  readingComplete: origin.readingComplete,
   usage: Option.getOrNull(
     Option.map(request.usage, ({ tokens, reasoning }) => ({
       ...tokens,

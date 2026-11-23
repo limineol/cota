@@ -1,11 +1,13 @@
 import { Effect, Layer, Option, Schema } from "effect";
 import {
   type Batch,
+  type PricedRequest,
   RequestsRepository,
   RequestsRepositoryDeclined,
   RequestsRepositoryFailed,
   type StoredConversation,
 } from "#modules/request-log/02-application/interfaces/requests.repository.ts";
+import * as StoredItems from "#modules/request-log/03-domain/stored-items.ts";
 import type * as Request from "#shared/03-domain/request.entity.ts";
 import * as ClickHouse from "./client.ts";
 import { Param } from "./client.ts";
@@ -19,6 +21,9 @@ const KnownRow = Schema.Struct({ session: Schema.String, digest: UInt128 });
 
 const Content = Schema.Struct({ digest: UInt128, content: Schema.String });
 
+const rowOf = ({ request, cost }: PricedRequest) =>
+  RequestMapper.requestRowOf({ request: StoredItems.storedOf(request), cost });
+
 const insertsOf = (batch: Batch) => [
   { table: "items", rows: batch.items.map(ItemMapper.itemRowOf) },
   {
@@ -27,7 +32,7 @@ const insertsOf = (batch: Batch) => [
   },
   {
     table: "requests",
-    rows: batch.requests.map(RequestMapper.requestRowOf),
+    rows: batch.requests.map(rowOf),
   },
 ];
 
@@ -127,7 +132,7 @@ export const layer: Layer.Layer<
         Effect.provideService(ClickHouse.ClickHouse, clickHouse),
         Effect.mapError(failed),
       ),
-      holds: (request) => isHeld(RequestMapper.requestRowOf(request)),
+      holds: (request) => isHeld(rowOf(request)),
       store,
       known,
       conversationOf,

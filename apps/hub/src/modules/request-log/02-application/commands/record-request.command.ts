@@ -26,8 +26,10 @@ import type * as Request from "#shared/03-domain/request.entity.ts";
 export class RecordRequest extends Context.Service<
   RecordRequest,
   {
-    /** Takes a finished request without waiting, and never fails. */
-    readonly execute: (request: Request.Request) => Effect.Effect<void>;
+    /** Takes a finished forwarded request without waiting, and never fails. */
+    readonly execute: (
+      request: Request.ForwardedRequest,
+    ) => Effect.Effect<void>;
   }
 >()("@cota/hub/request-log/RecordRequest") {}
 
@@ -56,7 +58,7 @@ export const dropped = Metric.counter("cota_requests_dropped", {
 });
 
 interface SetAside {
-  readonly request: Request.Request;
+  readonly request: Request.ForwardedRequest;
   readonly reason: string;
 }
 
@@ -87,7 +89,7 @@ export const layer = (
     Effect.gen(function* () {
       const repository = yield* RequestsRepository;
       const prices = yield* Prices;
-      const queue = yield* Queue.dropping<Request.Request, Cause.Done>(
+      const queue = yield* Queue.dropping<Request.ForwardedRequest, Cause.Done>(
         options.capacity,
       );
       const closed = yield* Ref.make(false);
@@ -163,12 +165,22 @@ export const layer = (
       });
 
       const valuesOf = Effect.fn("RecordRequest.valuesOf")(function* (
-        request: Request.Request,
+        request: Request.ForwardedRequest,
         session: ReadonlySet<Conversation.Digest>,
       ) {
         const cost = yield* Option.match(request.usage, {
           onNone: () => Effect.succeedNone,
-          onSome: (usage) => Cost.of(usage.tokens, prices.of(request)),
+          onSome: (usage) =>
+            Cost.of(
+              usage.tokens,
+              prices.of({
+                pool: request.pool,
+                model: request.model,
+                protocol: request.origin.protocol,
+                servedModel: request.origin.servedModel,
+                serviceTier: request.origin.serviceTier,
+              }),
+            ),
         });
         const priced: PricedRequest = { request, cost };
         return {
@@ -180,7 +192,7 @@ export const layer = (
       });
 
       const drop = Effect.fn("RecordRequest.drop")(function* (
-        request: Request.Request,
+        request: Request.ForwardedRequest,
         message: string,
         fields: Readonly<Record<string, string>> = {},
       ) {
@@ -190,7 +202,7 @@ export const layer = (
       });
 
       const batchOf = Effect.fn("RecordRequest.batchOf")(function* (
-        finished: ReadonlyArray<Request.Request>,
+        finished: ReadonlyArray<Request.ForwardedRequest>,
       ): Effect.fn.Return<Made> {
         const sessions = [
           ...new Set(
@@ -265,9 +277,9 @@ export const layer = (
       );
 
       const write: (
-        requests: ReadonlyArray<Request.Request>,
+        requests: ReadonlyArray<Request.ForwardedRequest>,
       ) => Effect.Effect<boolean> = Effect.fn("RecordRequest.write")(function* (
-        requests: ReadonlyArray<Request.Request>,
+        requests: ReadonlyArray<Request.ForwardedRequest>,
       ) {
         const made = yield* batchOf(requests);
         const kept = made.batch.requests.map(({ request }) => request);
@@ -293,7 +305,7 @@ export const layer = (
       });
 
       const writeTaken = Effect.fn("RecordRequest.writeTaken")(function* (
-        taken: ReadonlyArray<Request.Request>,
+        taken: ReadonlyArray<Request.ForwardedRequest>,
       ) {
         for (const { id } of taken) pending.add(id);
         return yield* write(taken.map(StoredItems.wellFormed));
@@ -376,7 +388,7 @@ export const layer = (
 
       return RecordRequest.of({
         execute: Effect.fn("RecordRequest.execute")(function* (
-          request: Request.Request,
+          request: Request.ForwardedRequest,
         ) {
           if (yield* Queue.offer(queue, request)) return;
           yield* Metric.update(dropped, 1);

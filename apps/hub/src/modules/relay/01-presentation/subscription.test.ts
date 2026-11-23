@@ -1,6 +1,7 @@
 import { expect, layer } from "@effect/vitest";
 import { Clock, DateTime, Effect, Option } from "effect";
 import { TestClock } from "effect/testing";
+import * as StoredItems from "#modules/request-log/03-domain/stored-items.ts";
 import { Recorded } from "#modules/request-log/05-tests/fakes/record-request.fake.ts";
 import * as FakeProvider from "#shared/05-tests/fake-provider.ts";
 import * as Harness from "#shared/05-tests/harness.ts";
@@ -102,7 +103,7 @@ layer(Harness.layer())("subscription pools", (it) => {
           ["x-api-key", "sk-ant-api03-also-sent"],
         ]);
         const request = yield* nextRequest;
-        expect(request).toMatchObject({
+        expect(StoredItems.storedOf(request)).toMatchObject({
           pool: "claude",
           provider: "anthropic",
           protocol: "anthropic-messages",
@@ -164,7 +165,7 @@ layer(Harness.layer())("subscription pools", (it) => {
         ).toBe(true);
         const refused = yield* nextRequest;
         const diverted = yield* nextRequest;
-        expect(refused).toMatchObject({
+        expect(StoredItems.storedOf(refused)).toMatchObject({
           pool: "claude",
           outcome: "refused",
           upstreamStatus: 429,
@@ -176,7 +177,7 @@ layer(Harness.layer())("subscription pools", (it) => {
           responseBytes: 0,
           errorBody: "",
         });
-        expect(diverted).toMatchObject({
+        expect(StoredItems.storedOf(diverted)).toMatchObject({
           pool: "personal",
           provider: "anthropic",
           outcome: "ok",
@@ -206,7 +207,7 @@ layer(Harness.layer())("subscription pools", (it) => {
           ["claude", [["authorization", `Bearer ${login}`]]],
         ]);
         const straightAway = yield* nextRequest;
-        expect(straightAway).toMatchObject({
+        expect(StoredItems.storedOf(straightAway)).toMatchObject({
           pool: "personal",
           divertedFrom: Option.some("claude"),
           follows: Option.none(),
@@ -239,7 +240,7 @@ layer(Harness.layer())("subscription pools", (it) => {
         const refusedAt = DateTime.toEpochMillis(yield* now);
         yield* ask("claude", { authorization: `Bearer ${login}` });
         const [refused] = yield* Harness.recorded(2);
-        expect(refused?.refusalReset).toEqual(Option.none());
+        expect(refused?.origin.refusalReset).toEqual(Option.none());
         fake.forget();
         yield* TestClock.setTime(refusedAt + 15 * 60_000 - 1);
         yield* ask("claude", { authorization: `Bearer ${login}` });
@@ -276,7 +277,7 @@ layer(Harness.layer())("subscription pools", (it) => {
           ["solo", [["authorization", `Bearer ${login}`]]],
         ]);
         const request = yield* nextRequest;
-        expect(request).toMatchObject({
+        expect(StoredItems.storedOf(request)).toMatchObject({
           pool: "solo",
           outcome: "refused",
           refusalReset: Option.some(reset),
@@ -317,11 +318,11 @@ layer(Harness.layer())("subscription pools", (it) => {
         const diverted = yield* nextRequest;
         expect([
           refused.outcome,
-          refused.refusalReset,
+          refused.origin.refusalReset,
           diverted.outcome,
           diverted.pool,
-          diverted.follows,
-          diverted.refusalReset,
+          diverted.origin.follows,
+          diverted.origin.refusalReset,
           diverted.errorType,
         ]).toEqual([
           "refused",
@@ -352,7 +353,7 @@ layer(Harness.layer())("subscription pools", (it) => {
         expect(response.status).toBe(429);
         expect(reached(fake.seen())).toEqual([["claude", []]]);
         const request = yield* nextRequest;
-        expect([request.outcome, request.loginFingerprint]).toEqual([
+        expect([request.outcome, request.origin.loginFingerprint]).toEqual([
           "refused",
           Option.none(),
         ]);

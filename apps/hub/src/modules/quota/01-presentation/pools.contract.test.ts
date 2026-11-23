@@ -16,7 +16,7 @@ const at = (iso: string) => DateTime.makeUnsafe(iso);
 const unixSeconds = (iso: string) =>
   String(DateTime.toEpochMillis(at(iso)) / 1000);
 
-const seeded = (fields: Partial<Request.Request>) => ({
+const seeded = (fields: Partial<Harness.RequestFields>) => ({
   request: Harness.requestOf({
     loginFingerprint: Option.some(LoginFingerprint.make("fingerprint")),
     ...fields,
@@ -83,7 +83,7 @@ const noLogin = (provider: "anthropic" | "chatgpt") => ({
 const quiet = (
   id: string,
   kind: "subscription" | "keyed",
-  protocol: Request.Request["protocol"],
+  protocol: Request.Forwarded["protocol"],
   provider: string,
 ) => ({
   id,

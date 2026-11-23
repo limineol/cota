@@ -1,6 +1,7 @@
 import { describe, expect, it, layer } from "@effect/vitest";
 import { DateTime, Effect, Exit, Fiber, Layer, Option, Scope } from "effect";
 import { TestClock } from "effect/testing";
+import * as StoredItems from "#modules/request-log/03-domain/stored-items.ts";
 import { Recorded } from "#modules/request-log/05-tests/fakes/record-request.fake.ts";
 import * as FakeProvider from "#shared/05-tests/fake-provider.ts";
 import * as Harness from "#shared/05-tests/harness.ts";
@@ -234,7 +235,7 @@ layer(Harness.layer())("relay", (it) => {
             `Bearer ${Harness.secrets.heldKey}`,
           );
           const request = yield* nextRequest;
-          expect(request.hubKey).toBe("fleet");
+          expect(request.origin.hubKey).toBe("fleet");
         }),
     );
   });
@@ -298,7 +299,10 @@ layer(Harness.layer())("relay", (it) => {
         yield* Harness.textOf(response);
         expect(fake.seen()).toHaveLength(1);
         const request = yield* nextRequest;
-        expect([request.outcome, request.upstreamStatus]).toEqual(["ok", 307]);
+        expect([request.outcome, request.origin.upstreamStatus]).toEqual([
+          "ok",
+          307,
+        ]);
       }),
     );
 
@@ -329,7 +333,7 @@ layer(Harness.layer())("relay", (it) => {
           expect(yield* Harness.bytesOf(response)).toEqual(answer);
           const request = yield* nextRequest;
           expect(request.outcome).toBe("ok");
-          expect(request.readingComplete).toBe(true);
+          expect(request.origin.readingComplete).toBe(true);
           expect(
             Option.map(request.usage, ({ tokens }) => tokens.output),
           ).toEqual(Option.some(1));
@@ -489,7 +493,7 @@ layer(Harness.layer())("relay", (it) => {
           expect(response.headers.get("x-cota-request")).toBe(request.id);
           expect([
             request.outcome,
-            request.upstreamStatus,
+            request.origin.upstreamStatus,
             request.errorType,
             request.model,
           ]).toEqual(["error", 0, "cota_provider_unreachable", "glm-5.2"]);
@@ -552,7 +556,7 @@ layer(Harness.layer())("relay", (it) => {
           );
           expect(yield* Harness.textOf(response)).toBe(streamed.join(""));
           const request = yield* nextRequest;
-          expect(request).toMatchObject({
+          expect(StoredItems.storedOf(request)).toMatchObject({
             outcome: "ok",
             upstreamStatus: 200,
             errorType: "",
@@ -630,7 +634,7 @@ layer(Harness.layer())("relay", (it) => {
           expect(response.status).toBe(404);
           expect(yield* Harness.textOf(response)).toBe(body);
           const request = yield* nextRequest;
-          expect(request).toMatchObject({
+          expect(StoredItems.storedOf(request)).toMatchObject({
             outcome: "error",
             upstreamStatus: 404,
             errorType: "invalid_request_error",
@@ -660,9 +664,9 @@ layer(Harness.layer())("relay", (it) => {
             request.operation,
             request.outcome,
             request.usage,
-            request.servedModel,
-            request.responseBytes,
-            request.readingComplete,
+            request.origin.servedModel,
+            request.origin.responseBytes,
+            request.origin.readingComplete,
           ]).toEqual(["models", "ok", Option.none(), "", body.length, true]);
         }),
     );
@@ -686,9 +690,9 @@ layer(Harness.layer())("relay", (it) => {
           const request = yield* nextRequest;
           expect([
             request.outcome,
-            request.errorBody,
-            request.responseBytes,
-            request.readingComplete,
+            request.origin.errorBody,
+            request.origin.responseBytes,
+            request.origin.readingComplete,
           ]).toEqual(["error", body.slice(0, 64 * 1024), body.length, true]);
         }),
     );
@@ -714,7 +718,7 @@ layer(Harness.layer())("relay", (it) => {
         yield* Harness.textOf(response);
         const request = yield* nextRequest;
         expect(request.outcome).toBe("refused");
-        expect(request.refusalReset).toEqual(
+        expect(request.origin.refusalReset).toEqual(
           Option.some(DateTime.add(now, { seconds: 30 })),
         );
       }),
@@ -814,7 +818,7 @@ layer(Harness.layer())("relay", (it) => {
           abort.abort();
           yield* waitUntil(() => fake.last().signal.aborted);
           const request = yield* nextRequest;
-          expect([request.outcome, request.upstreamStatus]).toEqual([
+          expect([request.outcome, request.origin.upstreamStatus]).toEqual([
             "cancelled",
             200,
           ]);
@@ -842,7 +846,7 @@ layer(Harness.layer())("relay", (it) => {
           yield* Fiber.join(pending);
           yield* waitUntil(() => fake.last().signal.aborted);
           const request = yield* nextRequest;
-          expect([request.outcome, request.upstreamStatus]).toEqual([
+          expect([request.outcome, request.origin.upstreamStatus]).toEqual([
             "cancelled",
             0,
           ]);
@@ -904,7 +908,7 @@ layer(Harness.layer())("relay", (it) => {
           expect(response.status).toBe(status);
           expect(yield* Harness.textOf(response)).toBe("");
           const request = yield* nextRequest;
-          expect([request.outcome, request.upstreamStatus]).toEqual([
+          expect([request.outcome, request.origin.upstreamStatus]).toEqual([
             status >= 400 ? "error" : "ok",
             status,
           ]);
@@ -1062,9 +1066,9 @@ layer(
         const request = yield* nextRequest;
         expect([
           request.outcome,
-          request.readingComplete,
+          request.origin.readingComplete,
           request.usage,
-          request.responseBytes,
+          request.origin.responseBytes,
         ]).toEqual(["ok", false, Option.none(), answer.length]);
       }),
   );
@@ -1087,7 +1091,7 @@ layer(
         expect(yield* Harness.textOf(response)).toBe(chunks.join(""));
         Harness.sabotageReader("none");
         const request = yield* requestOnceTheClockMoves;
-        expect(request.readingComplete).toBe(false);
+        expect(request.origin.readingComplete).toBe(false);
       }),
   );
 });
@@ -1222,11 +1226,13 @@ describe("shutdown", () => {
           Effect.flatMap(Recorded, (recorded) => recorded.drain),
         );
         expect(
-          requests.map(({ outcome, errorType, readingComplete }) => [
-            outcome,
-            errorType,
-            readingComplete,
-          ]),
+          requests.map(
+            ({ outcome, errorType, origin: { readingComplete } }) => [
+              outcome,
+              errorType,
+              readingComplete,
+            ],
+          ),
         ).toEqual([
           ["ok", "", false],
           ["error", "cota_hub_shutdown", false],

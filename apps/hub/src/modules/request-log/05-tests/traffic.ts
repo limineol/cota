@@ -5,6 +5,7 @@ import { ReadBreakdown } from "#modules/request-log/02-application/queries/read-
 import { ReadFacets } from "#modules/request-log/02-application/queries/read-facets.query.ts";
 import { ReadOverview } from "#modules/request-log/02-application/queries/read-overview.query.ts";
 import { ReadSeries } from "#modules/request-log/02-application/queries/read-series.query.ts";
+import * as StoredItems from "#modules/request-log/03-domain/stored-items.ts";
 import * as Traffic from "#modules/request-log/03-domain/traffic.ts";
 import { HubKeyName, PoolId } from "#shared/03-domain/ids.ts";
 import * as Request from "#shared/03-domain/request.entity.ts";
@@ -344,7 +345,9 @@ export const facetsAndCounts = (
     const counted: Record<string, unknown> = {};
     for (const dimension of Traffic.dimensions) {
       const candidates = new Set(
-        log.map(({ request }) => Traffic.valueIn(request, dimension)),
+        log.map(({ request }) =>
+          Traffic.valueIn(StoredItems.storedOf(request), dimension),
+        ),
       );
       const values: Array<Traffic.FacetValue> = [];
       for (const value of candidates) {

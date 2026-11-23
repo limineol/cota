@@ -2,11 +2,11 @@ import { DateTime, Duration, Effect, Option, Schema } from "effect";
 import type * as Request from "#shared/03-domain/request.entity.ts";
 import { compareText } from "#shared/03-domain/text.ts";
 import type * as Cost from "./cost.ts";
+import type { StoredRequest } from "./stored-items.ts";
 
 /** Whether a request is traffic: every request but a model listing. */
-export const isTraffic = (
-  request: Pick<Request.Request, "operation">,
-): boolean => request.operation !== "models";
+export const isTraffic = (request: Pick<StoredRequest, "operation">): boolean =>
+  request.operation !== "models";
 
 export const Dimension = Schema.Literals([
   "pool",
@@ -23,7 +23,7 @@ export const dimensions = Dimension.literals;
 
 /** A request's value for a dimension; `model` is the model asked for. */
 export const valueIn = (
-  request: Request.Request,
+  request: StoredRequest,
   dimension: Dimension,
 ): string => {
   switch (dimension) {
@@ -67,7 +67,7 @@ export const noFilters: Filters = {
 /** Whether a request has, for every dimension but `except`, one of its filter's values. */
 export const matches = (
   filters: Filters,
-  request: Request.Request,
+  request: StoredRequest,
   except?: Dimension,
 ): boolean =>
   dimensions.every((dimension) => {
@@ -148,7 +148,7 @@ export const selectionOf = Effect.fn("Traffic.selectionOf")(function* (
 
 export const isSelected = (
   selection: Selection,
-  request: Request.Request,
+  request: StoredRequest,
   except?: Dimension,
 ): boolean =>
   isTraffic(request) &&

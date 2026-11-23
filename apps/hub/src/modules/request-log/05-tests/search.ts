@@ -3,7 +3,7 @@ import type { PricedRequest } from "#modules/request-log/02-application/interfac
 import type { FoundHit } from "#modules/request-log/02-application/queries/read-snippets.query.ts";
 import * as SearchItems from "#modules/request-log/02-application/queries/search-items.query.ts";
 import * as Search from "#modules/request-log/03-domain/search.ts";
-import type * as StoredItems from "#modules/request-log/03-domain/stored-items.ts";
+import * as StoredItems from "#modules/request-log/03-domain/stored-items.ts";
 import * as Traffic from "#modules/request-log/03-domain/traffic.ts";
 import * as Conversation from "#shared/03-domain/conversation.ts";
 import { compareText } from "#shared/03-domain/text.ts";
@@ -247,7 +247,9 @@ export const selectedSessions = (
   Effect.map(Traffic.selectionOf(asked), (selection) => {
     const sessions = new Set<string>();
     for (const { request } of log) {
-      if (Traffic.isSelected(selection, request)) sessions.add(request.session);
+      if (Traffic.isSelected(selection, StoredItems.storedOf(request))) {
+        sessions.add(request.session);
+      }
     }
     return sessions;
   }).pipe(Effect.orDie);
