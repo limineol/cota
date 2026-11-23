@@ -230,6 +230,7 @@ export type Law =
   | "J23"
   | "J24"
   | "J26"
+  | "J27"
   | "E1"
   | "E2"
   | "E3"
@@ -320,6 +321,7 @@ const cliRecord = `${cli}/03-domain/antigravity-record.ts`;
 const cliRequests = `${cli}/03-domain/requests.ts`;
 const cliSendRequests = `${cli}/02-application/commands/send-reported-requests.command.ts`;
 const cliSqliteRecords = `${cli}/04-infrastructure/sqlite-client-records.ts`;
+const cliRunLock = `${cli}/04-infrastructure/node-run-lock.ts`;
 const cliShowRequests = `${cli}/02-application/queries/show-requests.query.ts`;
 const j3 =
   "J3: For every client file and every set of pools, what is not `cota`'s reads as the same value after a rewrite as before, and in Codex's file every line outside `cota`'s tables is unchanged and in order.";
@@ -396,6 +398,8 @@ const j24 =
   "J24: For any record with a table or column missing, a sub-agent, a step that is not a protocol buffer or a record rewritten, the calls reported are those before it, and `cota requests show` and doctor name the conversation and the reason.";
 const j26 =
   "J26: A report carries a folder's `through` only when every call the folder's readable conversations held when the run began reading it has been answered 200, and that `through` is the moment the run began.";
+const j27 =
+  "J27: Of runs that take the lock at once, over no lock or one whose process is gone, exactly one takes it; the lock appears whole, naming its owner, or not at all; and a run removes only its own lock.";
 const signIn = "apps/hub/src/modules/sign-in";
 const access = `${signIn}/03-domain/access.ts`;
 const attempts = `${signIn}/03-domain/attempts.ts`;
@@ -7847,5 +7851,29 @@ export const layer = (policy: Admission.Policy) =>
     find: "                const last = index === sendable.length - 1 && complete;",
     replace: "                const last = index === sendable.length - 1;",
     killedBy: j26,
+  },
+  {
+    name: "the lock appears before its owner is written in it",
+    law: "J27",
+    file: cliRunLock,
+    find: '  await writeFile(written, owned, { mode: 0o600, flag: "wx" });',
+    replace: '  await writeFile(written, "", { mode: 0o600, flag: "wx" });',
+    killedBy: j27,
+  },
+  {
+    name: "a dead run's lock is taken over without taking it over first",
+    law: "J27",
+    file: cliRunLock,
+    find: "    if (!(await claim(taking))) return false;\n",
+    replace: "",
+    killedBy: j27,
+  },
+  {
+    name: "a run's release removes a lock not its own",
+    law: "J27",
+    file: cliRunLock,
+    find: "        if ((await textAt(path)) === owned) await rm(path, { force: true });",
+    replace: "        await rm(path, { force: true });",
+    killedBy: j27,
   },
 ];
