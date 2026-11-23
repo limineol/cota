@@ -2,8 +2,8 @@
 status: active
 scope: repository
 owner: limineol
-last_verified: 2026-11-23
-review_by: 2027-02-23
+last_verified: 2026-11-22
+review_by: 2027-02-20
 supersedes: []
 code:
   - deploy/compose.yaml
@@ -20,7 +20,7 @@ This document is for a coding agent: you were given it to install Cota for the p
 
 ## What Cota is
 
-Cota is one hub for every AI coding subscription and API plan its owner has: Claude Code, Codex, OpenCode and Pi send their requests through it, from every machine the owner works on. The hub forwards each request with the client's own login or the key it holds for a pool, bills each project to the pool the owner chose, and keeps every request and conversation in a request log the owner reads in the hub's dashboard. Each machine runs `cota`, which joins it to the hub, launches the clients through the hub, and reports each session's title; for Antigravity, which cannot be pointed at the hub, it reports each model call from the record Antigravity keeps of its conversations.
+Cota is one hub for every AI coding subscription and API plan its owner has: Claude Code, Codex, OpenCode and Pi send their requests through it, from every machine the owner works on. The hub forwards each request with the client's own login or the key it holds for a pool, bills each project to the pool the owner chose, and keeps every request and conversation in a request log the owner reads in the hub's dashboard. Each machine runs `cota`, which joins it to the hub, launches the clients through the hub, and reports each session's title.
 
 ## Never
 
@@ -38,10 +38,9 @@ Ask these together, in one message, before you run anything:
 2. **Which pools?** One for each subscription and each API plan the hub should use:
    - each Claude subscription (Pro or Max), by the name the owner wants for it, and which one is the fallback of which;
    - a ChatGPT subscription, for Codex;
-   - each API plan: an Anthropic API key, OpenRouter, Z.ai, OpenCode Go, or a server of their own (an OpenAI-compatible URL);
-   - each Antigravity sign-in whose model calls the machines report (question 4): an observed pool, which the hub records and never forwards to.
+   - each API plan: an Anthropic API key, OpenRouter, Z.ai, OpenCode Go, or a server of their own (an OpenAI-compatible URL).
 3. **The hub's address as the machines reach it**, such as `http://studio.lan:8080`, a VPN address, or `https://cota.example.com` behind a proxy the owner already runs. An `http` address that is not this machine's own is sent in the clear, hub keys included: say so, and ask whether they accept it. The proxy and the private network are the owner's; [`recipes`](recipes/README.md) has what each needs.
-4. **Which machines join**, and on each, which of Claude Code, Codex, OpenCode and Pi are installed. Each needs `curl` and to reach `github.com`. Where Antigravity runs, which of its data folders to report, and which observed pool of question 2 each bills: `~/.gemini/antigravity-cli` is `agy`'s, `~/.gemini/antigravity` the desktop app's, and a folder Antigravity is started with is its own. None is reported unless the owner names it.
+4. **Which machines join**, and on each, which of Claude Code, Codex, OpenCode and Pi are installed. Each needs `curl` and to reach `github.com`.
 
 Write down the answers. Every step below names what it uses.
 
@@ -153,7 +152,7 @@ key = { file = "/etc/cota/secrets/zai" }
 prices = "zai"
 ```
 
-A kept login is `kept_login = { file = "/etc/cota/secrets/<pool>-login" }`. An observed pool of question 2 is a table of two lines, `observed = true` and `provider = "google"` for Antigravity, with no `protocol`, `base_url` or `key`: the hub never sends it a request, and prices what the machines report of it. A server of the owner's own on this machine is not `127.0.0.1` from inside the hub's container, which is the container itself: on Docker Desktop and OrbStack it is `host.docker.internal`.
+A kept login is `kept_login = { file = "/etc/cota/secrets/<pool>-login" }`. A server of the owner's own on this machine is not `127.0.0.1` from inside the hub's container, which is the container itself: on Docker Desktop and OrbStack it is `host.docker.internal`.
 
 With a ClickHouse the owner already runs (question 1), write its URL, database and user in `[clickhouse]` in place of the deployment's, as the hub's container reaches it; its password stays `/etc/cota/secrets/clickhouse`. Step 5 then starts the hub alone, with `docker compose up -d --wait --no-deps hub`.
 
@@ -279,10 +278,6 @@ Success: no line starts `failed`, and it exits 0. Each check prints `passed`, `w
 | `configured` | `cota configure`, or `edit '<file>' as the problem says, then cota configure` | Run `~/.local/bin/cota configure`. A file `cota` cannot rewrite is the owner's: show them the problem, and wait. |
 | `titles` | `cota titles schedule`, or `fix what that says, then cota titles report` | Run `~/.local/bin/cota titles schedule`, then `~/.local/bin/cota titles report`. A problem that names the hub is fixed by the `hub` row; a file that `cannot be read` is the owner's. |
 | `titles` | `edit your crontab (crontab -e) to add * * * * * '<cota>' titles report` | This system has no scheduler `cota` can use. The crontab is the owner's: show them the line, and ask. |
-| `requests` | `cota requests schedule`, or `fix what that says, then cota requests report` | Run `~/.local/bin/cota requests schedule`, then `~/.local/bin/cota requests report`. A problem that names the hub is fixed by the `hub` row; a file that `cannot be read` is the owner's. |
-| `requests` | `cota requests remove antigravity '<folder>'`, or `cota requests add antigravity '<folder>' <an observed pool>` | A data folder that is gone, or a pool the hub does not observe: ask the owner which, and run the one they choose. |
-| `requests` | `cota requests show; …` | A warning: a conversation `cota` cannot read is not reported, and says why. Show the owner what `~/.local/bin/cota requests show` prints; a reason `schema` or `unreadable-step` means Antigravity's record changed, which the owner may report as an issue of Cota's. |
-| `requests` | `edit your crontab (crontab -e) to add * * * * * '<cota>' requests report` | As for `titles`: the crontab is the owner's. |
 
 `~/.local/bin/cota titles report` prints `cota: the hub kept 3 titles.` or `cota: there was no new title to send.` when it works.
 
@@ -295,24 +290,6 @@ A machine login lets Claude Code on this machine spend a Claude subscription oth
 ```
 
 Success: `cota: kept the machine login for personal.` A pool that is not a Claude subscription pool of this hub is refused, with the reason.
-
-### 5. Antigravity's model calls, where it runs
-
-Do this only on a machine where question 4 named a data folder of Antigravity's. For each folder, with the pool question 4 named for it:
-
-```sh
-~/.local/bin/cota requests add antigravity "$HOME/.gemini/antigravity-cli" gemini
-```
-
-Success, the first time on the machine:
-
-```text
-cota: /Users/owner/.gemini/antigravity-cli is reported now, its model calls billing gemini.
-cota: scheduled the request reporter every 30 seconds, by /Users/owner/Library/LaunchAgents/cota.requests.plist.
-cota: the hub stored 40 calls.
-```
-
-It reports every conversation the folder holds, from its first call, and from then on every 30 seconds what is new; the request log keeps each conversation as a session, billing that pool. It reads only the folder's `conversations/*.db`, from a copy, and never the folder's sign-in. `<hub> has no observed pool …` names the hub's observed pools: the pool is missing from `cota.toml` (the hub's step 4), or another was meant. `… is not a directory`: check the folder with the owner. `~/.local/bin/cota requests show` says how far each folder was reported, each conversation not reported and why, and Antigravity's folders that hold conversations and are not reported. Then run doctor (step 3) again.
 
 ## Quota logins, the owner's
 

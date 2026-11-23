@@ -28,9 +28,6 @@ export const known = {
   joined: "Each machine › 2. Join the hub #3",
   doctor: "Each machine › 3. Run doctor until it passes #1",
   login: "Each machine › 4. Machine logins, where a route needs one #1",
-  reportFolder: "Each machine › 5. Antigravity's model calls, where it runs #1",
-  folderReported:
-    "Each machine › 5. Antigravity's model calls, where it runs #2",
   route: "The routes #1",
 } as const;
 

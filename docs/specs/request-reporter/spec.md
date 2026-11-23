@@ -107,7 +107,7 @@ As `cota titles schedule` (`docs/specs/title-reporter/spec.md`), its own schedul
 
 A Linux without a systemd user session says so, with the line that runs the reporter every minute from cron, and exits 1. Joining schedules it when the configuration keeps a folder, and runs it once; leaving removes it, before the titles'. A schedule of its own, not a second step of the titles': a slow report, megabytes over a slow link, never holds back a title, and each has its own error file and check.
 
-**The install prompt, decided by default.** `docs/install.md` asks, for a machine with Antigravity, which data folders to report and which observed pool each bills, and runs `cota requests add` for each. The other way, leaving it to `cota requests add` by hand, was the owner's to choose, who has not answered; this is the recommendation, taken by default, and is one question and one block of the prompt.
+**The install prompt, decided by default.** The install prompt asks, for a machine with Antigravity, which data folders to report and which observed pool each bills, and runs `cota requests add` for each. The other way, leaving it to `cota requests add` by hand, was the owner's to choose, who has not answered; this is the recommendation, taken by default, and is one question and one block of the prompt. `docs/install.md` gains them with the release that holds `cota requests`, not before: the guide on `main` installs the latest release, and waits for the release that holds what it needs (ADR-0028).
 
 ## The Antigravity reader
 
