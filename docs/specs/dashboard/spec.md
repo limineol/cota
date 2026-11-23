@@ -134,7 +134,7 @@ A click on a column, or Enter on it, opens the session's Requests tab on the col
 
 ## Pairing tool calls
 
-A transcript shows a tool call with the result that answered it. `pairCalls(entries)` reads the entries in order: a `tool-result` goes with the nearest earlier `tool-call` of its `callId` that no result has taken, and is shown inside that call's row; a result with no such call, or with no `callId`, is a row of its own, and so is every other entry. A call with no `callId` takes no result.
+A transcript shows a tool call with the result that answered it. `pairCalls(entries)` reads the entries in order: a `tool-result` goes with the nearest earlier `tool-call` of its `callId` that no result has taken, and is shown inside that call's row; a result with no such call, or with no `callId`, is a row of its own, and so is every other entry. A call with no `callId` takes no result. A result that stands alone says which it is: "a later result of a call above" when a call of its `callId` comes before it in the transcript (a call that already has a result: an Antigravity task's notification is one, `docs/specs/reported-requests/spec.md`), else "a result whose call is not in this transcript".
 
 ## Splitting text
 

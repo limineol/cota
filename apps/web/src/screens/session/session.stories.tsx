@@ -389,8 +389,11 @@ export const AReportedSession: Story = {
     await expect(canvas.getByText("Segment 2 of 2")).toBeVisible();
     await expect(
       canvas.getByText(
-        /the next began when the prompt fell below half its size/,
+        /the next began when the client compacted the conversation/,
       ),
+    ).toBeVisible();
+    await expect(
+      canvas.getByText("a later result of a call above"),
     ).toBeVisible();
     await expect(
       canvas.getByText("An item the dashboard cannot read"),
