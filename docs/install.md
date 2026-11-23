@@ -2,7 +2,7 @@
 status: active
 scope: repository
 owner: limineol
-last_verified: 2026-11-22
+last_verified: 2026-11-23
 review_by: 2027-02-20
 supersedes: []
 code:
@@ -290,6 +290,8 @@ A machine login lets Claude Code on this machine spend a Claude subscription oth
 ```
 
 Success: `cota: kept the machine login for personal.` A pool that is not a Claude subscription pool of this hub is refused, with the reason.
+
+Tell the owner what such a login does not carry. It makes model requests only, so in the projects routed to that pool Claude Code has no claude.ai connectors and no Remote Control, and does not say so. A connector they need there is added to the machine instead, by the owner, where it has an address of its own, and every pool then has it: `claude mcp add --scope user --transport http <name> <address>`, then `/mcp` in Claude Code to sign in to it. A connector reached only through claude.ai has no such address, and is not to be had in those projects.
 
 ## Quota logins, the owner's
 
