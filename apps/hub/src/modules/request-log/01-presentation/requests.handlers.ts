@@ -3,6 +3,7 @@ import type { HttpApiBuilder } from "effect/http-api";
 import { InspectRequest } from "#modules/request-log/02-application/queries/inspect-request.query.ts";
 import { RebuildConversation } from "#modules/request-log/02-application/queries/rebuild-conversation.query.ts";
 import * as Session from "#modules/request-log/03-domain/session.ts";
+import { originOf } from "#modules/request-log/03-domain/stored-protocol.ts";
 import * as Transcript from "#modules/request-log/03-domain/transcript.ts";
 import {
   RequestLogProblem,
@@ -134,6 +135,7 @@ export const build = (
               refusalReset: Option.getOrNull(request.refusalReset),
               provider: request.provider,
               protocol: request.protocol,
+              origin: originOf(request.protocol),
               operation: request.operation,
               purpose: request.purpose,
               model: request.model,

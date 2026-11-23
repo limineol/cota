@@ -43,6 +43,7 @@ const access: Readonly<Record<string, Access>> = {
   "GET /api/display-names": "reader",
   "GET /api/pools": "reader",
   "GET /api/routes": "reader",
+  "GET /api/reported-through": "reader",
   "POST /api/sign-out": "owner",
   "GET /api/sign-ins": "owner",
   "DELETE /api/sign-ins": "owner",

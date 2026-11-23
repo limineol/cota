@@ -15,6 +15,7 @@ const requestId = (session: number, n: number) =>
   `0193a4c2-${hex(session, 4)}-7000-8000-${hex(n, 12)}`;
 
 type Role = "main" | "subagent" | "title" | "utility";
+type Origin = "forwarded" | "imported" | "reported";
 type Outcome = "ok" | "error" | "refused" | "cancelled";
 
 interface Planned {
@@ -59,6 +60,7 @@ const summariesOf = (
     return {
       id: requestId(session, n + 1),
       startedAt: iso(started),
+      origin: "forwarded" as Origin,
       requestRole: request.role,
       segment: request.role === "main" ? request.segment : null,
       operation: request.role === "utility" ? "count-tokens" : "messages",
@@ -178,6 +180,7 @@ const rowOf = ({
     clients: ["claude-code"],
     providers: ["anthropic"],
     models: [...new Set(summaries.map((each) => each.model))].sort(),
+    origins: [...new Set(summaries.map((each) => each.origin))].sort(),
     usage: usageOf(summaries),
     usageUnreported: summaries.filter((each) => each.promptSize === null)
       .length,
@@ -589,6 +592,7 @@ const inspected = (summary: Summary, session: string) => {
       refusalReset: null,
       provider: "anthropic",
       protocol: "anthropic-messages",
+      origin: summary.origin,
       operation: summary.operation,
       purpose: summary.purpose,
       model: summary.model,

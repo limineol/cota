@@ -5975,6 +5975,123 @@
           "required": true
         }
       }
+    },
+    "/api/reported-through": {
+      "get": {
+        "tags": ["reports"],
+        "operationId": "reports.reportedThrough",
+        "parameters": [],
+        "security": [
+          {
+            "signIn": []
+          },
+          {
+            "hubKey": ["reader"]
+          },
+          {
+            "bearer": ["reader"]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reporters": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Reporter"
+                      }
+                    }
+                  },
+                  "required": ["reporters"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestProblemEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign in, or send a hub key the hub knows.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignInRequiredEncoded"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller may not call this endpoint. | A browser request from another site may not change anything.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/NotAllowedEncoded"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CrossSiteEncoded"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The request body is over the API's limit.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BodyTooLargeEncoded"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "The API reads only JSON bodies.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnsupportedMediaTypeEncoded"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorProblemEncoded"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The hub store failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HubStoreProblemEncoded"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5999,6 +6116,61 @@
           "title": {
             "type": "string",
             "enum": ["Internal Server Error"]
+          }
+        },
+        "required": ["type"],
+        "additionalProperties": false
+      },
+      "BadRequestProblemEncoded": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string",
+                        "enum": ["Infinity", "-Infinity", "NaN"]
+                      }
+                    ]
+                  }
+                },
+                "message": {
+                  "type": "string"
+                }
+              },
+              "required": ["path", "message"],
+              "additionalProperties": false
+            }
+          },
+          "type": {
+            "type": "string",
+            "enum": ["about:blank"]
+          },
+          "status": {
+            "type": "number",
+            "enum": [400]
+          },
+          "title": {
+            "type": "string",
+            "enum": ["Bad Request"]
           }
         },
         "required": ["type"],
@@ -6156,6 +6328,48 @@
         "required": ["type"],
         "additionalProperties": false
       },
+      "Reporter": {
+        "type": "object",
+        "properties": {
+          "machine": {
+            "type": "string"
+          },
+          "client": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": ["antigravity"]
+              }
+            ]
+          },
+          "pool": {
+            "type": "string",
+            "minLength": 1
+          },
+          "through": {
+            "type": "string"
+          },
+          "reportedAt": {
+            "type": "string"
+          },
+          "reportedBy": {
+            "type": "string"
+          },
+          "late": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "machine",
+          "client",
+          "pool",
+          "through",
+          "reportedAt",
+          "reportedBy",
+          "late"
+        ],
+        "additionalProperties": false
+      },
       "RequestLogProblemEncoded": {
         "type": "object",
         "properties": {
@@ -6226,61 +6440,6 @@
           "title": {
             "type": "string",
             "enum": ["A call's call before was never stored."]
-          }
-        },
-        "required": ["type"],
-        "additionalProperties": false
-      },
-      "BadRequestProblemEncoded": {
-        "type": "object",
-        "properties": {
-          "detail": {
-            "type": "string"
-          },
-          "instance": {
-            "type": "string"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "path": {
-                  "type": "array",
-                  "items": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "string",
-                        "enum": ["Infinity", "-Infinity", "NaN"]
-                      }
-                    ]
-                  }
-                },
-                "message": {
-                  "type": "string"
-                }
-              },
-              "required": ["path", "message"],
-              "additionalProperties": false
-            }
-          },
-          "type": {
-            "type": "string",
-            "enum": ["about:blank"]
-          },
-          "status": {
-            "type": "number",
-            "enum": [400]
-          },
-          "title": {
-            "type": "string",
-            "enum": ["Bad Request"]
           }
         },
         "required": ["type"],
@@ -8554,6 +8713,10 @@
               "antigravity-steps"
             ]
           },
+          "origin": {
+            "type": "string",
+            "enum": ["forwarded", "imported", "reported"]
+          },
           "operation": {
             "type": "string"
           },
@@ -8705,6 +8868,7 @@
           "refusalReset",
           "provider",
           "protocol",
+          "origin",
           "operation",
           "purpose",
           "model",
@@ -8903,6 +9067,10 @@
           "startedAt": {
             "type": "string"
           },
+          "origin": {
+            "type": "string",
+            "enum": ["forwarded", "imported", "reported"]
+          },
           "requestRole": {
             "type": "string",
             "enum": ["main", "subagent", "title", "utility"]
@@ -9033,6 +9201,7 @@
         "required": [
           "id",
           "startedAt",
+          "origin",
           "requestRole",
           "segment",
           "operation",
@@ -9112,6 +9281,13 @@
               "type": "string"
             }
           },
+          "origins": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["forwarded", "imported", "reported"]
+            }
+          },
           "usage": {
             "$ref": "#/components/schemas/Usage"
           },
@@ -9161,6 +9337,7 @@
           "clients",
           "providers",
           "models",
+          "origins",
           "usage",
           "usageUnreported",
           "costUsd",
@@ -9327,6 +9504,13 @@
               "type": "string"
             }
           },
+          "origins": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["forwarded", "imported", "reported"]
+            }
+          },
           "usage": {
             "$ref": "#/components/schemas/Usage"
           },
@@ -9386,6 +9570,7 @@
           "clients",
           "providers",
           "models",
+          "origins",
           "usage",
           "usageUnreported",
           "costUsd",

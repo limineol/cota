@@ -1,6 +1,7 @@
 import { Effect, Option } from "effect";
 import type { HttpApiBuilder } from "effect/http-api";
 import { ReportRequests } from "#modules/request-log/02-application/commands/report-requests.command.ts";
+import { ReadReportedThrough } from "#modules/request-log/02-application/queries/read-reported-through.query.ts";
 import type * as Report from "#modules/request-log/03-domain/report.ts";
 import { CurrentCaller } from "#shared/01-presentation/caller.middleware.ts";
 import {
@@ -36,46 +37,54 @@ export const build = (
 ) =>
   Effect.gen(function* () {
     const reportRequests = yield* ReportRequests;
+    const readReportedThrough = yield* ReadReportedThrough;
 
-    return handlers.handle("reportRequests", ({ headers, payload }) =>
-      Effect.gen(function* () {
-        const caller = yield* CurrentCaller;
-        return yield* reportRequests.execute(
-          {
-            client: payload.client,
-            pool: payload.pool,
-            through: Option.fromNullOr(payload.through),
-            calls: payload.calls.map(callOf),
-          },
-          {
-            reporter:
-              caller._tag === "Owner"
-                ? { _tag: "Owner" }
-                : { _tag: "HubKey", name: caller.hubKey.name },
-            machine: headers["x-cota-machine"] ?? "",
-          },
-        );
-      }).pipe(
-        Effect.catchTags({
-          NoSuchPool: ({ pool }) =>
-            Effect.fail(
-              new NoSuchPoolProblem({
-                detail: `The hub has no pool ${JSON.stringify(pool)}.`,
-              }),
-            ),
-          PoolNotObserved: ({ pool }) =>
-            Effect.fail(
-              new PoolNotObservedProblem({
-                detail: `The pool ${JSON.stringify(pool)} is not observed: a report bills an observed pool only.`,
-              }),
-            ),
-          ReportRefused: ({ detail }) =>
-            Effect.fail(new ReportRefusedProblem({ detail })),
-          ReportOutOfOrder: ({ detail }) =>
-            Effect.fail(new ReportOutOfOrderProblem({ detail })),
-          RequestLogUnavailable: requestLogProblem,
-          HubStoreUnavailable: hubStoreProblem,
-        }),
-      ),
-    );
+    return handlers
+      .handle("reportedThrough", () =>
+        readReportedThrough.execute.pipe(
+          Effect.map((reporters) => ({ reporters })),
+          Effect.catchTag("HubStoreUnavailable", hubStoreProblem),
+        ),
+      )
+      .handle("reportRequests", ({ headers, payload }) =>
+        Effect.gen(function* () {
+          const caller = yield* CurrentCaller;
+          return yield* reportRequests.execute(
+            {
+              client: payload.client,
+              pool: payload.pool,
+              through: Option.fromNullOr(payload.through),
+              calls: payload.calls.map(callOf),
+            },
+            {
+              reporter:
+                caller._tag === "Owner"
+                  ? { _tag: "Owner" }
+                  : { _tag: "HubKey", name: caller.hubKey.name },
+              machine: headers["x-cota-machine"] ?? "",
+            },
+          );
+        }).pipe(
+          Effect.catchTags({
+            NoSuchPool: ({ pool }) =>
+              Effect.fail(
+                new NoSuchPoolProblem({
+                  detail: `The hub has no pool ${JSON.stringify(pool)}.`,
+                }),
+              ),
+            PoolNotObserved: ({ pool }) =>
+              Effect.fail(
+                new PoolNotObservedProblem({
+                  detail: `The pool ${JSON.stringify(pool)} is not observed: a report bills an observed pool only.`,
+                }),
+              ),
+            ReportRefused: ({ detail }) =>
+              Effect.fail(new ReportRefusedProblem({ detail })),
+            ReportOutOfOrder: ({ detail }) =>
+              Effect.fail(new ReportOutOfOrderProblem({ detail })),
+            RequestLogUnavailable: requestLogProblem,
+            HubStoreUnavailable: hubStoreProblem,
+          }),
+        ),
+      );
   });

@@ -312,7 +312,8 @@ const sessionColumns = `session, min(started_at) AS first_at, max(started_at) AS
   ${sums}, ${errors}, countIf(NOT usage_reported) AS usage_unreported,
   ${distinctValues("pool")} AS pools, ${distinctValues("project")} AS projects,
   ${distinctValues("machine")} AS machines, ${distinctValues("client")} AS clients,
-  ${distinctValues("provider")} AS providers, ${distinctValues("model")} AS models`;
+  ${distinctValues("provider")} AS providers, ${distinctValues("model")} AS models,
+  arraySort(groupUniqArray(toString(protocol))) AS protocols`;
 
 const selectedSessions = `SELECT session FROM requests WHERE ${selected()}`;
 
@@ -484,6 +485,7 @@ const SessionRow = Schema.Struct({
   clients: Schema.Array(Schema.String),
   providers: Schema.Array(Schema.String),
   models: Schema.Array(Schema.String),
+  protocols: Schema.Array(StoredProtocol),
   total: Count,
 });
 
@@ -500,6 +502,7 @@ const sessionRowOf = (row: typeof SessionRow.Type): Session.SessionRow => ({
   clients: row.clients,
   providers: row.providers,
   models: row.models,
+  protocols: row.protocols,
 });
 
 const Dollars = Schema.NullOr(
@@ -512,7 +515,8 @@ const costOf = (dollars: string | null): Option.Option<bigint> =>
     BigInt(each.replace(".", "")),
   );
 
-const summariesSql = `SELECT toString(id) AS id, started_at, toString(operation) AS operation,
+const summariesSql = `SELECT toString(id) AS id, started_at, toString(protocol) AS protocol,
+     toString(operation) AS operation,
      toString(purpose) AS purpose, toString(model) AS model, toString(served_model) AS served_model,
      toString(stop_reason) AS stop_reason, toString(outcome) AS outcome, upstream_status,
      toString(error_type) AS error_type,
@@ -528,6 +532,7 @@ const summariesSql = `SELECT toString(id) AS id, started_at, toString(operation)
 const SummaryRow = Schema.Struct({
   id: Request.RequestId,
   started_at: Time,
+  protocol: StoredProtocol,
   operation: Schema.String,
   purpose: Schema.String,
   model: Schema.String,
@@ -549,6 +554,7 @@ const SummaryRow = Schema.Struct({
 const summaryOf = (row: typeof SummaryRow.Type): Session.RequestSummary => ({
   id: row.id,
   startedAt: row.started_at,
+  protocol: row.protocol,
   operation: row.operation,
   purpose: row.purpose,
   model: row.model,

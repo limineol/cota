@@ -35,6 +35,7 @@ const recordOf = (n: number, changes: Partial<Logged> = {}): Logged => ({
   refusalReset: null,
   provider: "anthropic",
   protocol: "anthropic-messages",
+  origin: "forwarded",
   operation: "messages",
   purpose: "main",
   model: "claude-opus-4-5",
@@ -377,6 +378,7 @@ export const importedAnswers: ReadonlyArray<Fixture> = [
     inspectedOf(
       recordOf(8, {
         protocol: "bifrost-responses",
+        origin: "imported",
         operation: "responses",
         sessionSource: "",
         hubKey: "",

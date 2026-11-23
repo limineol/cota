@@ -1,5 +1,6 @@
 import { expect, layer } from "@effect/vitest";
-import { Effect } from "effect";
+import { DateTime, Effect } from "effect";
+import { TestClock } from "effect/testing";
 import * as StoredItems from "#modules/request-log/03-domain/stored-items.ts";
 import * as Steps from "#modules/request-log/05-tests/antigravity-steps.ts";
 import { InMemoryRequests } from "#modules/request-log/05-tests/fakes/in-memory-requests.repository.ts";
@@ -184,7 +185,7 @@ layer(Harness.layer())("POST /api/reported-requests", (it) => {
   );
 
   it.effect(
-    "reads a reported request back: its transcript by the record form's table, and its body as its steps through its input",
+    "reads a reported request back: its origin, its transcript by the record form's table, and its body as its steps through its input",
     () =>
       Effect.gen(function* () {
         expect((yield* sent(reportOf("read-back"), keys.fleet)).status).toBe(
@@ -206,7 +207,21 @@ layer(Harness.layer())("POST /api/reported-requests", (it) => {
         expect(inspected).toMatchObject({
           status: 200,
           body: {
-            request: { protocol: "antigravity-steps", hubKey: "fleet" },
+            request: {
+              protocol: "antigravity-steps",
+              origin: "reported",
+              hubKey: "fleet",
+            },
+          },
+        });
+        const detail = yield* Harness.problemOf(
+          yield* Harness.send("/api/sessions/read-back", { headers: reader }),
+        );
+        expect(detail).toMatchObject({
+          status: 200,
+          body: {
+            session: { origins: ["reported"] },
+            requests: [{ origin: "reported" }, { origin: "reported" }],
           },
         });
         const body = yield* Harness.problemOf(
@@ -367,5 +382,75 @@ layer(Harness.layer())("POST /api/reported-requests", (it) => {
       expect(answer.split(" ")[1]).toBe("413");
       expect(answer).toContain("urn:cota:body-too-large");
     }),
+  );
+});
+
+layer(Harness.layer())("GET /api/reported-through", (it) => {
+  const reporters = Effect.gen(function* () {
+    const { status, body } = yield* Harness.problemOf(
+      yield* Harness.send("/api/reported-through", { headers: keys.agents }),
+    );
+    expect(status).toBe(200);
+    return body;
+  });
+  const minutesBefore = (minutes: number) =>
+    DateTime.formatIso(DateTime.subtract(Harness.start, { minutes }));
+
+  it.effect(
+    "answers every machine's, client's and pool's reported through in that order, late once it is more than 5 minutes behind the hub's clock",
+    () =>
+      Effect.gen(function* () {
+        expect(yield* reporters).toEqual({ reporters: [] });
+        for (const [machine, through, caller] of [
+          ["studio", minutesBefore(1), keys.fleet],
+          ["laptop", minutesBefore(10), keys.clients],
+        ] as const) {
+          expect(
+            (yield* sent(
+              { ...reportOf("through"), calls: [], through },
+              caller,
+              machine,
+            )).status,
+          ).toBe(200);
+        }
+        const reportedAt = DateTime.formatIso(Harness.start);
+        expect(yield* reporters).toEqual({
+          reporters: [
+            {
+              machine: "laptop",
+              client: "antigravity",
+              pool: "gemini",
+              through: minutesBefore(10),
+              reportedAt,
+              reportedBy: "clients",
+              late: true,
+            },
+            {
+              machine: "studio",
+              client: "antigravity",
+              pool: "gemini",
+              through: minutesBefore(1),
+              reportedAt,
+              reportedBy: "fleet",
+              late: false,
+            },
+          ],
+        });
+        const lateness = Effect.map(reporters, (body) =>
+          typeof body === "object" && body !== null && "reporters" in body
+            ? body.reporters
+            : undefined,
+        );
+        yield* TestClock.adjust("4 minutes");
+        expect(yield* lateness).toMatchObject([
+          { machine: "laptop", late: true },
+          { machine: "studio", late: false },
+        ]);
+        yield* TestClock.adjust("1 millis");
+        expect(yield* lateness).toMatchObject([
+          { machine: "laptop", late: true },
+          { machine: "studio", late: true },
+        ]);
+      }),
   );
 });

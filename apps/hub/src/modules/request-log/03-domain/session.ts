@@ -118,6 +118,8 @@ export interface SessionRow extends Sums {
   readonly clients: ReadonlyArray<string>;
   readonly providers: ReadonlyArray<string>;
   readonly models: ReadonlyArray<string>;
+  /** The distinct protocols its requests are stored in, sorted. */
+  readonly protocols: ReadonlyArray<StoredProtocol>;
 }
 
 export interface SessionRows {
@@ -142,6 +144,7 @@ export const mostListedRequests = 10_000;
 export interface RequestSummary {
   readonly id: Request.RequestId;
   readonly startedAt: DateTime.Utc;
+  readonly protocol: StoredProtocol;
   readonly operation: string;
   readonly purpose: string;
   readonly model: string;

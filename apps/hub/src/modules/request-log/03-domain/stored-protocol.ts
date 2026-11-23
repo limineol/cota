@@ -19,3 +19,24 @@ export type StoredProtocol = typeof StoredProtocol.Type;
 
 /** Whether a request's items are a client's record: the request was reported (ADR-0029). */
 export const isRecordForm = Schema.is(RecordForm);
+
+/** Which way a stored request came in, read from its `protocol`: forwarded for a protocol, imported for a source form, reported for a record form. */
+export const Origin = Schema.Literals(["forwarded", "imported", "reported"]);
+export type Origin = typeof Origin.Type;
+
+const isSourceForm = Schema.is(SourceForm);
+
+export const originOf = (protocol: StoredProtocol): Origin =>
+  isRecordForm(protocol)
+    ? "reported"
+    : isSourceForm(protocol)
+      ? "imported"
+      : "forwarded";
+
+/** The distinct origins of a session's requests, in the order `Origin` lists them. */
+export const originsOf = (
+  protocols: ReadonlyArray<StoredProtocol>,
+): ReadonlyArray<Origin> => {
+  const found = new Set(protocols.map(originOf));
+  return Origin.literals.filter((origin) => found.has(origin));
+};

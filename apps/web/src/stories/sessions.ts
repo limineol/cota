@@ -108,6 +108,7 @@ export const sessionOf = ({ index, endedAgo, snippet = null }: Shape) => {
       kind === 6
         ? [at(models, index), at(models, index + 1), at(models, index + 3)]
         : [at(models, index)],
+    origins: ["forwarded"],
     usage: usageOf(tokens),
     usageUnreported: 0,
     costUsd: money(pool === "zai" ? 0 : tokens * 0.0000021),

@@ -103,9 +103,29 @@ const reportRequests = HttpApiEndpoint.post(
   },
 ).annotateMerge(mayCall("any-hub-key"));
 
-/** The model calls machines report (`docs/specs/reported-requests/spec.md`), with a body of up to 64 MiB. */
+export const Reporter = Schema.Struct({
+  machine: Schema.String,
+  client: ReportedClient,
+  pool: PoolId,
+  through: Time,
+  reportedAt: Time,
+  reportedBy: Schema.String,
+  late: Schema.Boolean,
+}).annotate({ identifier: "Reporter" });
+
+const reportedThrough = HttpApiEndpoint.get(
+  "reportedThrough",
+  "/reported-through",
+  {
+    success: Schema.Struct({ reporters: Schema.Array(Reporter) }),
+    error: [HubStoreProblem],
+  },
+).annotateMerge(mayCall("reader"));
+
+/** The model calls machines report, and how far each has reported (`docs/specs/reported-requests/spec.md`), with a body of up to 64 MiB. */
 export const group = HttpApiGroup.make("reports")
   .add(reportRequests)
+  .add(reportedThrough)
   .middleware(CallerMiddleware)
   .middleware(ReportBody)
   .middleware(HttpApiMiddleware.ProblemDetails)

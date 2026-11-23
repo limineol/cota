@@ -5,7 +5,10 @@ import {
   HttpApiMiddleware,
 } from "effect/http-api";
 import { RequestRole } from "#modules/request-log/03-domain/request-role.ts";
-import { StoredProtocol } from "#modules/request-log/03-domain/stored-protocol.ts";
+import {
+  Origin,
+  StoredProtocol,
+} from "#modules/request-log/03-domain/stored-protocol.ts";
 import {
   CallerMiddleware,
   mayCall,
@@ -108,6 +111,7 @@ export const RequestRecord = Schema.Struct({
   refusalReset: Schema.NullOr(Time),
   provider: Schema.String,
   protocol: StoredProtocol,
+  origin: Origin,
   operation: Schema.String,
   purpose: Schema.String,
   model: Schema.String,
