@@ -5,12 +5,15 @@ import {
   eightPools,
   emptyLog,
   failed,
+  historyFailed,
+  historyLoading,
   loading,
   overviewOfPools,
   poolsToOrder,
   reportedThrough,
   threePools,
   withAnObservedPool,
+  withHistory,
 } from "#stories/overview.ts";
 import { locationShown, page } from "#stories/page.tsx";
 
@@ -414,5 +417,136 @@ export const BeforeTheLogBegins: Story = {
     await expect(
       within(traffic).queryAllByTitle(/of the window before$/),
     ).toHaveLength(0);
+  },
+};
+
+const summaryOf = (canvas: HTMLElement) =>
+  within(canvas).getByText("Today", { selector: '[data-slot="stat-label"]' })
+    .parentElement?.parentElement ?? canvas;
+
+const allTimeCard = async (canvas: HTMLElement) =>
+  (
+    await within(canvas).findByText("All time", {
+      selector: '[data-slot="stat-label"]',
+    })
+  ).closest('[data-slot="stat"]');
+
+export const AllTimeWithHistory: Story = {
+  ...page("/", withHistory(eightPools)),
+  play: async ({ canvasElement, canvas }) => {
+    const card = await allTimeCard(canvasElement);
+    await waitFor(() => expect(card).toHaveTextContent(/9\.5B\s*tokens/));
+    await expect(card).toHaveTextContent(/≥\$20,[0-9]{3} · 274,140 requests/);
+    await expect(card).toHaveTextContent(
+      /The whole request log, since [A-Z][a-z]{2} \d{1,2}$/,
+    );
+    await expect(
+      await canvas.findByText("Last 30 days", {
+        selector: '[data-slot="stat-label"]',
+      }),
+    ).toBeVisible();
+    const cards = canvas.getByRole("list", { name: "Pools" });
+    const spare = within(cards).getByRole("link", { name: /^spare/ });
+    await waitFor(() =>
+      expect(spare).toHaveTextContent(/All time\s*1\.2B\s*\$2,640/),
+    );
+  },
+};
+
+export const AllTimeWithHistoryList: Story = {
+  ...page("/", withHistory(eightPools)),
+  beforeEach: () => {
+    localStorage.setItem(layoutKey, "list");
+    return () => localStorage.removeItem(layoutKey);
+  },
+};
+
+export const AllTimeOfOnePool: Story = {
+  ...page("/?pool=work", withHistory(eightPools)),
+  play: async ({ canvas }) => {
+    const usage = await canvas.findByRole("region", { name: "work traffic" });
+    await waitFor(() =>
+      expect(usage).toHaveTextContent(/All time\s*4\.4B\s*tokens/),
+    );
+  },
+};
+
+export const OrderedByAllTime: Story = {
+  ...page("/", withHistory(eightPools)),
+  play: async ({ canvasElement, canvas, userEvent }) => {
+    await waitFor(() =>
+      expect(cardNames(canvasElement)[0]).toBe("Personal plan"),
+    );
+    await userEvent.click(canvas.getByRole("radio", { name: "All time" }));
+    await expect(canvas.getByRole("radio", { name: "All time" })).toBeChecked();
+    await waitFor(() =>
+      expect(cardNames(canvasElement)).toEqual([
+        "work",
+        "Personal plan",
+        "spare",
+        "codex",
+        "acme/shop",
+        "zai",
+        "local",
+        "opencode",
+      ]),
+    );
+    await expect(locationShown().search).toEqual({ sort: "all-time" });
+    const hues = huesOf(canvasElement);
+    await expect(hues.cards).toEqual(hues.switcher);
+  },
+};
+
+export const AllTimeOfAYoungHub: Story = {
+  ...page("/", overviewOfPools(eightPools)),
+  play: async ({ canvasElement, canvas }) => {
+    const month = await canvas.findByText(/^Since [A-Z][a-z]{2} \d{1,2}$/, {
+      selector: '[data-slot="stat-label"]',
+    });
+    await expect(month.closest('[data-slot="stat"]')).toHaveTextContent(
+      /The whole request log$/,
+    );
+    await expect(
+      within(summaryOf(canvasElement)).queryByText("All time"),
+    ).toBeNull();
+    await expect(
+      within(canvas.getByRole("list", { name: "Pools" })).queryAllByText(
+        "All time",
+      ),
+    ).toHaveLength(0);
+    await expect(canvas.getByRole("radio", { name: "All time" })).toBeVisible();
+  },
+};
+
+export const AllTimeLoading: Story = {
+  ...page("/", historyLoading),
+  play: async ({ canvas }) => {
+    await expect(
+      await canvas.findByText("Last 30 days", {
+        selector: '[data-slot="stat-label"]',
+      }),
+    ).toBeVisible();
+    await expect(
+      canvas.queryByText("All time", { selector: '[data-slot="stat-label"]' }),
+    ).toBeNull();
+    await expect(
+      within(canvas.getByRole("list", { name: "Pools" })).getAllByText(
+        "All time",
+      ),
+    ).toHaveLength(8);
+  },
+};
+
+export const AllTimeFailed: Story = {
+  ...page("/", historyFailed),
+  play: async ({ canvas }) => {
+    await expect(
+      await canvas.findByText("The hub could not read the request log."),
+    ).toBeVisible();
+    await expect(
+      await canvas.findByText("Last 30 days", {
+        selector: '[data-slot="stat-label"]',
+      }),
+    ).toBeVisible();
   },
 };

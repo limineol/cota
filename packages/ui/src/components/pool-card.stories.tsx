@@ -43,6 +43,7 @@ interface Sample {
   readonly none?: string;
   readonly today: readonly [string, string];
   readonly month: readonly [string, string];
+  readonly allTime: readonly [string, string];
 }
 
 const samples: ReadonlyArray<Sample> = [
@@ -59,6 +60,7 @@ const samples: ReadonlyArray<Sample> = [
     ],
     today: ["38.2M", "$84.10"],
     month: ["1.1B", "$2,410"],
+    allTime: ["4.8B", "$10,920"],
   },
   {
     id: "work",
@@ -72,6 +74,7 @@ const samples: ReadonlyArray<Sample> = [
     ],
     today: ["9.4M", "$21.60"],
     month: ["310M", "$690"],
+    allTime: ["1.2B", "≥$2,705"],
   },
   {
     id: "local",
@@ -83,13 +86,14 @@ const samples: ReadonlyArray<Sample> = [
     none: "No quota windows",
     today: ["0", "$0"],
     month: ["0", "$0"],
+    allTime: ["2.1M", "no price"],
   },
 ];
 
 const severityOf = (used: number) =>
   used >= 100 ? "full" : used >= 80 ? "near" : "normal";
 
-const cards = (layout: "grid" | "list") => (
+const cards = (layout: "grid" | "list", allTime = false) => (
   <PoolCards layout={layout} aria-label="Pools">
     {samples.map((sample) => (
       <PoolCard
@@ -138,6 +142,11 @@ const cards = (layout: "grid" | "list") => (
           <PoolCardFigure label="Last 30 days">
             <strong>{sample.month[0]}</strong> {sample.month[1]}
           </PoolCardFigure>
+          {allTime ? (
+            <PoolCardFigure label="All time">
+              <strong>{sample.allTime[0]}</strong> {sample.allTime[1]}
+            </PoolCardFigure>
+          ) : null}
         </PoolCardFoot>
       </PoolCard>
     ))}
@@ -170,4 +179,12 @@ export const List: Story = {
 
 export const NarrowList: Story = {
   render: () => <div className="max-w-xl">{cards("list")}</div>,
+};
+
+export const ThreeFigures: Story = {
+  render: () => cards("grid", true),
+};
+
+export const ThreeFiguresList: Story = {
+  render: () => cards("list", true),
 };

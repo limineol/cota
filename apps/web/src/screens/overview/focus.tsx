@@ -25,9 +25,11 @@ import { useNow } from "#shared/now.tsx";
 import { glyphOf } from "#shared/providers.tsx";
 import { millis, tokensIn } from "#shared/words.ts";
 import {
+  allTimeLabel,
+  allTimeNote,
   type Figures,
   LiveState,
-  sameAsToday,
+  monthNote,
   sumOf,
   UsageFigure,
   WindowLine,
@@ -96,11 +98,16 @@ export function PoolInFocus({
   hue,
   figures,
   since,
+  first,
+  showAllTime,
 }: {
   readonly pool: Pool;
   readonly hue: Hue;
   readonly figures: Figures;
   readonly since: string | null;
+  /** When the request log begins, `null` when it is empty, until read `undefined`. */
+  readonly first: number | null | undefined;
+  readonly showAllTime: boolean;
 }) {
   const now = useNow();
   const nameOf = useNameOf();
@@ -179,7 +186,7 @@ export function PoolInFocus({
                 sum={month}
                 size="xl"
                 variant="plain"
-                note={sameAsToday(today, month)}
+                note={monthNote(today, month, since)}
               />
             </>
           ) : (
@@ -188,6 +195,23 @@ export function PoolInFocus({
               <Skeleton className="h-16 w-full" />
             </>
           )}
+          {showAllTime ? (
+            figures.allTime === undefined ? (
+              <Skeleton className="h-16 w-full" />
+            ) : (
+              <UsageFigure
+                label={allTimeLabel}
+                sum={figures.allTime}
+                size="xl"
+                variant="plain"
+                note={
+                  first === null || first === undefined
+                    ? undefined
+                    : allTimeNote(first)
+                }
+              />
+            )
+          ) : null}
         </PoolFocusUsage>
       </PoolFocusBody>
       <PoolFocusLists>

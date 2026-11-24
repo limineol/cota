@@ -992,7 +992,7 @@ const refusalOnItsRow =
 const poolsThatFit =
   "V46: a select offers every pool of the configuration that speaks the client's protocol and no other, in the configuration's order, and the pool chosen beside them when it is not among them";
 const poolsInOrder =
-  "V47: the pools are each shown once, by usage, most first, then by the name shown ignoring case, then by id, or by name and id alone whatever their usage, and pools equal in all of these keep the order given";
+  "V47: the pools are each shown once, by usage or by usage since the request log began, most first, then by the name shown ignoring case, then by id, or by name and id alone whatever their usage, and pools equal in all of these keep the order given";
 const huesInOrder =
   "V18: pools take the hues in the order given, one each, and a pool beyond the set is neutral";
 const dashboardRoutes =
@@ -6213,8 +6213,8 @@ export const layer = (policy: Policy): Layer.Layer<Fallback> =>
     name: "pools of equal usage keep the order given",
     law: "V47",
     file: poolOrder,
-    find: " || byName(a, b)",
-    replace: "",
+    find: "b.usage - a.usage || byName(a, b)",
+    replace: "b.usage - a.usage",
     killedBy: poolsInOrder,
   },
   {
@@ -6237,8 +6237,32 @@ export const layer = (policy: Policy): Layer.Layer<Fallback> =>
     name: "the name order heeds usage",
     law: "V47",
     file: poolOrder,
-    find: "name: byName }",
-    replace: "name: byUsage }",
+    find: "name: byName,",
+    replace: "name: byUsage,",
+    killedBy: poolsInOrder,
+  },
+  {
+    name: "the pool with the least usage since the request log began comes first",
+    law: "V47",
+    file: poolOrder,
+    find: "b.allTime - a.allTime",
+    replace: "a.allTime - b.allTime",
+    killedBy: poolsInOrder,
+  },
+  {
+    name: "the all-time order is by the 30 days' usage",
+    law: "V47",
+    file: poolOrder,
+    find: '"all-time": byAllTime,',
+    replace: '"all-time": byUsage,',
+    killedBy: poolsInOrder,
+  },
+  {
+    name: "pools of equal usage since the request log began keep the order given",
+    law: "V47",
+    file: poolOrder,
+    find: "b.allTime - a.allTime || byName(a, b)",
+    replace: "b.allTime - a.allTime",
     killedBy: poolsInOrder,
   },
   {

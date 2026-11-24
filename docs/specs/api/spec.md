@@ -447,7 +447,8 @@ The overview's pool cards need no endpoint of their own. A card is a pool of `GE
 
 - today's requests, tokens and cost: with `from` the start of today in the owner's zone;
 - the last 30 days' requests, tokens and cost, and the last request (`lastAt`): with `from` 30 days before now;
-- active sessions: `sessions`, with `from` 15 minutes before now. A request that carried no session id is a session of its own (`docs/specs/sessions/spec.md`), where the prototype did not count it.
+- active sessions: `sessions`, with `from` 15 minutes before now. A request that carried no session id is a session of its own (`docs/specs/sessions/spec.md`), where the prototype did not count it;
+- the all-time total, while the request log is older than 30 days: with `from` its first request (`firstRequestAt` of `GET /api/overview`) and `to` the start of today, added to today's. It reads the whole log, so the dashboard asks it every five minutes rather than every 30 seconds (`docs/specs/dashboard/spec.md`, The all-time total). A request without `from` is the last 7 days, never all time.
 
 ## Machine (the `machine` group, the admission module)
 

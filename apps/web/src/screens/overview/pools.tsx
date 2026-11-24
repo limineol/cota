@@ -31,6 +31,7 @@ import {
   StatValue,
 } from "@cota/ui/components/stat";
 import { Link } from "@tanstack/react-router";
+import type { ReactNode } from "react";
 import type { Hue } from "#shared/domain/hues.ts";
 import { meter } from "#shared/domain/meter.ts";
 import { ago, share, span, tokens } from "#shared/domain/quantities.ts";
@@ -39,6 +40,7 @@ import { useNow } from "#shared/now.tsx";
 import { glyphOf } from "#shared/providers.tsx";
 import {
   costText,
+  dayOf,
   dollarsOf,
   inputIn,
   millis,
@@ -59,6 +61,8 @@ export interface Figures {
   readonly active: BreakdownRow | undefined;
   /** Whether the windows' answers have arrived. */
   readonly loaded: boolean;
+  /** Its traffic since the request log began, until read `undefined`. */
+  readonly allTime: Sum | undefined;
 }
 
 /** One quota window: its name, how much is used, the countdown to its reset, and its block meter. */
@@ -156,15 +160,19 @@ export function LiveState({
 export const usageOf = (figures: Figures): number =>
   figures.month === undefined ? 0 : tokensIn(figures.month.usage);
 
-const figureOf = (row: BreakdownRow | undefined) => (
+/** A pool's usage since the request log began, as the cards are ordered by it; none until it is read. */
+export const allTimeOf = (figures: Figures): number =>
+  figures.allTime?.tokens ?? 0;
+
+const figureOf = (sum: Sum) => (
   <>
-    <strong>{tokens(row === undefined ? 0 : tokensIn(row.usage))}</strong>
-    {costText(
-      row === undefined ? 0 : dollarsOf(row.costUsd),
-      row?.unpricedRequests ?? 0,
-    )}
+    <strong>{tokens(sum.tokens)}</strong>
+    {costText(sum.dollars, sum.unpriced)}
   </>
 );
+
+const rowFigure = (row: BreakdownRow | undefined) =>
+  figureOf(sumOf(row === undefined ? [] : [row]));
 
 /** A pool in the All view: its state, up to three windows and its traffic. It opens the pool. */
 export function PoolCardView({
@@ -172,11 +180,14 @@ export function PoolCardView({
   hue,
   figures,
   since,
+  showAllTime,
 }: {
   readonly pool: Pool;
   readonly hue: Hue;
   readonly figures: Figures;
   readonly since: string | null;
+  /** Whether the figure since the request log began stands apart from the 30 days', which it is not while the log is younger. */
+  readonly showAllTime: boolean;
 }) {
   const hidden = pool.windows.length - cardWindows;
   const observed = pool.kind === "observed";
@@ -228,7 +239,7 @@ export function PoolCardView({
       <PoolCardFoot>
         <PoolCardFigure label="Today">
           {figures.loaded ? (
-            figureOf(figures.today)
+            rowFigure(figures.today)
           ) : (
             <Skeleton className="mt-1 w-24" />
           )}
@@ -237,11 +248,20 @@ export function PoolCardView({
           label={since === null ? "Last 30 days" : `Since ${since}`}
         >
           {figures.loaded ? (
-            figureOf(figures.month)
+            rowFigure(figures.month)
           ) : (
             <Skeleton className="mt-1 w-24" />
           )}
         </PoolCardFigure>
+        {showAllTime ? (
+          <PoolCardFigure label={allTimeLabel}>
+            {figures.allTime === undefined ? (
+              <Skeleton className="mt-1 w-24" />
+            ) : (
+              figureOf(figures.allTime)
+            )}
+          </PoolCardFigure>
+        ) : null}
       </PoolCardFoot>
     </PoolCard>
   );
@@ -269,7 +289,7 @@ export function PoolCardsSkeleton({
   );
 }
 
-interface Sum {
+export interface Sum {
   readonly requests: number;
   readonly tokens: number;
   readonly input: number;
@@ -324,11 +344,24 @@ export function UsageFigure({
   );
 }
 
-/** When the 30-day figure is all from today, say so rather than show one figure twice unexplained. */
-export const sameAsToday = (today: Sum, month: Sum) =>
+/** What the figure since the request log began is called, on its card and as the order of the cards. */
+export const allTimeLabel = "All time";
+
+/**
+ * What the 30-day figure's note says: that it is all from today, rather than
+ * show one figure twice unexplained, or else, while the request log is younger
+ * than 30 days (`since` its first day), that it is the whole log.
+ */
+export const monthNote = (today: Sum, month: Sum, since: string | null) =>
   month.requests > 0 && month.requests === today.requests
     ? "All of it from today"
-    : undefined;
+    : since === null
+      ? undefined
+      : "The whole request log";
+
+/** Since when the figure of the whole request log counts, from its first request's day. */
+export const allTimeNote = (first: number) =>
+  `The whole request log, since ${dayOf(first)}`;
 
 interface NextReset {
   readonly pool: string;
@@ -353,38 +386,60 @@ const soonestReset = (
   return best;
 };
 
-/** Every pool together: today, the last 30 days, and now. */
+const summaryGrid = {
+  three: "mb-3 grid grid-cols-2 gap-2.5 @3xl:grid-cols-3 wide:gap-3",
+  four: "mb-3 grid grid-cols-2 gap-2.5 @5xl:grid-cols-4 wide:gap-3",
+} as const;
+
+/** Every pool together: today, the last 30 days, since the request log began when that is longer, and now. */
 export function FleetSummary({
   pools,
   today,
   month,
+  allTime,
   active,
   sessions,
   since,
+  first,
 }: {
   readonly pools: ReadonlyArray<Pool>;
   readonly today: ReadonlyArray<BreakdownRow>;
   readonly month: ReadonlyArray<BreakdownRow>;
+  /** Every pool's traffic since the request log began, until read `undefined`, or `null` while it is the 30 days'. */
+  readonly allTime: Sum | null | undefined;
   readonly active: ReadonlyArray<BreakdownRow>;
   readonly sessions: number;
   readonly since: string | null;
+  readonly first: number | null;
 }) {
   const now = useNow();
   const daySum = sumOf(today);
   const monthSum = sumOf(month);
   const busy = active.filter((row) => row.sessions > 0).length;
   const next = soonestReset(pools, now);
+  const cards = allTime === null ? "three" : "four";
   return (
-    <div className="mb-3 grid grid-cols-2 gap-2.5 @3xl:grid-cols-3 wide:gap-3">
+    <div className={summaryGrid[cards]}>
       <UsageFigure label="Today" sum={daySum} size="lg" variant="panel" />
       <UsageFigure
         label={since === null ? "Last 30 days" : `Since ${since}`}
         sum={monthSum}
         size="lg"
         variant="panel"
-        note={sameAsToday(daySum, monthSum)}
+        note={monthNote(daySum, monthSum, since)}
       />
-      <Stat variant="panel" className="col-span-2 @3xl:col-span-1">
+      {allTime === null ? null : allTime === undefined ? (
+        <UsageFigureSkeleton />
+      ) : (
+        <UsageFigure
+          label={allTimeLabel}
+          sum={allTime}
+          size="lg"
+          variant="panel"
+          note={first === null ? undefined : allTimeNote(first)}
+        />
+      )}
+      <NowStat wide={cards === "three"}>
         <StatLabel>Now</StatLabel>
         <StatValue size="lg">
           {sessions}
@@ -405,28 +460,59 @@ export function FleetSummary({
             </>
           )}
         </StatMeta>
-      </Stat>
+      </NowStat>
     </div>
   );
 }
 
-export function FleetSummarySkeleton() {
+/** The Now card, across both columns of a phone's summary when it is the third of three. */
+function NowStat({
+  wide,
+  children,
+}: {
+  readonly wide: boolean;
+  readonly children: ReactNode;
+}) {
+  return wide ? (
+    <Stat variant="panel" className="col-span-2 @3xl:col-span-1">
+      {children}
+    </Stat>
+  ) : (
+    <Stat variant="panel">{children}</Stat>
+  );
+}
+
+const skeletonLines = (
+  <>
+    <Skeleton className="w-20" />
+    <Skeleton className="h-7 w-36" />
+    <Skeleton className="w-44" />
+  </>
+);
+
+function UsageFigureSkeleton() {
+  return (
+    <Stat variant="panel" aria-hidden="true">
+      {skeletonLines}
+    </Stat>
+  );
+}
+
+/** The summary while it is read, with as many cards as it will have when that is known. */
+export function FleetSummarySkeleton({
+  showAllTime,
+}: {
+  readonly showAllTime: boolean;
+}) {
   return (
     <div
       aria-hidden="true"
-      className="mb-3 grid grid-cols-2 gap-2.5 @3xl:grid-cols-3 wide:gap-3"
+      className={summaryGrid[showAllTime ? "four" : "three"]}
     >
-      {[0, 1, 2].map((index) => (
-        <Stat
-          key={index}
-          variant="panel"
-          className={index === 2 ? "col-span-2 @3xl:col-span-1" : undefined}
-        >
-          <Skeleton className="w-20" />
-          <Skeleton className="h-7 w-36" />
-          <Skeleton className="w-44" />
-        </Stat>
-      ))}
+      <UsageFigureSkeleton />
+      <UsageFigureSkeleton />
+      {showAllTime ? <UsageFigureSkeleton /> : null}
+      <NowStat wide={!showAllTime}>{skeletonLines}</NowStat>
     </div>
   );
 }

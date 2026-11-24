@@ -47,7 +47,7 @@ function PoolCard({
         className: cn(
           "group/card flex min-w-0 flex-1 flex-col gap-4 rounded-card border border-border bg-surface p-3.5 text-text transition-state outline-none [--meter-ring:var(--surface)] wide:px-4.5 wide:py-4",
           "[&:is(a)]:hover:border-border-strong [&:is(a)]:hover:bg-surface-2 [&:is(a)]:hover:[--meter-ring:var(--surface-2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text",
-          "@min-[640px]/pools:grid @min-[640px]/pools:grid-cols-[240px_minmax(0,1fr)_216px] @min-[640px]/pools:items-center @min-[640px]/pools:gap-x-7 @min-[640px]/pools:[grid-template-areas:'head_._foot'_'windows_windows_windows'] @min-[1320px]/pools:[grid-template-areas:'head_windows_foot']",
+          "@min-[640px]/pools:grid @min-[640px]/pools:grid-cols-[minmax(0,240px)_minmax(0,1fr)_auto] @min-[640px]/pools:items-center @min-[640px]/pools:gap-x-7 @min-[640px]/pools:[grid-template-areas:'head_._foot'_'windows_windows_windows'] @min-[1320px]/pools:[grid-template-areas:'head_windows_foot']",
           className,
         ),
         ...(idle ? { "data-idle": "" } : {}),
@@ -129,12 +129,13 @@ function PoolCardNote({ className, ...props }: ComponentProps<"span">) {
   );
 }
 
+/** The pool's figures, at the card's edges, or in columns of one width that line up from row to row in the list. */
 function PoolCardFoot({ className, ...props }: ComponentProps<"span">) {
   return (
     <span
       data-slot="pool-card-foot"
       className={cn(
-        "flex justify-between gap-3 border-t border-border pt-3 [grid-area:foot] @min-[640px]/pools:grid @min-[640px]/pools:grid-cols-2 @min-[640px]/pools:gap-6 @min-[640px]/pools:border-t-0 @min-[640px]/pools:pt-0",
+        "flex justify-between gap-3 border-t border-border pt-3 [grid-area:foot] @min-[640px]/pools:grid @min-[640px]/pools:auto-cols-[96px] @min-[640px]/pools:grid-flow-col @min-[640px]/pools:gap-6 @min-[640px]/pools:border-t-0 @min-[640px]/pools:pt-0",
         className,
       )}
       {...props}

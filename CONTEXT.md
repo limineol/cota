@@ -732,6 +732,10 @@ _Avoid_: stacked bar, pie, donut, waffle
 Traffic over time drawn as one column per bucket, each a stack of blocks of one unit for the whole chart, so a column's height can be counted.
 _Avoid_: bar chart, histogram, stones (the prototype's name)
 
+**All-time total**:
+What the request log holds of a pool, or of every pool together, since its first request: tokens, every class summed, with its cost and requests, written "All time" and with the day it counts from. It counts only what the hub forwarded, was reported or imported, never usage the hub did not see. While the request log is younger than 30 days it is the 30-day figure, and is not shown apart.
+_Avoid_: lifetime, total alone (a total can be of any window), ever
+
 **Command palette**:
 The dashboard's way to anywhere, opened over every screen with `⌘K`, `Ctrl+K` or `/`: it finds the screens, the pools, the values the sessions list filters by and, with the hub's **search**, sessions, and opens what is chosen. Its button in the sidebar says "Search".
 _Avoid_: quick open, spotlight, omnibox, search alone (search is the request log's, which the palette asks)

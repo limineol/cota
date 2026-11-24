@@ -922,6 +922,104 @@ export const overviewOfPools = (
   ];
 };
 
+/** When the request log of a hub with history begins: 94 days ago, so that the last 30 days are not all of it. */
+const historyBegins = now - 94 * day;
+
+/** Each pool's traffic from when the log began to the start of today, of a hub with history: work's mostly from before the 30 days, spare's all of it. */
+const beforeTodayRows: ReadonlyArray<RowShape> = [
+  {
+    key: "work",
+    requests: 126_400,
+    tokens: 4_400_000_000,
+    dollars: 9700,
+    lastAgo: day,
+  },
+  {
+    key: "personal",
+    requests: 84_120,
+    tokens: 2_900_000_000,
+    dollars: 6380,
+    lastAgo: day,
+  },
+  {
+    key: "spare",
+    requests: 31_900,
+    tokens: 1_200_000_000,
+    dollars: 2640,
+    lastAgo: 41 * day,
+  },
+  {
+    key: "codex",
+    requests: 15_300,
+    tokens: 610_000_000,
+    dollars: 1090,
+    lastAgo: day,
+  },
+  {
+    key: "acme/shop",
+    requests: 9_640,
+    tokens: 214_000_000,
+    dollars: 481,
+    lastAgo: day,
+  },
+  {
+    key: "zai",
+    requests: 4410,
+    tokens: 95_000_000,
+    dollars: 44.9,
+    unpriced: 4410,
+    lastAgo: day,
+  },
+  {
+    key: "local",
+    requests: 118,
+    tokens: 2_400_000,
+    dollars: 0,
+    unpriced: 118,
+    lastAgo: 6 * day,
+  },
+];
+
+const ofTheWholeLog = (q: URLSearchParams) =>
+  byPool(q) && q.get("from") === iso(historyBegins);
+
+/** What the overview reads of a hub whose request log is older than 30 days: every pool's traffic before today, answered as `beforeToday` says. */
+const withHistoryAnswered = (
+  pools: ReadonlyArray<PoolShape>,
+  beforeToday: Fixture,
+): ReadonlyArray<Fixture> => [
+  where(beforeToday, ofTheWholeLog),
+  lastFifteenMinutes(historyBegins),
+  ...overviewOfPools(pools),
+];
+
+/** Every answer the overview reads, for these pools, of a hub whose request log began 94 days ago. */
+export const withHistory = (pools: ReadonlyArray<PoolShape>) =>
+  withHistoryAnswered(
+    pools,
+    breakdown(
+      beforeTodayRows.filter((row) =>
+        pools.some((pool) => pool.id === row.key),
+      ),
+    ),
+  );
+
+/** A hub with history whose read of the traffic before today has not been answered. */
+export const historyLoading = withHistoryAnswered(
+  eightPools,
+  never("traffic", "breakdown"),
+);
+
+/** A hub with history whose read of the traffic before today failed. */
+export const historyFailed = withHistoryAnswered(
+  eightPools,
+  problem("traffic", "breakdown", {
+    type: "urn:cota:request-log-unavailable",
+    status: 503,
+    detail: "ClickHouse did not answer within 30 seconds.",
+  }),
+);
+
 /**
  * Pools whose three orders differ: the configuration's (local, work, zai,
  * codex, personal, acme/shop), by usage over 30 days (Personal plan, then

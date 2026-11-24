@@ -46,15 +46,21 @@ import { dayOf, millis, plural, when } from "#shared/words.ts";
 import { BreakdownTable } from "./breakdowns.tsx";
 import { PoolInFocus } from "./focus.tsx";
 import {
+  allTimeLabel,
+  allTimeOf,
   type Figures,
   FleetSummary,
   FleetSummarySkeleton,
   PoolCardsSkeleton,
   PoolCardView,
+  type Sum,
+  sumOf,
   usageOf,
 } from "./pools.tsx";
 import {
   type BreakdownRow,
+  startOfToday,
+  useBeforeToday,
   useBreakdown,
   useLogNow,
   usePoolFigures,
@@ -96,6 +102,7 @@ const layouts: ReadonlyArray<{
 const orderLabels = {
   usage: "Usage",
   name: "Name",
+  "all-time": allTimeLabel,
 } satisfies Record<PoolOrder, string>;
 
 const orders = poolOrders.map((value) => ({
@@ -131,10 +138,14 @@ function OverviewPage() {
   const now = useNow();
   const nameOf = useNameOf();
 
+  const dayStart = startOfToday(now);
   const pools = usePools();
-  const figures = usePoolFigures();
+  const figures = usePoolFigures(dayStart);
   const log = useLogNow();
   const first = log.data?.firstRequestAt;
+  const showAllTime =
+    first === undefined || (first !== null && now - first >= thirtyDays);
+  const beforeToday = useBeforeToday(first, dayStart, showAllTime);
   const start = startOf(range, first);
   const totals = useTotals(selected, start);
   const series = useSeries(selected, start);
@@ -163,11 +174,27 @@ function OverviewPage() {
     figures.today.data !== undefined &&
     figures.month.data !== undefined &&
     figures.active.data !== undefined;
+  const sinceTheLogBegan = (pool: string | null): Sum | undefined => {
+    const rowsOf = (answer: { readonly rows: ReadonlyArray<BreakdownRow> }) =>
+      pool === null
+        ? answer.rows
+        : answer.rows.filter((row) => row.key === pool);
+    if (first === undefined) return undefined;
+    if (!showAllTime) {
+      return figures.month.data === undefined
+        ? undefined
+        : sumOf(rowsOf(figures.month.data));
+    }
+    return beforeToday.data === undefined || figures.today.data === undefined
+      ? undefined
+      : sumOf([...rowsOf(beforeToday.data), ...rowsOf(figures.today.data)]);
+  };
   const figuresOf = (pool: string): Figures => ({
     today: today.get(pool),
     month: month.get(pool),
     active: active.get(pool),
     loaded,
+    allTime: sinceTheLogBegan(pool),
   });
   const cards = ordered(
     (list ?? []).map((pool) => {
@@ -178,6 +205,7 @@ function OverviewPage() {
         id: pool.id,
         name: nameOf("pool", pool.id),
         usage: loaded ? usageOf(figures) : 0,
+        allTime: allTimeOf(figures),
       };
     }),
     order,
@@ -205,6 +233,7 @@ function OverviewPage() {
     figures.today,
     figures.month,
     figures.active,
+    beforeToday,
     log,
   ].find((query) => query.isError && query.data === undefined);
   const refresh = () => queries.invalidateQueries({ queryKey: ["overview"] });
@@ -355,6 +384,8 @@ function OverviewPage() {
               hue={hueOf(focused.id)}
               figures={figuresOf(focused.id)}
               since={since}
+              first={first}
+              showAllTime={showAllTime}
             />
           ) : list !== undefined ? (
             <Empty>
@@ -376,7 +407,7 @@ function OverviewPage() {
         ) : list === undefined ? (
           pools.isError ? null : (
             <>
-              <FleetSummarySkeleton />
+              <FleetSummarySkeleton showAllTime={showAllTime} />
               <PoolCardsSkeleton layout={layout} />
             </>
           )
@@ -387,12 +418,14 @@ function OverviewPage() {
                 pools={list}
                 today={figures.today.data?.rows ?? []}
                 month={figures.month.data?.rows ?? []}
+                allTime={showAllTime ? sinceTheLogBegan(null) : null}
                 active={figures.active.data?.rows ?? []}
                 sessions={log.data.sessions}
                 since={since}
+                first={log.data.firstRequestAt}
               />
             ) : (
-              <FleetSummarySkeleton />
+              <FleetSummarySkeleton showAllTime={showAllTime} />
             )}
             {list.length === 0 ? (
               <Empty>
@@ -411,6 +444,7 @@ function OverviewPage() {
                     hue={hueOf(pool.id)}
                     figures={figures}
                     since={since}
+                    showAllTime={showAllTime}
                   />
                 ))}
               </PoolCards>
