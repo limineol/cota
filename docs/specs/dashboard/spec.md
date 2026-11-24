@@ -122,7 +122,7 @@ The overview shows every pool of `GET /api/pools` as a card (`docs/specs/api/spe
 
 Sorting moves a card, never its colour: a pool keeps the hue of its place in the configuration (V18). The switcher above the cards, the traffic's legend, the breakdowns and the command palette keep the order they have.
 
-Usage as the 30 days' tokens, and no option for the configuration's order, are decided by default: the owner asked for usage first and names after, and has not said which usage or whether the configuration's order should stay an option. The owner asked for an all-time total beside it, and the third option orders by it.
+The owner asked for usage first and names after, accepted usage as the 30 days' tokens, and asked for an all-time total beside it, which the third option orders by. That the configuration's order is not an option is decided by default: the owner has not said whether it should stay one.
 
 ## The all-time total
 
