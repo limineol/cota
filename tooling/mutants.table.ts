@@ -6213,8 +6213,8 @@ export const layer = (policy: Policy): Layer.Layer<Fallback> =>
     name: "pools of equal usage keep the order given",
     law: "V47",
     file: poolOrder,
-    find: " || byName(a, b)",
-    replace: "",
+    find: "b.usage - a.usage || byName(a, b)",
+    replace: "b.usage - a.usage",
     killedBy: poolsInOrder,
   },
   {
