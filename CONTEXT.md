@@ -178,7 +178,7 @@ A file named for a client's command (`claude`, `codex`, `opencode`, `pi`) in a d
 _Avoid_: wrapper, alias, symlink, hook
 
 **Override**:
-The pool the owner names for one launch (`COTA_POOL`, or `cota --pool <pool> <client>`), which the hub answers in place of the route, and which the launch hands its client as `COTA_POOL`, so the clients it starts are launched on it too. It chooses a pool as a route does and opens nothing a route cannot.
+The pool the owner names for one launch (`COTA_POOL`, or `cota --pool <pool> <client>`), which the hub answers in place of the route, and which the launch hands its client as `COTA_POOL`, so a client it starts by name, through a shim, is launched on it too where the pool is one that client can use. It chooses a pool as a route does and opens nothing a route cannot.
 _Avoid_: account, force, pin, route (an override is not stored)
 
 **Bypass**:
