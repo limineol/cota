@@ -435,8 +435,8 @@ export const AllTimeWithHistory: Story = {
   ...page("/", withHistory(eightPools)),
   play: async ({ canvasElement, canvas }) => {
     const card = await allTimeCard(canvasElement);
-    await waitFor(() => expect(card).toHaveTextContent(/9\.3B\s*tokens/));
-    await expect(card).toHaveTextContent(/≥\$19,[0-9]{3} · 264,500 requests/);
+    await waitFor(() => expect(card).toHaveTextContent(/9\.5B\s*tokens/));
+    await expect(card).toHaveTextContent(/≥\$20,[0-9]{3} · 274,140 requests/);
     await expect(card).toHaveTextContent(
       /The whole request log, since [A-Z][a-z]{2} \d{1,2}$/,
     );
@@ -485,8 +485,8 @@ export const OrderedByAllTime: Story = {
         "Personal plan",
         "spare",
         "codex",
-        "zai",
         "acme/shop",
+        "zai",
         "local",
         "opencode",
       ]),

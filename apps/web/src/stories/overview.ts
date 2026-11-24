@@ -956,6 +956,13 @@ const beforeTodayRows: ReadonlyArray<RowShape> = [
     lastAgo: day,
   },
   {
+    key: "acme/shop",
+    requests: 9_640,
+    tokens: 214_000_000,
+    dollars: 481,
+    lastAgo: day,
+  },
+  {
     key: "zai",
     requests: 4410,
     tokens: 95_000_000,
