@@ -18,12 +18,13 @@ const textOf = (characters: ReadonlyArray<string>, maxLength: number) =>
     Arbitrary.map((picked) => picked.join("")),
   );
 
-/** Few names, ids and usages, so that pools often share one, a name often only by its case, and some share all three. */
+/** Few names, ids and usages, so that pools often share one, a name often only by its case, and some share all of them. */
 const pools = Arbitrary.array(
   Arbitrary.all({
     id: textOf(["a", "b", "B"], 2),
     name: textOf(["a", "A", "b", "B", "é", "z"], 2),
     usage: int(0, 3),
+    allTime: int(0, 3),
   }),
   { maxLength: 9 },
 ).pipe(
@@ -36,13 +37,17 @@ const byCodeUnits = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
 /** Where `a` stands against `b` by the law's keys, without the order given: negative before, positive after, zero when equal in all. */
 const keysCompared = (a: Placed, b: Placed, by: PoolOrder) =>
-  (by === "usage" ? Math.sign(b.usage - a.usage) : 0) ||
+  (by === "usage"
+    ? Math.sign(b.usage - a.usage)
+    : by === "all-time"
+      ? Math.sign(b.allTime - a.allTime)
+      : 0) ||
   byCodeUnits(a.name.toLowerCase(), b.name.toLowerCase()) ||
   byCodeUnits(a.id, b.id);
 
 describe("the order of the overview's pools", () => {
   it.prop(
-    "V47: the pools are each shown once, by usage, most first, then by the name shown ignoring case, then by id, or by name and id alone whatever their usage, and pools equal in all of these keep the order given",
+    "V47: the pools are each shown once, by usage or by usage since the request log began, most first, then by the name shown ignoring case, then by id, or by name and id alone whatever their usage, and pools equal in all of these keep the order given",
     { pools, order },
     ({ pools, order }) => {
       const shown = ordered(pools, order);

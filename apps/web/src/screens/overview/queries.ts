@@ -4,6 +4,8 @@ import { fifteenMinutes, type Start, thirtyDays } from "#shared/range.ts";
 
 const thirtySeconds = 30_000;
 
+const fiveMinutes = 5 * 60_000;
+
 const poll = { refetchInterval: thirtySeconds };
 
 const instant = (milliseconds: number) => DateTime.makeUnsafe(milliseconds);
@@ -13,7 +15,8 @@ export const viewerZone = DateTime.zoneMakeNamed(
   Intl.DateTimeFormat().resolvedOptions().timeZone,
 ).pipe(Option.getOrElse(() => DateTime.zoneMakeNamedUnsafe("UTC")));
 
-const startOfToday = (now: number) =>
+/** The start of the viewer's day that holds `now`. */
+export const startOfToday = (now: number) =>
   DateTime.makeZonedUnsafe(now, { timeZone: viewerZone }).pipe(
     DateTime.startOf("day"),
     DateTime.toEpochMillis,
@@ -57,11 +60,11 @@ export type BreakdownRow = Breakdown["rows"][number];
 export const usePools = () =>
   useApiQuery(["overview", "pools"], listPools, poll);
 
-/** Each pool's traffic today in the viewer's zone, over the last 30 days, and in the last 15 minutes. */
-export const usePoolFigures = () => {
-  const today = useApiQuery(
-    ["overview", "by-pool", "today"],
-    breakdownSince(startOfToday, "pool", null, 500),
+/** Each pool's traffic today in the viewer's zone (from `today`, its start), over the last 30 days, and in the last 15 minutes. */
+export const usePoolFigures = (today: number) => {
+  const sinceToday = useApiQuery(
+    ["overview", "by-pool", "today", today],
+    breakdownSince(() => today, "pool", null, 500),
     poll,
   );
   const month = useApiQuery(
@@ -74,8 +77,35 @@ export const usePoolFigures = () => {
     breakdownSince((now) => now - fifteenMinutes, "pool", null, 500),
     poll,
   );
-  return { today, month, active };
+  return { today: sinceToday, month, active };
 };
+
+/**
+ * Each pool's traffic from when the request log begins (`first`) to the start
+ * of today, which with today's makes its traffic since the log began. It reads
+ * the whole log but changes only when an older request is added, so it is read
+ * every five minutes, and only while the log is older than the 30 days.
+ */
+export const useBeforeToday = (
+  first: number | null | undefined,
+  today: number,
+  enabled: boolean,
+) =>
+  useApiQuery(
+    ["overview", "by-pool", "before-today", first ?? null, today],
+    first === null || first === undefined
+      ? null
+      : (client) =>
+          client.traffic.breakdown({
+            query: {
+              from: instant(first),
+              to: instant(today),
+              by: "pool",
+              limit: 500,
+            },
+          }),
+    { refetchInterval: fiveMinutes, enabled },
+  );
 
 /** The distinct sessions of every pool together in the last 15 minutes, and when the request log begins. */
 export const useLogNow = () =>
