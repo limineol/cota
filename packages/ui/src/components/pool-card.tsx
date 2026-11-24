@@ -47,7 +47,7 @@ function PoolCard({
         className: cn(
           "group/card flex min-w-0 flex-1 flex-col gap-4 rounded-card border border-border bg-surface p-3.5 text-text transition-state outline-none [--meter-ring:var(--surface)] wide:px-4.5 wide:py-4",
           "[&:is(a)]:hover:border-border-strong [&:is(a)]:hover:bg-surface-2 [&:is(a)]:hover:[--meter-ring:var(--surface-2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text",
-          "@min-[640px]/pools:grid @min-[640px]/pools:grid-cols-[240px_minmax(0,1fr)_auto] @min-[640px]/pools:items-center @min-[640px]/pools:gap-x-7 @min-[640px]/pools:[grid-template-areas:'head_._foot'_'windows_windows_windows'] @min-[1320px]/pools:[grid-template-areas:'head_windows_foot']",
+          "@min-[640px]/pools:grid @min-[640px]/pools:grid-cols-[minmax(0,240px)_minmax(0,1fr)_auto] @min-[640px]/pools:items-center @min-[640px]/pools:gap-x-7 @min-[640px]/pools:[grid-template-areas:'head_._foot'_'windows_windows_windows'] @min-[1320px]/pools:[grid-template-areas:'head_windows_foot']",
           className,
         ),
         ...(idle ? { "data-idle": "" } : {}),
