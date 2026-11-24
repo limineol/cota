@@ -232,6 +232,7 @@ export type Law =
   | "J24"
   | "J26"
   | "J27"
+  | "J28"
   | "E1"
   | "E2"
   | "E3"
@@ -342,6 +343,8 @@ const j7 =
   "J7: No launch whose pool is keyed starts its client without the hub's address.";
 const j8 =
   "J8: With `COTA=off`, or on a machine that has not joined, the client gets exactly the environment and arguments the launch was given.";
+const j28 =
+  "J28: Every launch that starts its client gives it `PATH` as the launch was given it, the shims' directory included, and `COTA_POOL` naming the launch's override where it had one, so that a client it starts by name is launched again.";
 const j10 =
   "J10: After `cota shims`, the shell's file holds `cota`'s line exactly once, as its last line, and every other line as it was, in order.";
 const o1 =
@@ -6848,6 +6851,23 @@ export const layer = (policy: Admission.Policy) =>
     replace:
       '      args: given.args,\n      variables: { ...given.variables, PATH: "" },',
     killedBy: j8,
+  },
+  {
+    name: "the shims' directory, first on PATH, is taken off the client's PATH again",
+    law: "J28",
+    file: cliLaunch,
+    find: "    COTA_PROJECT: project,\n  };",
+    replace:
+      '    COTA_PROJECT: project,\n    PATH: given.variables.PATH?.split(":").slice(1).join(":"),\n  };',
+    killedBy: j28,
+  },
+  {
+    name: "an override is not handed down to the client",
+    law: "J28",
+    file: cliLaunch,
+    find: "    base.COTA_POOL = machine.override.value;\n",
+    replace: "",
+    killedBy: j28,
   },
   {
     name: "Codex is given the subscription hub key as an argument",

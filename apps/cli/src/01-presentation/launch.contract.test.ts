@@ -100,7 +100,7 @@ layer(Harness.layer())("launching against a whole hub", (it) => {
           expect(args).toEqual(["--print", "a b"]);
           expect(env).toEqual({
             HOME: on.home,
-            PATH: on.bin,
+            PATH: on.variables.PATH,
             SHELL: "/bin/sh",
             EDITOR: "vi",
             COTA_PROJECT: "acme/api",
@@ -260,7 +260,7 @@ layer(Harness.layer())("launching against a whole hub", (it) => {
           ]);
           expect(env).toEqual({
             HOME: on.home,
-            PATH: on.bin,
+            PATH: on.variables.PATH,
             SHELL: "/bin/sh",
             COTA_PROJECT: "acme/api",
           });
@@ -274,7 +274,7 @@ layer(Harness.layer())("launching against a whole hub", (it) => {
   );
 
   it.effect(
-    "launches opencode and pi at once with the project and PATH beyond the shims, and passes the client's exit status and the signal that ended it",
+    "launches opencode and pi at once with the project and the PATH they were given, and passes the client's exit status and the signal that ended it",
     () =>
       onAMachine((on) =>
         Effect.gen(function* () {
@@ -290,7 +290,7 @@ layer(Harness.layer())("launching against a whole hub", (it) => {
               args: ["--model", "x"],
               env: {
                 HOME: on.home,
-                PATH: on.bin,
+                PATH: on.variables.PATH,
                 SHELL: "/bin/sh",
                 COTA_PROJECT: "acme/api",
               },
@@ -371,7 +371,7 @@ layer(Harness.layer())("launching against a whole hub", (it) => {
           });
           expect(on.seen("claude").env).toEqual({
             HOME: on.home,
-            PATH: on.bin,
+            PATH: on.variables.PATH,
             SHELL: "/bin/sh",
             COTA_PROJECT: "new/one",
             ANTHROPIC_BASE_URL: `${hub}/pools/claude`,
@@ -394,7 +394,7 @@ layer(Harness.layer())("launching against a whole hub", (it) => {
           });
           expect(on.seen("claude").env).toEqual({
             HOME: on.home,
-            PATH: on.bin,
+            PATH: on.variables.PATH,
             SHELL: "/bin/sh",
             COTA_PROJECT: "acme/api",
             CLAUDE_CODE_OAUTH_TOKEN: machineLogin,
@@ -503,9 +503,56 @@ layer(Harness.layer())("launching against a whole hub", (it) => {
           expect(ran).toMatchObject({ status: 5, err: "" });
           const { args, env } = on.seen("claude");
           expect(args).toEqual(["--exit=5", "x"]);
-          expect(env.PATH).toBe(on.bin);
+          expect(env.PATH).toBe(on.variables.PATH);
           expect(env.CLAUDE_CODE_OAUTH_TOKEN).toBe(machineLogin);
           expect((yield* shim(["--kill=SIGTERM"])).signal).toBe("SIGTERM");
+        }),
+      ),
+  );
+
+  it.effect(
+    "J28: Every launch that starts its client gives it `PATH` as the launch was given it, the shims' directory included, and `COTA_POOL` naming the launch's override where it had one, so that a client it starts by name is launched again. Launches against a whole hub.",
+    () =>
+      onAMachine((on) =>
+        Effect.gen(function* () {
+          const hub = yield* ready(on);
+          const startsClaude = (argv: ReadonlyArray<string>) =>
+            Effect.gen(function* () {
+              expect(
+                yield* launched(on, [...argv, "claude", "--start=claude"]),
+              ).toEqual({ status: 0, out: "", err: "" });
+              return on.starts("claude");
+            });
+
+          expect(yield* startsClaude([])).toMatchObject([
+            {
+              args: ["--start=claude"],
+              env: { PATH: on.variables.PATH },
+            },
+            {
+              args: [],
+              env: {
+                PATH: on.variables.PATH,
+                COTA_PROJECT: "acme/api",
+                CLAUDE_CODE_OAUTH_TOKEN: machineLogin,
+                ANTHROPIC_BASE_URL: `${hub}/pools/claude`,
+                ANTHROPIC_CUSTOM_HEADERS: claudeHeaders(
+                  "acme/api",
+                  "subscription",
+                ),
+              },
+            },
+          ]);
+
+          const [, inner] = yield* startsClaude(["--pool", "console"]);
+          expect(inner?.args).toEqual([]);
+          expect(inner?.env).toMatchObject({
+            COTA_POOL: "console",
+            ANTHROPIC_BASE_URL: `${hub}/pools/console`,
+            ANTHROPIC_API_KEY: keyedKey,
+            ANTHROPIC_CUSTOM_HEADERS: claudeHeaders("acme/api", "keyed"),
+          });
+          expect(inner?.env.CLAUDE_CODE_OAUTH_TOKEN).toBeUndefined();
         }),
       ),
   );

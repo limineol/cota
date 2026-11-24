@@ -179,7 +179,6 @@ export const layer: Layer.Layer<
         return {
           configuration,
           project,
-          shims: paths.shims,
           hubKeys,
           logins,
           override,
@@ -201,7 +200,6 @@ export const layer: Layer.Layer<
       return {
         configuration,
         project,
-        shims: paths.shims,
         hubKeys,
         logins,
         override,
@@ -245,7 +243,6 @@ export const layer: Layer.Layer<
         }
         const decision = Launch.decide({
           command,
-          system,
           given,
           realClient,
           machine,

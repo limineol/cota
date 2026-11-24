@@ -47,19 +47,29 @@ const cliSource = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 /**
  * A stand-in client, linked to from `PATH` as a package manager links a
- * client's own script: it writes the arguments and environment it was given
- * beside itself (beside the script, not the link), as JSON, and then exits with `--exit=<status>`, kills itself
- * with `--kill=<signal>`, or with `--wait` says it is ready and waits to be
- * signalled. It is never a real client.
+ * client's own script: it adds the arguments and environment it was given to
+ * a file beside itself (beside the script, not the link), one JSON line a
+ * start, and then exits with `--exit=<status>`, kills itself with
+ * `--kill=<signal>`, with `--wait` says it is ready and waits to be
+ * signalled, or with `--start=<command>` starts that command by name, as a
+ * client runs a command, and exits with its status. A command it starts is
+ * given its environment without `CLAUDE_CODE_OAUTH_TOKEN`, which Claude Code
+ * keeps from the commands it runs (ADR-0022, Facts to confirm). It is never a
+ * real client.
  */
 const standIn = `#!${process.execPath}
 const fs = require("node:fs");
 const args = process.argv.slice(2);
 const self = fs.realpathSync(__filename);
-fs.writeFileSync(self + ".seen", JSON.stringify({ args, env: process.env }));
+fs.appendFileSync(self + ".seen", JSON.stringify({ args, env: process.env }) + "\\n");
 const exit = args.find((arg) => arg.startsWith("--exit="));
 const kill = args.find((arg) => arg.startsWith("--kill="));
-if (args.includes("--wait")) {
+const start = args.find((arg) => arg.startsWith("--start="));
+if (start !== undefined) {
+  const { CLAUDE_CODE_OAUTH_TOKEN, ...env } = process.env;
+  const ran = require("node:child_process").spawnSync(start.slice("--start=".length), [], { env, stdio: "inherit" });
+  process.exit(ran.status ?? 1);
+} else if (args.includes("--wait")) {
   fs.writeFileSync(self + ".ready", "");
   setTimeout(() => {}, 60000);
 } else if (kill !== undefined) {
@@ -112,6 +122,11 @@ export const machine = () => {
   const configuration = join(home, ".config", "cota");
   const shims = join(home, ".local", "share", "cota", "bin");
   const state = join(home, ".local", "state", "cota");
+  const startsOf = (client: string): ReadonlyArray<Seen> =>
+    readFileSync(join(clients, `${client}.seen`), "utf8")
+      .split("\n")
+      .filter((line) => line !== "")
+      .map((line) => JSON.parse(line));
   return {
     root,
     home,
@@ -145,8 +160,15 @@ export const machine = () => {
       PATH: `${shims}:${bin}`,
       SHELL: "/bin/sh",
     } satisfies Variables,
-    seen: (client: string): Seen =>
-      JSON.parse(readFileSync(join(clients, `${client}.seen`), "utf8")),
+    /** What the client was given at its latest start. */
+    seen: (client: string): Seen => {
+      const starts = startsOf(client);
+      const latest = starts.at(-1);
+      if (latest === undefined) throw new Error(`${client} was not started`);
+      return latest;
+    },
+    /** What the client was given at each start since it was last forgotten, in order. */
+    starts: (client: string): ReadonlyArray<Seen> => startsOf(client),
     forget: (client: string) =>
       rmSync(join(clients, `${client}.seen`), { force: true }),
     wasStarted: (client: string) => existsSync(join(clients, `${client}.seen`)),
