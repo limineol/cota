@@ -80,6 +80,7 @@ const Drawn = Schema.Struct({
   ),
   inheritedBaseUrl: Schema.Literals(["absent", "hub", "other"]),
   inheritedHeaders: Schema.Literals(["absent", "owner", "owner and cota"]),
+  inheritedPool: Schema.Literals(["absent", "team", " "]),
   ownPool: MaybePool,
   subscriptionKey: Schema.Boolean,
   keyedKey: Schema.Boolean,
@@ -130,6 +131,9 @@ const givenOf = (drawn: Drawn): Launch.Given => {
       drawn.inheritedHeaders === "owner"
         ? "x-team: platform"
         : "x-team: platform\nx-cota-project: elsewhere";
+  }
+  if (drawn.inheritedPool !== "absent") {
+    variables.COTA_POOL = drawn.inheritedPool;
   }
   return { args: drawn.args, variables };
 };
@@ -194,7 +198,6 @@ const launchOf = (drawn: Drawn): Launch.Launch => {
       : Option.none();
   return {
     command: drawn.command,
-    system: drawn.system,
     given: givenOf(drawn),
     realClient: drawn.installed
       ? Option.some(`/usr/bin/${drawn.command}`)
@@ -203,7 +206,6 @@ const launchOf = (drawn: Drawn): Launch.Launch => {
       ? Option.some({
           configuration: configurationOf(drawn),
           project,
-          shims: shimsOf(drawn.system),
           hubKeys: {
             subscription: drawn.subscriptionKey
               ? Option.some(Redacted.make(subscriptionKey))
@@ -378,10 +380,28 @@ describe("launch laws", () => {
     runs,
   );
 
+  it.effect.prop(
+    "J28: Every launch that starts its client gives it `PATH` as the launch was given it, the shims' directory included, and `COTA_POOL` naming the launch's override where it had one, so that a client it starts by name is launched again.",
+    { drawn },
+    ({ drawn }) =>
+      Effect.sync(() => {
+        const launch = launchOf(drawn);
+        const decision = Launch.decide(launch);
+        if (decision._tag === "Stop") return;
+        const { variables } = launch.given;
+        expect(decision.variables.PATH).toBe(variables.PATH);
+        expect(decision.variables.COTA_POOL).toBe(
+          drawn.joined && drawn.cota !== "off" && drawn.override !== "none"
+            ? drawn.override
+            : variables.COTA_POOL,
+        );
+      }),
+    runs,
+  );
+
   it("a launch with no real client stops with 127, whatever else it was given", () => {
     const decision = Launch.decide({
       command: "claude",
-      system: "darwin",
       given: { args: [], variables: { COTA: "off" } },
       realClient: Option.none(),
       machine: Option.none(),

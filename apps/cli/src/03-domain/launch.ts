@@ -20,12 +20,10 @@ export interface Given {
 export interface Joined {
   readonly configuration: Configuration;
   readonly project: string;
-  /** The shims' directory, which the client's `PATH` lacks. */
-  readonly shims: string;
   readonly hubKeys: HubKeys;
   /** The machine logins, by pool. */
   readonly logins: ReadonlyMap<string, Redacted.Redacted<string>>;
-  /** The pool `--pool` or `COTA_POOL` named, which the hub was asked in place of the route. */
+  /** The pool `--pool` or `COTA_POOL` named, which the hub was asked in place of the route, and which the client is given as `COTA_POOL`. */
   readonly override: Option.Option<string>;
   /** What the hub answered by the deadline; none for a client the hub does not route. */
   readonly asked: Option.Option<Asked>;
@@ -35,7 +33,6 @@ export interface Joined {
 
 export interface Launch {
   readonly command: Command;
-  readonly system: System;
   readonly given: Given;
   /** The client's real command, the first on `PATH` beyond the shims that is not a shim. */
   readonly realClient: Option.Option<string>;
@@ -189,7 +186,7 @@ export const refusedLine = (
  * and directly where it could not be reached, or the launch stops.
  */
 export const decide = (launch: Launch): Decision => {
-  const { command, system, given } = launch;
+  const { command, given } = launch;
   if (Option.isNone(launch.realClient)) {
     return stop(
       `cota: ${command} is not installed: no ${command} on PATH beyond cota's shims.`,
@@ -214,10 +211,8 @@ export const decide = (launch: Launch): Decision => {
     ...without(given.variables, []),
     COTA_PROJECT: project,
   };
-  if (given.variables.PATH !== undefined) {
-    base.PATH = pathWithout(system, given.variables.PATH, machine.shims).join(
-      pathSeparatorOf(system),
-    );
+  if (Option.isSome(machine.override)) {
+    base.COTA_POOL = machine.override.value;
   }
   const start = (
     variables: Variables,
