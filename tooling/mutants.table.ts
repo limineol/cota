@@ -190,6 +190,7 @@ export type Law =
   | "V44"
   | "V45"
   | "V46"
+  | "V47"
   | "P1"
   | "P2"
   | "P3"
@@ -911,6 +912,7 @@ const waysIn = `${webDomain}/ways-in.ts`;
 const setupCode = `${webDomain}/setup-code.ts`;
 const newPassword = `${webDomain}/new-password.ts`;
 const routeEdits = `${webDomain}/routes.ts`;
+const poolOrder = `${webDomain}/pool-order.ts`;
 const everyBlockGiven =
   "V1: when the total is above zero, the parts' blocks sum to the blocks given";
 const eachPartItsShare =
@@ -989,6 +991,8 @@ const refusalOnItsRow =
   "V45: each refusal is said once, on the row of the route sent at its position, which it follows as the route moves, the default pool's on the default pool, and one at a position nothing was sent at apart from the rows; a row's refusals keep the hub's order, and a shadowed route names the route sent at the position that shadows it";
 const poolsThatFit =
   "V46: a select offers every pool of the configuration that speaks the client's protocol and no other, in the configuration's order, and the pool chosen beside them when it is not among them";
+const poolsInOrder =
+  "V47: the pools are each shown once, by usage, most first, then by the name shown ignoring case, then by id, or by name and id alone whatever their usage, and pools equal in all of these keep the order given";
 const huesInOrder =
   "V18: pools take the hues in the order given, one each, and a pool beyond the set is neutral";
 const dashboardRoutes =
@@ -6188,6 +6192,62 @@ export const layer = (policy: Policy): Layer.Layer<Fallback> =>
     find: "        : chosen,",
     replace: "        : null,",
     killedBy: poolsThatFit,
+  },
+  {
+    name: "the last pool is not shown",
+    law: "V47",
+    file: poolOrder,
+    find: "[...pools].sort(orderings[order])",
+    replace: "[...pools].sort(orderings[order]).slice(0, -1)",
+    killedBy: poolsInOrder,
+  },
+  {
+    name: "the pool with the least usage comes first",
+    law: "V47",
+    file: poolOrder,
+    find: "b.usage - a.usage",
+    replace: "a.usage - b.usage",
+    killedBy: poolsInOrder,
+  },
+  {
+    name: "pools of equal usage keep the order given",
+    law: "V47",
+    file: poolOrder,
+    find: " || byName(a, b)",
+    replace: "",
+    killedBy: poolsInOrder,
+  },
+  {
+    name: "names are compared with their case",
+    law: "V47",
+    file: poolOrder,
+    find: "compared(a.name.toLowerCase(), b.name.toLowerCase())",
+    replace: "compared(a.name, b.name)",
+    killedBy: poolsInOrder,
+  },
+  {
+    name: "pools of one name are not ordered by id",
+    law: "V47",
+    file: poolOrder,
+    find: " || compared(a.id, b.id)",
+    replace: "",
+    killedBy: poolsInOrder,
+  },
+  {
+    name: "the name order heeds usage",
+    law: "V47",
+    file: poolOrder,
+    find: "name: byName }",
+    replace: "name: byUsage }",
+    killedBy: poolsInOrder,
+  },
+  {
+    name: "pools equal in every key are shown last first",
+    law: "V47",
+    file: poolOrder,
+    find: "[...pools].sort(",
+    replace: "[...pools].reverse().sort(",
+    killedBy: poolsInOrder,
   },
   {
     name: "the hashed files are read from the folder above the build",

@@ -7,11 +7,12 @@ import {
   failed,
   loading,
   overviewOfPools,
+  poolsToOrder,
   reportedThrough,
   threePools,
   withAnObservedPool,
 } from "#stories/overview.ts";
-import { page } from "#stories/page.tsx";
+import { locationShown, page } from "#stories/page.tsx";
 
 const meta = { title: "Screens/Overview" } satisfies Meta;
 
@@ -63,6 +64,90 @@ export const AllPoolsList: Story = {
     await expect(
       await canvas.findByRole("radio", { name: "List" }),
     ).toBeChecked();
+  },
+};
+
+const cardNames = (canvas: HTMLElement) =>
+  Array.from(
+    within(canvas)
+      .getByRole("list", { name: "Pools" })
+      .querySelectorAll('[data-slot="pool-card-name"]'),
+    (name) => name.textContent,
+  );
+
+/** Each pool's hue, read from its mark in the cards and in the switcher, which keeps the configuration's order. */
+const huesOf = (canvas: HTMLElement) => {
+  const colourOf = (link: Element) => {
+    const mark = link.querySelector('[data-slot="pool-mark"]');
+    return mark === null ? null : getComputedStyle(mark).color;
+  };
+  const cards = within(canvas)
+    .getByRole("list", { name: "Pools" })
+    .querySelectorAll('[data-slot="pool-card"]');
+  const switcher = within(canvas).getByRole("navigation", { name: "Pool" });
+  return {
+    cards: Object.fromEntries(
+      Array.from(cards, (card) => [
+        card.querySelector('[data-slot="pool-card-name"]')?.textContent,
+        colourOf(card),
+      ]),
+    ),
+    switcher: Object.fromEntries(
+      within(switcher)
+        .getAllByRole("link")
+        .slice(1)
+        .map((link) => [
+          link.querySelector("span[title]")?.textContent,
+          colourOf(link),
+        ]),
+    ),
+  };
+};
+
+export const OrderedByUsage: Story = {
+  ...page("/", poolsToOrder),
+  play: async ({ canvasElement, canvas }) => {
+    await expect(
+      await canvas.findByRole("radio", { name: "Usage" }),
+    ).toBeChecked();
+    await waitFor(() =>
+      expect(cardNames(canvasElement)).toEqual([
+        "Personal plan",
+        "GLM plan",
+        "work",
+        "codex",
+        "acme/shop",
+        "local",
+      ]),
+    );
+    const hues = huesOf(canvasElement);
+    await expect(hues.cards).toEqual(hues.switcher);
+  },
+};
+
+export const OrderedByName: Story = {
+  ...page("/", poolsToOrder),
+  play: async ({ canvasElement, canvas, userEvent }) => {
+    await waitFor(() =>
+      expect(cardNames(canvasElement)[0]).toBe("Personal plan"),
+    );
+    await userEvent.click(canvas.getByRole("radio", { name: "Name" }));
+    await expect(canvas.getByRole("radio", { name: "Name" })).toBeChecked();
+    await expect(cardNames(canvasElement)).toEqual([
+      "acme/shop",
+      "codex",
+      "GLM plan",
+      "local",
+      "Personal plan",
+      "work",
+    ]);
+    await expect(locationShown().search).toEqual({ sort: "name" });
+    const hues = huesOf(canvasElement);
+    await expect(hues.cards).toEqual(hues.switcher);
+    const switcher = canvas.getByRole("navigation", { name: "Pool" });
+    await expect(
+      within(switcher).getByRole("link", { name: /work/ }),
+    ).toHaveAttribute("href", "/?sort=name&pool=work");
   },
 };
 

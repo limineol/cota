@@ -1,5 +1,5 @@
 import { answer, type Fixture, never, problem, where } from "./fake-api.ts";
-import { displayNames, owner } from "./fixtures.ts";
+import { displayNames, displayNamesWithPools, owner } from "./fixtures.ts";
 
 const minute = 60_000;
 const hour = 60 * minute;
@@ -921,6 +921,32 @@ export const overviewOfPools = (
     reported,
   ];
 };
+
+/**
+ * Pools whose three orders differ: the configuration's (local, work, zai,
+ * codex, personal, acme/shop), by usage over 30 days (Personal plan, then
+ * work and zai, of equal usage, which their names put GLM plan first though
+ * their ids put work first, then codex, acme/shop and local), and by name
+ * (acme/shop, codex, GLM plan, local, Personal plan, work).
+ */
+export const poolsToOrder: ReadonlyArray<Fixture> = [
+  displayNamesWithPools({ personal: "Personal plan", zai: "GLM plan" }),
+  ...poolFigures(todayRows, [
+    { key: "personal", requests: 31_880, tokens: 1_104_000_000, dollars: 2410 },
+    { key: "work", requests: 9870, tokens: 288_000_000, dollars: 690 },
+    {
+      key: "zai",
+      requests: 8120,
+      tokens: 288_000_000,
+      dollars: 136.5,
+      unpriced: 8120,
+    },
+    { key: "codex", requests: 2210, tokens: 71_000_000, dollars: 160.2 },
+    { key: "acme/shop", requests: 1408, tokens: 30_100_000, dollars: 66.8 },
+    { key: "local", requests: 41, tokens: 820_000, dollars: 0, unpriced: 41 },
+  ]),
+  ...overviewOfPools([local, work, zai, codex, personal, acmeShop]),
+];
 
 /** A hub whose request log has nothing in it yet. */
 export const emptyLog: ReadonlyArray<Fixture> = [

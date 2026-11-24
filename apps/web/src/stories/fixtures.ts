@@ -11,31 +11,44 @@ export const owner = answer("sign-in", "me", {
   },
 });
 
-/** `GET /api/display-names` with an owner's name, built-in names, and a name that replaced a built-in one. */
-export const displayNames = answer("display-names", "list", {
-  names: [
-    {
-      kind: "client",
-      key: "claude-code",
-      name: "Claude Code",
-      source: "built-in",
-    },
-    { kind: "client", key: "codex", name: "Codex", source: "built-in" },
-    {
-      kind: "client",
-      key: "antigravity",
-      name: "Antigravity",
-      source: "built-in",
-    },
-    { kind: "machine", key: "tower", name: "Desk", source: "owner" },
-    {
-      kind: "model",
-      key: "claude-opus-4-5",
-      name: "Claude Opus 4.5",
-      source: "built-in",
-    },
-    { kind: "pool", key: "personal", name: "Personal plan", source: "owner" },
-  ],
+/** `GET /api/display-names` with an owner's name, built-in names, and the owner's names for the pools given, by id. */
+export const displayNamesWithPools = (
+  pools: Readonly<Record<string, string>>,
+) =>
+  answer("display-names", "list", {
+    names: [
+      {
+        kind: "client",
+        key: "claude-code",
+        name: "Claude Code",
+        source: "built-in",
+      },
+      { kind: "client", key: "codex", name: "Codex", source: "built-in" },
+      {
+        kind: "client",
+        key: "antigravity",
+        name: "Antigravity",
+        source: "built-in",
+      },
+      { kind: "machine", key: "tower", name: "Desk", source: "owner" },
+      {
+        kind: "model",
+        key: "claude-opus-4-5",
+        name: "Claude Opus 4.5",
+        source: "built-in",
+      },
+      ...Object.entries(pools).map(([key, name]) => ({
+        kind: "pool" as const,
+        key,
+        name,
+        source: "owner" as const,
+      })),
+    ],
+  });
+
+/** `GET /api/display-names` with an owner's name, built-in names, and the owner's name for the pool `personal`. */
+export const displayNames = displayNamesWithPools({
+  personal: "Personal plan",
 });
 
 /** How the owner signs in, as `GET /api/sign-in` answers. */

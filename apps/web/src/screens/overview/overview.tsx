@@ -20,6 +20,12 @@ import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { LayoutGrid, List } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { type Hue, poolHues } from "#shared/domain/hues.ts";
+import {
+  defaultOrder,
+  ordered,
+  type PoolOrder,
+  poolOrders,
+} from "#shared/domain/pool-order.ts";
 import { ago, span } from "#shared/domain/quantities.ts";
 import { Name, useNameOf } from "#shared/names.tsx";
 import { NowProvider, useNow } from "#shared/now.tsx";
@@ -45,6 +51,7 @@ import {
   FleetSummarySkeleton,
   PoolCardsSkeleton,
   PoolCardView,
+  usageOf,
 } from "./pools.tsx";
 import {
   type BreakdownRow,
@@ -86,6 +93,16 @@ const layouts: ReadonlyArray<{
   { value: "list", label: "List", icon: <List /> },
 ];
 
+const orderLabels = {
+  usage: "Usage",
+  name: "Name",
+} satisfies Record<PoolOrder, string>;
+
+const orders = poolOrders.map((value) => ({
+  value,
+  label: orderLabels[value],
+}));
+
 /** A link to the overview is the current page only when its query matches whole, not when it is part of the current one. */
 const exactly = { exact: true } as const;
 
@@ -107,6 +124,7 @@ function OverviewPage() {
   const navigate = useNavigate({ from: "/" });
   const selected = search.pool ?? null;
   const range = search.range ?? defaultRange;
+  const order = search.sort ?? defaultOrder;
   const [layout, setLayout] = useState(storedLayout);
   const queries = useQueryClient();
   const fetching = useIsFetching({ queryKey: ["overview"] });
@@ -151,6 +169,19 @@ function OverviewPage() {
     active: active.get(pool),
     loaded,
   });
+  const cards = ordered(
+    (list ?? []).map((pool) => {
+      const figures = figuresOf(pool.id);
+      return {
+        pool,
+        figures,
+        id: pool.id,
+        name: nameOf("pool", pool.id),
+        usage: loaded ? usageOf(figures) : 0,
+      };
+    }),
+    order,
+  );
   const since =
     first !== undefined && first !== null && now - first < thirtyDays
       ? dayOf(first)
@@ -185,6 +216,13 @@ function OverviewPage() {
     navigate({
       search: ({ range: _range, ...rest }) =>
         next === defaultRange ? rest : { ...rest, range: next },
+      replace: true,
+      resetScroll: false,
+    });
+  const chooseOrder = (next: PoolOrder) =>
+    navigate({
+      search: ({ sort: _sort, ...rest }) =>
+        next === defaultOrder ? rest : { ...rest, sort: next },
       replace: true,
       resetScroll: false,
     });
@@ -242,7 +280,7 @@ function OverviewPage() {
           </Updated>
         </PageHeader>
 
-        <div className="mb-4.5 flex items-center justify-between gap-3">
+        <div className="mb-4.5 flex flex-wrap items-center justify-between gap-3">
           <Switcher aria-label="Pool">
             <SwitcherItem
               current={selected === null}
@@ -280,14 +318,21 @@ function OverviewPage() {
             ))}
           </Switcher>
           {selected === null ? (
-            <Segmented
-              label="Show pools as"
-              value={layout}
-              options={layouts}
-              onValueChange={chooseLayout}
-              iconOnly
-              className="shrink-0"
-            />
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              <Segmented
+                label="Sort pools by"
+                value={order}
+                options={orders}
+                onValueChange={chooseOrder}
+              />
+              <Segmented
+                label="Show pools as"
+                value={layout}
+                options={layouts}
+                onValueChange={chooseLayout}
+                iconOnly
+              />
+            </div>
           ) : null}
         </div>
 
@@ -359,12 +404,12 @@ function OverviewPage() {
               </Empty>
             ) : (
               <PoolCards layout={layout} aria-label="Pools">
-                {list.map((pool) => (
+                {cards.map(({ pool, figures }) => (
                   <PoolCardView
                     key={pool.id}
                     pool={pool}
                     hue={hueOf(pool.id)}
-                    figures={figuresOf(pool.id)}
+                    figures={figures}
                     since={since}
                   />
                 ))}
