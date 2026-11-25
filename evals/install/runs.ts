@@ -34,6 +34,7 @@ export const criterionIds = [
   "requests",
   "titles",
   "routes",
+  "memory",
   "secrets",
   "untouched",
 ] as const;

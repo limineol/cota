@@ -318,7 +318,7 @@ const secrets = (task: Task, observed: Observed): Verdict =>
         : secretPlacesOf(observed.secrets, observed)),
   ]);
 
-/** The paths under a home that are Cota's, or written by the world's Bun (its cache), by what the prompt runs (the Docker client's own files, the memory skill it copies), or by the owner's own clients and terminals. */
+/** The paths under a home that are Cota's, or written by the world's Bun (its cache), by what the prompt runs (the Docker client's own files), or by the owner's own clients and terminals. */
 export const ownedByCota = [
   "cota-hub/",
   ".config/cota/",
@@ -328,7 +328,6 @@ export const ownedByCota = [
   ".bun/",
   ".docker/",
   ".claude/projects/",
-  ".claude/skills/cota-memory/",
   ".stand-ins/",
   ".bash_history",
 ];
@@ -369,14 +368,21 @@ const withoutCotaTables = (text: string): ReadonlyArray<string> => {
   return kept;
 };
 
-const changesOf = (before: Home, after: Home): ReadonlyArray<string> => {
+const skillFolder = ".claude/skills/cota-memory/";
+const skillFile = `${skillFolder}SKILL.md`;
+const readerKeyFile = ".config/cota/hub-keys/reader";
+
+const changesOf = (
+  before: Home,
+  after: Home,
+  owned: ReadonlyArray<string>,
+): ReadonlyArray<string> => {
   const paths = [
     ...new Set([...Object.keys(before.files), ...Object.keys(after.files)]),
   ].sort();
   return paths.flatMap((path) => {
     if (before.files[path] === after.files[path]) return [];
-    if (ownedByCota.some((owned) => path === owned || path.startsWith(owned)))
-      return [];
+    if (owned.some((each) => path === each || path.startsWith(each))) return [];
     const shared = sharedFiles[path];
     if (shared !== undefined) {
       const was = shared(before.texts[path] ?? "");
@@ -392,16 +398,67 @@ const changesOf = (before: Home, after: Home): ReadonlyArray<string> => {
   });
 };
 
+/** What doctor's `memory` check says of a machine whose agents may read the request log: nothing when the hub knows its kept key as a reader key. */
+const readerKeyProblems = (
+  report: Read<DoctorReport> | undefined,
+  name: string,
+  may: string,
+): ReadonlyArray<string> => {
+  if (report === undefined) return [`${name}: doctor was not run`];
+  if (isUnread(report))
+    return [`${name}: doctor's report did not read: ${report.unread}`];
+  const check = report.checks.find(({ id }) => id === "memory");
+  if (check === undefined) return [`${may} doctor has no memory check`];
+  return check.outcome === "passed"
+    ? []
+    : [
+        `${may} doctor's memory check ${check.outcome}: ${check.problem ?? "no problem given"}`,
+      ];
+};
+
+/** Where the owner said yes, the reader key and the skill in Claude Code's skills; where they said no, neither. */
+const memory = (task: Task, observed: Observed): Verdict =>
+  verdict(
+    "memory",
+    task.machines.flatMap((machine) => {
+      const { name } = machine;
+      const read = observed.homes[name];
+      if (read === undefined) return [`${name}: its home was not read`];
+      if (isUnread(read)) return [`${name}: ${read.unread}`];
+      const { files } = read.after;
+      if (machine.memory) {
+        const may = `${name}: its coding agents may read the request log, but`;
+        return [
+          ...readerKeyProblems(observed.doctor[name], name, may),
+          ...(files[skillFile] === undefined
+            ? [`${may} ~/${skillFile} is not there`]
+            : []),
+        ];
+      }
+      const mayNot = `${name}: its coding agents may not read the request log, but`;
+      return [
+        ...(files[readerKeyFile] === undefined
+          ? []
+          : [`${mayNot} it keeps a reader key in ~/${readerKeyFile}`]),
+        ...(files[skillFile] === undefined
+          ? []
+          : [`${mayNot} ~/${skillFile} is there`]),
+      ];
+    }),
+  );
+
 const untouched = (task: Task, observed: Observed): Verdict =>
   verdict(
     "untouched",
-    task.machines.flatMap(({ name }) => {
+    task.machines.flatMap(({ name, memory }) => {
       const home = observed.homes[name];
       if (home === undefined) return [`${name}: its home was not read`];
       if (isUnread(home)) return [`${name}: ${home.unread}`];
-      return changesOf(home.before, home.after).map(
-        (change) => `${name}: ${change}`,
-      );
+      return changesOf(
+        home.before,
+        home.after,
+        memory ? [...ownedByCota, skillFolder] : ownedByCota,
+      ).map((change) => `${name}: ${change}`);
     }),
   );
 
@@ -415,6 +472,7 @@ export const verdictsOf = (
   requests(task, observed),
   titles(task, observed),
   routes(task, observed),
+  memory(task, observed),
   secrets(task, observed),
   untouched(task, observed),
 ];

@@ -302,6 +302,10 @@ const installCriteria = "evals/install/criteria.ts";
 const e1 = "E1: A run with any criterion failed, or with none, fails.";
 const e2 =
   "E2: A machine, a launch or a route the eval could not read fails its criterion; nothing unobserved passes.";
+const installMemoryYes =
+  "fails a machine the owner said yes for that keeps no reader key the hub knows, or has no memory skill";
+const installMemoryNo =
+  "fails a machine the owner said no for that keeps a reader key or has the memory skill, and untouched fails the skill there";
 const installClient = "evals/install/client.ts";
 const installAgent = "evals/install/agent.ts";
 const e3 =
@@ -7235,6 +7239,43 @@ export const layer = (policy: Admission.Policy) =>
     find: "      if (isUnread(home)) return [`${name}: ${home.unread}`];",
     replace: "      if (isUnread(home)) return [];",
     killedBy: e2,
+  },
+  {
+    name: "a doctor not read passes memory where the owner said yes",
+    law: "E2",
+    file: installCriteria,
+    find: "    return [`${name}: doctor's report did not read: ${report.unread}`];",
+    replace: "    return [];",
+    killedBy: e2,
+  },
+  {
+    name: "a home not read passes memory",
+    law: "E2",
+    file: installCriteria,
+    find: "      if (isUnread(read)) return [`${name}: ${read.unread}`];",
+    replace: "      if (isUnread(read)) return [];",
+    killedBy: e2,
+  },
+  {
+    name: "a reader key the hub does not know passes memory where the owner said yes",
+    file: installCriteria,
+    find: '  return check.outcome === "passed"\n    ? []',
+    replace: '  return check.outcome !== "failed"\n    ? []',
+    killedBy: installMemoryYes,
+  },
+  {
+    name: "a reader key passes memory where the owner said no",
+    file: installCriteria,
+    find: "        ...(files[readerKeyFile] === undefined\n          ? []",
+    replace: "        ...(true\n          ? []",
+    killedBy: installMemoryNo,
+  },
+  {
+    name: "the memory skill passes untouched where the owner said no",
+    file: installCriteria,
+    find: "        memory ? [...ownedByCota, skillFolder] : ownedByCota,",
+    replace: "        [...ownedByCota, skillFolder],",
+    killedBy: installMemoryNo,
   },
   {
     name: "a client that announces another tool starts",

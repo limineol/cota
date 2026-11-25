@@ -27,6 +27,24 @@ const healthy: DoctorReport = {
   ],
 };
 
+const memoryCheck = (
+  outcome: "passed" | "warned",
+): DoctorReport["checks"][number] =>
+  outcome === "passed"
+    ? { id: "memory", outcome, problem: null, fix: null }
+    : {
+        id: "memory",
+        outcome,
+        problem:
+          "this machine keeps no reader key, so coding agents on it cannot read the request log with cota memory",
+        fix: "cota memory key",
+      };
+
+const doctorFor = (memory: boolean): DoctorReport => ({
+  ...healthy,
+  checks: [...healthy.checks, memoryCheck(memory ? "passed" : "warned")],
+});
+
 const sessionOf = (machine: string) => `session-${machine}`;
 
 const command = (
@@ -61,7 +79,7 @@ const homeWith = (
 });
 
 const before = homeWith({});
-const after = homeWith(
+const cotas = homeWith(
   {
     ".bashrc": "100644:c",
     ".codex/config.toml": "100600:d",
@@ -75,6 +93,14 @@ const after = homeWith(
     ".codex/config.toml": `${codex}\n# cota: this table is rewritten by cota configure.\n[model_providers.cota-chatgpt]\nname = "OpenAI"\nbase_url = "http://studio:8080/pools/chatgpt/backend-api/codex"\n`,
   },
 );
+const readerKey = ".config/cota/hub-keys/reader";
+const skill = ".claude/skills/cota-memory/SKILL.md";
+const withMemory: Home = {
+  ...cotas,
+  files: { ...cotas.files, [readerKey]: "100600:j", [skill]: "100644:k" },
+};
+/** A home after the install, with the reader key and the skill where the owner said yes. */
+const afterFor = (memory: boolean) => (memory ? withMemory : cotas);
 
 const secret = {
   name: "secret in studio:~/cota-hub/secrets/clients",
@@ -85,7 +111,9 @@ const secret = {
 const perfect = (): Observed => ({
   ending: "done",
   error: null,
-  doctor: Object.fromEntries(task.machines.map(({ name }) => [name, healthy])),
+  doctor: Object.fromEntries(
+    task.machines.map(({ name, memory }) => [name, doctorFor(memory)]),
+  ),
   requests: task.launches.map((launch) => ({
     session: sessionOf(launch.machine),
     machine: launch.machine,
@@ -113,7 +141,10 @@ const perfect = (): Observed => ({
     ]),
   ),
   homes: Object.fromEntries(
-    task.machines.map(({ name }) => [name, { before, after }]),
+    task.machines.map(({ name, memory }) => [
+      name,
+      { before, after: afterFor(memory) },
+    ]),
   ),
   secrets: [secret],
   transcript: [
@@ -154,7 +185,7 @@ const gaps: Readonly<Record<Gap, (observed: Observed) => Observed>> = {
     ...observed,
     doctor: {
       ...observed.doctor,
-      laptop: { unread: "doctor printed no JSON" },
+      studio: { unread: "doctor printed no JSON" },
     },
   }),
   "a machine never asked": (observed: Observed): Observed => ({
@@ -200,14 +231,14 @@ const gaps: Readonly<Record<Gap, (observed: Observed) => Observed>> = {
 
 /** The criteria that cannot pass without each. */
 const failsWithout: Readonly<Record<Gap, ReadonlyArray<string>>> = {
-  "a machine's doctor": ["doctor"],
-  "a machine never asked": ["doctor"],
+  "a machine's doctor": ["doctor", "memory"],
+  "a machine never asked": ["doctor", "memory"],
   "the hub's requests": ["requests"],
   "a launch's request": ["requests"],
   "the hub's titles": ["titles"],
   "the hub's routes": ["routes"],
   "a machine's stand-ins": ["requests", "titles", "secrets"],
-  "a machine's home": ["untouched"],
+  "a machine's home": ["memory", "untouched"],
   "the secrets": ["secrets"],
 };
 
@@ -437,6 +468,38 @@ describe("the install eval's criteria", () => {
       "studio: ~/.bashrc: changed beyond cota's part",
       "studio: ~/.codex/config.toml: changed beyond cota's part",
       "studio: ~/.gitconfig: added",
+    ]);
+  });
+
+  it("fails a machine the owner said yes for that keeps no reader key the hub knows, or has no memory skill", () => {
+    const observed = perfect();
+    const without = (memory: Observed["doctor"][string]): Observed => ({
+      ...observed,
+      doctor: { ...observed.doctor, studio: memory },
+      homes: { ...observed.homes, studio: { before, after: cotas } },
+    });
+    expect(problemsOf(without(doctorFor(false)), "memory")).toEqual([
+      "studio: its coding agents may read the request log, but doctor's memory check warned: this machine keeps no reader key, so coding agents on it cannot read the request log with cota memory",
+      "studio: its coding agents may read the request log, but ~/.claude/skills/cota-memory/SKILL.md is not there",
+    ]);
+    expect(problemsOf(without(healthy), "memory")).toEqual([
+      "studio: its coding agents may read the request log, but doctor has no memory check",
+      "studio: its coding agents may read the request log, but ~/.claude/skills/cota-memory/SKILL.md is not there",
+    ]);
+  });
+
+  it("fails a machine the owner said no for that keeps a reader key or has the memory skill, and untouched fails the skill there", () => {
+    const observed = perfect();
+    const given: Observed = {
+      ...observed,
+      homes: { ...observed.homes, laptop: { before, after: withMemory } },
+    };
+    expect(problemsOf(given, "memory")).toEqual([
+      "laptop: its coding agents may not read the request log, but it keeps a reader key in ~/.config/cota/hub-keys/reader",
+      "laptop: its coding agents may not read the request log, but ~/.claude/skills/cota-memory/SKILL.md is there",
+    ]);
+    expect(problemsOf(given, "untouched")).toEqual([
+      "laptop: ~/.claude/skills/cota-memory/SKILL.md: added",
     ]);
   });
 });

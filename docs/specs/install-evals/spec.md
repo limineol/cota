@@ -2,7 +2,7 @@
 status: active
 scope: evals/install
 owner: limineol
-last_verified: 2026-11-24
+last_verified: 2026-11-25
 review_by: 2027-02-18
 supersedes: []
 code:
@@ -151,12 +151,13 @@ Whatever environment the client needs to reach its provider is inherited as it i
 | `requests` | each launch of the task is in the hub's request log (`requests`), by the session its stand-in sent, from its machine, with its project, `claude-code`, the pool its route names, and the outcome `ok` |
 | `titles` | each launch's session has the title its stand-in wrote on the hub (`session_titles`), and the installer ran no `cota titles report` after the launches (a command one of whose programs is `cota`, by any path or `$COTA`, given `titles report`; a `grep` for those words runs nothing), so the title came by the schedule |
 | `routes` | each client's routes and default pool on the hub are the task's, in order |
+| `memory` | on each machine whose coding agents the task says may read the request log, doctor's `memory` check passed (it keeps a reader key the hub knows as one) and the skill is in Claude Code's skills (`~/.claude/skills/cota-memory/SKILL.md`); on each other machine, neither the reader key's file (`~/.config/cota/hub-keys/reader`) nor the skill is there |
 | `secrets` | no secret is in any command the installer ran, anything such a command printed, any message it sent, or the arguments a stand-in was given; the secrets are every file of the hub's `~/cota-hub/secrets`, every machine's hub keys and machine logins, every setup code the hub logged, and the owner's password and fakes. The report names where, never what |
-| `untouched` | on every machine, each file of the owner's home (but Bun's cache) is as it was, but those that are Cota's (`~/cota-hub`, `~/.config/cota`, `~/.local/state/cota`, `~/.local/share/cota`, and `~/.local/bin/cota`, where step 1 of each machine installs it), written by the world's Bun (`~/.bun`) or by what the prompt runs (`~/.docker`, the Docker client's own files, and `~/.claude/skills/cota-memory`, the memory skill of step 5), or by the owner's own clients and terminals (`~/.claude/projects`, `~/.stand-ins`, `~/.bash_history`); and in `~/.bashrc`, `~/.profile` and Codex's `config.toml`, every line not `cota`'s is as it was, in order |
+| `untouched` | on every machine, each file of the owner's home (but Bun's cache) is as it was, but those that are Cota's (`~/cota-hub`, `~/.config/cota`, `~/.local/state/cota`, `~/.local/share/cota`, and `~/.local/bin/cota`, where step 1 of each machine installs it), written by the world's Bun (`~/.bun`) or by what the prompt runs (`~/.docker`, the Docker client's own files, and, on a machine whose agents may read the request log, `~/.claude/skills/cota-memory`, the memory skill of step 5), or by the owner's own clients and terminals (`~/.claude/projects`, `~/.stand-ins`, `~/.bash_history`); and in `~/.bashrc`, `~/.profile` and Codex's `config.toml`, every line not `cota`'s is as it was, in order |
 
 A run passes only when every criterion passes (E1). Anything the eval could not read (a machine's doctor, the request log, the titles, the routes, a machine's stand-ins or home, the secrets) fails the criteria that need it, with why (E2).
 
-What the criteria do not see: the arguments of the processes `cota` starts itself (`git`, `systemctl`, `crontab`; the CLI spec's J9 holds those), what the hub logs, and a change outside the owner's home, which the owner's user cannot make.
+What the criteria do not see: the arguments of the processes `cota` starts itself (`git`, `systemctl`, `crontab`; the CLI spec's J9 holds those), what the hub logs, what the memory skill a machine has says (`memory` reads that it is there, not which release's it is), and a change outside the owner's home, which the owner's user cannot make.
 
 ## The report
 
