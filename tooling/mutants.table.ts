@@ -7147,6 +7147,56 @@ export const layer = (policy: Admission.Policy) =>
     killedBy: j14,
   },
   {
+    name: "the memory check's warning of no reader key names no fix",
+    law: "J14",
+    file: cliDoctor,
+    find: "          `${fix}, if the owner wants this machine's agents to read the request log`,",
+    replace: '          "",',
+    killedBy: j14,
+  },
+  {
+    name: "the memory check's failures name no fix",
+    law: "J14",
+    file: cliDoctor,
+    find: '      const fix = "cota memory key";',
+    replace: '      const fix = "";',
+    killedBy: j14,
+  },
+  {
+    name: "doctor fails a machine that keeps no reader key, which a join never gives it",
+    file: cliDoctor,
+    find: '        return Check.warned(\n          "this machine keeps no reader key',
+    replace:
+      '        return Check.failed(\n          "this machine keeps no reader key',
+    killedBy:
+      "doctor warns of a machine that keeps no reader key, passes one the hub knows as a reader key, and fails one it does not know or knows under another scope",
+  },
+  {
+    name: "doctor passes a reader key the hub does not know",
+    file: cliDoctor,
+    find: '        return Check.failed(answerProblem("reader", answer.failure), fix);',
+    replace: "        return Check.passed;",
+    killedBy:
+      "doctor warns of a machine that keeps no reader key, passes one the hub knows as a reader key, and fails one it does not know or knows under another scope",
+  },
+  {
+    name: "doctor passes a hub key of another scope kept as the reader key",
+    file: cliDoctor,
+    find: '      return scope === "reader"\n        ? Check.passed',
+    replace: '      return scope !== "keyed"\n        ? Check.passed',
+    killedBy:
+      "doctor warns of a machine that keeps no reader key, passes one the hub knows as a reader key, and fails one it does not know or knows under another scope",
+  },
+  {
+    name: "doctor asks a hub that did not answer /health about the reader key",
+    file: cliDoctor,
+    find: '            ...(hubOutcome.outcome === "passed"\n              ? yield* memoryCheck(paths, configuration)',
+    replace:
+      '            ...(hubOutcome.outcome !== "skipped"\n              ? yield* memoryCheck(paths, configuration)',
+    killedBy:
+      "doctor fails the hub check when the hub does not answer /health, and skips what needs the hub",
+  },
+  {
     name: "the title reporter's schedule carries every variable",
     law: "J9",
     file: cliSchedule,

@@ -1,8 +1,8 @@
-import { Context, Effect, Layer, Option, Redacted, Schema } from "effect";
-import { Files } from "#02-application/interfaces/files.ts";
+import { Context, Effect, Layer, Option, Schema } from "effect";
 import { Hub, type TranscriptOf } from "#02-application/interfaces/hub.ts";
 import { LocateFiles } from "#02-application/queries/locate-files.query.ts";
 import { ReadConfiguration } from "#02-application/queries/read-configuration.query.ts";
+import { ReadHubKeys } from "#02-application/queries/read-hub-keys.query.ts";
 import type { HubAddress } from "#03-domain/hub-address.ts";
 import {
   type HubFailed,
@@ -15,7 +15,6 @@ import {
   memoryDeadline,
   type TranscriptRead,
 } from "#03-domain/memory.ts";
-import { readerKeyFile } from "#03-domain/paths.ts";
 
 /** What `cota memory` could not read, and why; the problem never holds the reader key. */
 export class MemoryUnread extends Schema.TaggedError<
@@ -54,14 +53,14 @@ const problemOf = (
 export const layer: Layer.Layer<
   ReadMemory,
   never,
-  Files | Hub | LocateFiles | ReadConfiguration
+  Hub | LocateFiles | ReadConfiguration | ReadHubKeys
 > = Layer.effect(
   ReadMemory,
   Effect.gen(function* () {
-    const files = yield* Files;
     const hub = yield* Hub;
     const locate = yield* LocateFiles;
     const readConfiguration = yield* ReadConfiguration;
+    const readHubKeys = yield* ReadHubKeys;
     const refuse = (problem: string) =>
       Effect.fail(new MemoryUnread({ problem }));
 
@@ -85,20 +84,19 @@ export const layer: Layer.Layer<
             refuse(`${error.path} cannot be read: ${error.reason}`),
         }),
       );
-      const text = yield* files
-        .read(readerKeyFile(paths))
+      const key = yield* readHubKeys
+        .reader(paths)
         .pipe(
           Effect.catchTag("FilesFailed", (error) =>
             refuse(`${error.path} cannot be read: ${error.reason}`),
           ),
         );
-      const key = Option.getOrElse(text, () => "").trim();
-      if (key === "") {
+      if (Option.isNone(key)) {
         return yield* refuse(
           "this machine keeps no reader key; the owner gives it one with cota memory key.",
         );
       }
-      return { hub: configuration.hub, key: Redacted.make(key) };
+      return { hub: configuration.hub, key: key.value };
     });
 
     const inTime = <A, E>(effect: Effect.Effect<A, E>) =>

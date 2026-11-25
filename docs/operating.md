@@ -2,7 +2,7 @@
 status: active
 scope: repository
 owner: limineol
-last_verified: 2026-11-23
+last_verified: 2026-11-24
 review_by: 2027-02-19
 supersedes: []
 code:
@@ -195,7 +195,7 @@ cota memory key < "$HOME/cota-hub/secrets/agents"
 mkdir -p ~/.claude/skills && cp -R skills/cota-memory ~/.claude/skills/
 ```
 
-`cota` is the command the install built and put at `~/.local/bin/cota` ([`install.md`](install.md), Each machine). On another machine, run `cota memory key` alone and paste the key at its prompt, which does not show it. It says `cota: kept the reader key; cota memory reads the request log with it.`; `cota memory get /api/machine` then answers `{"hubKey":{"name":"agents","scope":"reader"},"pools":[]}`. Where Codex, OpenCode and Pi read skills is not confirmed yet: copy the folder where their own documentation says. A reader key reads every conversation: give one only to agents you trust with all of them, and a key of its own to each, so that you can retire one alone (Hub keys).
+`cota` is the command the install built and put at `~/.local/bin/cota` ([`install.md`](install.md), Each machine). On another machine, run `cota memory key` alone and paste the key at its prompt, which does not show it. It says `cota: kept the reader key; cota memory reads the request log with it.`; `cota memory get /api/machine` then answers `{"hubKey":{"name":"agents","scope":"reader"},"pools":[]}`. Where Codex, OpenCode and Pi read skills is not confirmed yet: copy the folder where their own documentation says. A reader key reads every conversation: give one only to agents you trust with all of them, and a key of its own to each, so that you can retire one alone (Hub keys). On a machine that keeps none, `cota doctor`'s `memory` line warns `this machine keeps no reader key`, which is as it should be where you chose no memory; it fails when the kept key is one the hub does not know or not a reader key, and `cota memory key` gives it again.
 
 ## The machines
 
@@ -208,7 +208,7 @@ In a new shell, `claude`, `codex`, `opencode` and `pi` are the shims, which star
 - `COTA=off claude` starts the client as if `cota` were not there.
 - `cota login <pool>` keeps a login for a Claude subscription other than the one Claude Code is signed in to (made with `claude setup-token`), for a route that names it. A session launched with it makes model requests only: it has no claude.ai connectors and no Remote Control. A connector needed in those projects is added to the machine as a server of the user's (`claude mcp add --scope user …`), which every pool has, where it has an address of its own; one reached only through claude.ai is not to be had there. A `claude` started inside such a session is launched through `cota` again, with this pool's login. On a machine joined with `--no-shims`, start it there as `cota claude`, not `claude`: a `claude` run directly reaches the hub with the login Claude Code is signed in to, and spends that subscription under this pool's name.
 - When the hub cannot be reached, a launch goes direct to the provider with the login its route would have used, and says so in one line. Those requests are neither logged nor diverted, and OpenCode and Pi cannot go direct: only the hub holds their keys.
-- `cota doctor` checks the configuration, the hub and its keys, the files' modes, the shims and `PATH`, the clients and their configuration, and the title reporter. Each check that failed or warned names its fix. It names where it found each client, and warns when that file is a script (another gateway's wrapper would take every session past the hub), when a `PATH` line comes after `cota`'s, and when the shims run a `cota` inside a Git checkout.
+- `cota doctor` checks the configuration, the hub and its keys, the files' modes, the shims and `PATH`, the clients and their configuration, the title reporter, and the reader key (`memory`), which it warns of on a machine that keeps none. Each check that failed or warned names its fix. It names where it found each client, and warns when that file is a script (another gateway's wrapper would take every session past the hub), when a `PATH` line comes after `cota`'s, and when the shims run a `cota` inside a Git checkout.
 - `cota leave` undoes the join: the title reporter's schedule, the hub's providers in the clients' files, the shims and their `PATH` line, and the keys.
 
 [The CLI spec](specs/cli/spec.md) has every command.

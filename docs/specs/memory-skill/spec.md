@@ -2,7 +2,7 @@
 status: active
 scope: repository
 owner: limineol
-last_verified: 2026-11-19
+last_verified: 2026-11-24
 review_by: 2027-02-19
 supersedes: []
 code:
@@ -11,6 +11,7 @@ code:
   - apps/cli/src/01-presentation/command-line.ts
   - apps/cli/src/02-application/queries/read-memory.query.ts
   - apps/cli/src/02-application/commands/keep-reader-key.command.ts
+  - apps/cli/src/02-application/queries/doctor.query.ts
   - apps/cli/src/04-infrastructure/http-hub.ts
 ---
 
@@ -54,6 +55,19 @@ mkdir -p ~/.claude/skills && cp -R skills/cota-memory ~/.claude/skills/
 ```
 
 Claude Code reads a user's skills from `~/.claude/skills/<name>/SKILL.md`. Where Codex, OpenCode and Pi read them (`~/.codex/skills`, `~/.agents/skills`, `~/.config/opencode/skills`, `~/.pi/agent/skills` are their documented or likely places) is to be confirmed on each client before the install prompt names it; until then the owner copies the folder where their client's own documentation says.
+
+## Doctor's check
+
+Doctor (the CLI spec's Doctor) gains one check, `memory`, after the request reporter's `requests`, last. It needs `config`, and `hub` to pass; `hub-keys` checks only the subscription and keyed keys, so this is the one check that asks the hub about the reader key.
+
+| Outcome | When | Problem | Fix |
+| --- | --- | --- | --- |
+| passed | `hub-keys/reader` holds a key the hub answers (`GET /api/machine`, waited for 5 seconds, as `hub-keys` asks) with the scope `reader` | | |
+| warned | the machine keeps no reader key: the file is absent or holds only spaces | `this machine keeps no reader key, so coding agents on it cannot read the request log with cota memory` | `cota memory key, if the owner wants this machine's agents to read the request log` |
+| failed | the hub does not know the key, does not say what it is within 5 seconds or cannot say, or knows it under another scope; or the file cannot be read | as `hub-keys` words it for the reader key (`the hub does not know the reader hub key`, `the hub key kept as the reader one is a subscription key`), or `<file> cannot be read: <why>` | `cota memory key` |
+| skipped | `config` failed, or `hub` did not pass | | |
+
+A warning is not a failure: doctor's exit and `--json`'s `ok` are as they were, so a machine whose owner gave it no reader key passes doctor with this warning. The check reads the key and shows it only to the hub, in `x-cota-key`, as `hub-keys` shows the others; it prints and returns nothing of it (J9 runs doctor on a machine that keeps a generated reader key). Its mode is the `files` check's, as every hub key's is. Its outcomes are held by a contract test (`apps/cli/src/01-presentation/memory.contract.test.ts`: none, a reader key, a key the hub does not know, a subscription key kept as the reader one) and by J14 over machines that keep a reader key in each state; its mutants are in `tooling/mutants.table.ts`.
 
 ## `cota memory`
 
