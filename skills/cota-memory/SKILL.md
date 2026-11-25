@@ -15,7 +15,7 @@ This works only on a machine that has joined the hub and keeps a reader key. Che
 cota memory get /api/machine
 ```
 
-It answers `{"hubKey":{"name":…,"scope":"reader"},"pools":[]}` when the machine can read the log. If it says `cota: this machine keeps no reader key`, or `has not joined a hub`, or `does not know this machine's reader key`, stop and tell the owner: they give the machine its reader key with `cota memory key`. Do nothing else to get one.
+It answers `{"hubKey":{"name":…,"scope":"reader"},"pools":[],"observedPools":[]}` when the machine can read the log. If it says `cota: this machine keeps no reader key`, or `has not joined a hub`, or `does not know this machine's reader key`, stop and tell the owner: they give the machine its reader key with `cota memory key`. Do nothing else to get one.
 
 `cota memory` prints the hub's answer on standard output (JSON, as the hub gave it, for `get` and `sql`) and every problem on stderr as a line starting `cota: `; it exits 0 when the hub answered with success and 1 otherwise. A problem of the hub's is `cota: the hub answered <status>: <its problem>`, whose `detail` says what was wrong.
 
