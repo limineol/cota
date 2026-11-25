@@ -28,6 +28,10 @@ export const known = {
   joined: "Each machine › 2. Join the hub #3",
   doctor: "Each machine › 3. Run doctor until it passes #1",
   login: "Each machine › 4. Machine logins, where a route needs one #1",
+  readerKey: "Each machine › 5. The memory skill, where the owner said yes #1",
+  readerKeyAnswer:
+    "Each machine › 5. The memory skill, where the owner said yes #2",
+  skill: "Each machine › 5. The memory skill, where the owner said yes #3",
   route: "The routes #1",
 } as const;
 
@@ -326,6 +330,20 @@ export const rehearsal = (task: Task): Installer => ({
           (answer) => answer.startsWith("Done"),
         );
       }
+      if (task.machines.find(({ name }) => name === each.name)?.memory) {
+        await memoryOn(each, each === hub, asFound, (name, changes) =>
+          run(each, name, text(name, changes)),
+        );
+        await doctorUntilItPasses(each, owner, text("doctor"), run);
+        const memory = doctorOf(
+          (await each.run(`${text("doctor")} --json`)).stdout,
+        ).checks.find(({ id }) => id === "memory");
+        if (memory?.outcome !== "passed") {
+          throw new Error(
+            `${known.doctor} on ${each.name}: memory is ${memory?.outcome ?? "missing"} after step 5 (${memory?.problem ?? ""})`,
+          );
+        }
+      }
     }
 
     await ask(
@@ -364,6 +382,38 @@ export const rehearsal = (task: Task): Installer => ({
     );
   },
 });
+
+/** Step 5 of each machine the owner said yes for: the reader key, from its file on the hub's machine, what the hub says of it, and the skill. */
+const memoryOn = async (
+  machine: Machine,
+  isHub: boolean,
+  asFound: Change,
+  run: (name: Known, changes?: ReadonlyArray<Change>) => Promise<Ran>,
+) => {
+  if (!isHub) {
+    throw new Error(
+      `${known.readerKey}: on ${machine.name}, not the hub's machine, the owner pastes the reader key, which the rehearsal's owner does not do`,
+    );
+  }
+  const kept = outputOf(await run("readerKey"));
+  if (!kept.includes("cota: kept the reader key")) {
+    throw new Error(
+      `${known.readerKey} on ${machine.name} did not keep the reader key: ${kept.trim()}`,
+    );
+  }
+  const answer = outputOf(await run("readerKeyAnswer"));
+  if (!answer.includes('"scope":"reader"') || !answer.includes('"pools":[]')) {
+    throw new Error(
+      `${known.readerKeyAnswer} on ${machine.name} did not answer a reader key: ${answer.trim()}`,
+    );
+  }
+  const copied = outputOf(await run("skill", [asFound]));
+  if (!/^name: cota-memory$/m.test(copied)) {
+    throw new Error(
+      `${known.skill} on ${machine.name} did not copy the skill: ${copied.trim().split("\n").slice(-4).join(" ")}`,
+    );
+  }
+};
 
 /** Step 3 of each machine: doctor, and what its table says to do for each check that failed, until it passes. */
 const doctorUntilItPasses = async (

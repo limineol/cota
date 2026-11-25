@@ -2,7 +2,7 @@
 status: active
 scope: repository
 owner: limineol
-last_verified: 2026-11-22
+last_verified: 2026-11-24
 review_by: 2027-02-20
 supersedes: []
 code:
@@ -86,7 +86,7 @@ docker compose logs hub | grep -c 'cota hub listening'
 
 The hub runs the new image, answers `{"status":"ok"}`, and has started once, with its pools named on that line. Sign in to the dashboard. If anything is wrong, roll back. `rm -rf "$DOWNLOADS"` removes the downloads once you no longer need the release's Compose file.
 
-The machines need nothing for a new hub image. A release whose notes say `cota` changed: on each machine, install its `cota` as the install did ([`install.md`](install.md), Each machine, step 1, with `VERSION` the new release's), which replaces `~/.local/bin/cota`, and run `~/.local/bin/cota doctor`.
+The machines need nothing for a new hub image. A release whose notes say `cota` changed: on each machine, install its `cota` as the install did ([`install.md`](install.md), Each machine, step 1, with `VERSION` the new release's), which replaces `~/.local/bin/cota`, and run `~/.local/bin/cota doctor`. A machine that keeps no reader key gets a warning on doctor's `memory` line, which a `cota` before that check did not give: it is expected where you chose that the machine's agents do not read the request log, and the install's step 5 gives the key and the skill where you want them to ([`install.md`](install.md), Each machine, step 5).
 
 ### What an upgrade keeps
 

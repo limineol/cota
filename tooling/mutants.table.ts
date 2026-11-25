@@ -302,6 +302,10 @@ const installCriteria = "evals/install/criteria.ts";
 const e1 = "E1: A run with any criterion failed, or with none, fails.";
 const e2 =
   "E2: A machine, a launch or a route the eval could not read fails its criterion; nothing unobserved passes.";
+const installMemoryYes =
+  "fails a machine the owner said yes for that keeps no reader key the hub knows, or has no memory skill";
+const installMemoryNo =
+  "fails a machine the owner said no for that keeps a reader key or has the memory skill, and untouched fails the skill there";
 const installClient = "evals/install/client.ts";
 const installAgent = "evals/install/agent.ts";
 const e3 =
@@ -7147,6 +7151,56 @@ export const layer = (policy: Admission.Policy) =>
     killedBy: j14,
   },
   {
+    name: "the memory check's warning of no reader key names no fix",
+    law: "J14",
+    file: cliDoctor,
+    find: "          `${fix}, if the owner wants this machine's agents to read the request log`,",
+    replace: '          "",',
+    killedBy: j14,
+  },
+  {
+    name: "the memory check's failures name no fix",
+    law: "J14",
+    file: cliDoctor,
+    find: '      const fix = "cota memory key";',
+    replace: '      const fix = "";',
+    killedBy: j14,
+  },
+  {
+    name: "doctor fails a machine that keeps no reader key, which a join never gives it",
+    file: cliDoctor,
+    find: '        return Check.warned(\n          "this machine keeps no reader key',
+    replace:
+      '        return Check.failed(\n          "this machine keeps no reader key',
+    killedBy:
+      "doctor warns of a machine that keeps no reader key, passes one the hub knows as a reader key, and fails one it does not know or knows under another scope",
+  },
+  {
+    name: "doctor passes a reader key the hub does not know",
+    file: cliDoctor,
+    find: '        return Check.failed(answerProblem("reader", answer.failure), fix);',
+    replace: "        return Check.passed;",
+    killedBy:
+      "doctor warns of a machine that keeps no reader key, passes one the hub knows as a reader key, and fails one it does not know or knows under another scope",
+  },
+  {
+    name: "doctor passes a hub key of another scope kept as the reader key",
+    file: cliDoctor,
+    find: '      return scope === "reader"\n        ? Check.passed',
+    replace: '      return scope !== "keyed"\n        ? Check.passed',
+    killedBy:
+      "doctor warns of a machine that keeps no reader key, passes one the hub knows as a reader key, and fails one it does not know or knows under another scope",
+  },
+  {
+    name: "doctor asks a hub that did not answer /health about the reader key",
+    file: cliDoctor,
+    find: '            ...(hubOutcome.outcome === "passed"\n              ? yield* memoryCheck(paths, configuration)',
+    replace:
+      '            ...(hubOutcome.outcome !== "skipped"\n              ? yield* memoryCheck(paths, configuration)',
+    killedBy:
+      "doctor fails the hub check when the hub does not answer /health, and skips what needs the hub",
+  },
+  {
     name: "the title reporter's schedule carries every variable",
     law: "J9",
     file: cliSchedule,
@@ -7185,6 +7239,43 @@ export const layer = (policy: Admission.Policy) =>
     find: "      if (isUnread(home)) return [`${name}: ${home.unread}`];",
     replace: "      if (isUnread(home)) return [];",
     killedBy: e2,
+  },
+  {
+    name: "a doctor not read passes memory where the owner said yes",
+    law: "E2",
+    file: installCriteria,
+    find: "    return [`${name}: doctor's report did not read: ${report.unread}`];",
+    replace: "    return [];",
+    killedBy: e2,
+  },
+  {
+    name: "a home not read passes memory",
+    law: "E2",
+    file: installCriteria,
+    find: "      if (isUnread(read)) return [`${name}: ${read.unread}`];",
+    replace: "      if (isUnread(read)) return [];",
+    killedBy: e2,
+  },
+  {
+    name: "a reader key the hub does not know passes memory where the owner said yes",
+    file: installCriteria,
+    find: '  return check.outcome === "passed"\n    ? []',
+    replace: '  return check.outcome !== "failed"\n    ? []',
+    killedBy: installMemoryYes,
+  },
+  {
+    name: "a reader key passes memory where the owner said no",
+    file: installCriteria,
+    find: "        ...(files[readerKeyFile] === undefined\n          ? []",
+    replace: "        ...(true\n          ? []",
+    killedBy: installMemoryNo,
+  },
+  {
+    name: "the memory skill passes untouched where the owner said no",
+    file: installCriteria,
+    find: "        memory ? [...ownedByCota, skillFolder] : ownedByCota,",
+    replace: "        [...ownedByCota, skillFolder],",
+    killedBy: installMemoryNo,
   },
   {
     name: "a client that announces another tool starts",

@@ -15,6 +15,7 @@ export const CheckId = Schema.Literals([
   "configured",
   "titles",
   "requests",
+  "memory",
 ]);
 export type CheckId = typeof CheckId.Type;
 

@@ -27,9 +27,9 @@ import {
   type HubKeyUnknown,
   HubUnreachable,
   hubDeadline,
-  type KeptScope,
   keptScopes,
   type OpenedPool,
+  type Scope,
 } from "#03-domain/machine.ts";
 import {
   type Paths,
@@ -79,7 +79,7 @@ const skippedAfter = (id: Check.CheckId): ReadonlyArray<Check.Check> =>
 const octal = (mode: number) => mode.toString(8).padStart(3, "0");
 
 const answerProblem = (
-  scope: KeptScope,
+  scope: Scope,
   error: HubUnreachable | HubKeyUnknown | HubFailed,
 ) => {
   switch (error._tag) {
@@ -829,6 +829,39 @@ export const layer: Layer.Layer<
         : Check.warned(notReported.join("; "), show);
     });
 
+    const memoryCheck = Effect.fn(function* (
+      paths: Paths,
+      configuration: Configuration,
+    ) {
+      const fix = "cota memory key";
+      const key = yield* Effect.result(readHubKeys.reader(paths));
+      if (Result.isFailure(key)) {
+        return Check.failed(
+          `${key.failure.path} cannot be read: ${key.failure.reason}`,
+          fix,
+        );
+      }
+      if (Option.isNone(key.success)) {
+        return Check.warned(
+          "this machine keeps no reader key, so coding agents on it cannot read the request log with cota memory",
+          `${fix}, if the owner wants this machine's agents to read the request log`,
+        );
+      }
+      const answer = yield* Effect.result(
+        withinDeadline(hub.machine(configuration.hub, key.success.value)),
+      );
+      if (Result.isFailure(answer)) {
+        return Check.failed(answerProblem("reader", answer.failure), fix);
+      }
+      const { scope } = answer.success.hubKey;
+      return scope === "reader"
+        ? Check.passed
+        : Check.failed(
+            `the hub key kept as the reader one is a ${scope} key`,
+            fix,
+          );
+    });
+
     return Doctor.of({
       execute: Effect.gen(function* () {
         const located = yield* Effect.result(locate.execute);
@@ -920,6 +953,12 @@ export const layer: Layer.Layer<
                   configuration,
                   hubKeys.observedPools,
                 )
+              : Check.skipped),
+          },
+          {
+            id: "memory",
+            ...(hubOutcome.outcome === "passed"
+              ? yield* memoryCheck(paths, configuration)
               : Check.skipped),
           },
         ] satisfies ReadonlyArray<Check.Check>;

@@ -30,6 +30,8 @@ export interface MachineOfTask {
   readonly clients: ReadonlyArray<ClientName>;
   /** The pools whose machine login the owner gives this machine. */
   readonly machineLogins: ReadonlyArray<string>;
+  /** Whether the owner lets this machine's coding agents read the request log: its reader key and the memory skill. */
+  readonly memory: boolean;
   readonly projects: ReadonlyArray<Project>;
 }
 
@@ -75,7 +77,8 @@ const studioAndLaptop: Task = {
   words: `1. The hub runs on studio, the machine you are on; it stays on, and every machine reaches it. It has Docker and curl, and reaches GitHub; you may run Cota's Compose project in its Docker. I do not run a ClickHouse of my own.
 2. Pools: my Claude Max for work is "work", and my own Claude Pro is "personal", which is work's fallback; my ChatGPT subscription is "chatgpt", for Codex; and my Z.ai coding plan is "zai".
 3. The machines reach the hub at http://studio:8080. It is plain http on my own network, and I accept that.
-4. Join studio and laptop; each has curl and reaches GitHub. Both have Claude Code and Codex, neither OpenCode nor Pi. Claude Code is signed in to personal on both; on laptop I also work on acme's projects, so give laptop a machine login for work. Acme's projects (acme/*) bill work and everything else personal; Codex bills chatgpt.`,
+4. Join studio and laptop; each has curl and reaches GitHub. Both have Claude Code and Codex, neither OpenCode nor Pi. Claude Code is signed in to personal on both; on laptop I also work on acme's projects, so give laptop a machine login for work. Acme's projects (acme/*) bill work and everything else personal; Codex bills chatgpt.
+5. The coding agents on studio may read the request log; those on laptop may not.`,
   hub: {
     machine: "studio",
     address: "http://studio:8080",
@@ -93,12 +96,14 @@ const studioAndLaptop: Task = {
       name: "studio",
       clients: ["claude", "codex"],
       machineLogins: [],
+      memory: true,
       projects: [{ directory: "src/notes", remote: null }],
     },
     {
       name: "laptop",
       clients: ["claude", "codex"],
       machineLogins: ["work"],
+      memory: false,
       projects: [
         { directory: "src/acme-api", remote: "git@github.com:Acme/API.git" },
       ],

@@ -7,7 +7,7 @@ description: Use when you are asked about past work on any of the owner's machin
 
 The owner runs a hub, Cota, that every coding agent on their machines (Claude Code, Codex, OpenCode, Pi) sends its model requests through, and it keeps each request in a **request log**: who sent it, when, from which machine and project, and the whole conversation it carried, with every tool call and what came back. That log is your memory of past sessions, the owner's and other agents', and `cota memory` reads it for you.
 
-This works only on a machine that has joined the hub and keeps a reader key. Check first:
+This works only on a machine that has joined the hub and keeps a reader key. When `cota` is not on `PATH`, it is `~/.local/bin/cota`; on Windows it is `Programs\cota\cota.exe` under the user's local application data folder (`$env:LOCALAPPDATA` in PowerShell, `$LOCALAPPDATA` in Git Bash, `%LOCALAPPDATA%` in cmd), in quotes when that path holds a space. Run it by that path wherever a command here says `cota`. Check first:
 
 ## Before you start
 
@@ -15,7 +15,7 @@ This works only on a machine that has joined the hub and keeps a reader key. Che
 cota memory get /api/machine
 ```
 
-It answers `{"hubKey":{"name":…,"scope":"reader"},"pools":[]}` when the machine can read the log. If it says `cota: this machine keeps no reader key`, or `has not joined a hub`, or `does not know this machine's reader key`, stop and tell the owner: they give the machine its reader key with `cota memory key`. Do nothing else to get one.
+It answers `{"hubKey":{"name":…,"scope":"reader"},"pools":[],"observedPools":[]}` when the machine can read the log. If it says `cota: this machine keeps no reader key`, or `has not joined a hub`, or `does not know this machine's reader key`, stop and tell the owner: they give the machine its reader key with `cota memory key`. Do nothing else to get one.
 
 `cota memory` prints the hub's answer on standard output (JSON, as the hub gave it, for `get` and `sql`) and every problem on stderr as a line starting `cota: `; it exits 0 when the hub answered with success and 1 otherwise. A problem of the hub's is `cota: the hub answered <status>: <its problem>`, whose `detail` says what was wrong.
 

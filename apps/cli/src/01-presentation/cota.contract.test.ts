@@ -40,6 +40,12 @@ const clientsFound = (on: Machine) =>
     .map((client) => `${client} at ${join(on.bin, client)}`)
     .join(", ");
 
+/** What doctor says of a machine that keeps no reader key, which a join never gives it. */
+const noReaderKey = [
+  "warned   memory    this machine keeps no reader key, so coding agents on it cannot read the request log with cota memory\n",
+  "                   fix: cota memory key, if the owner wants this machine's agents to read the request log\n",
+].join("");
+
 const later = (on: Machine) =>
   [
     "passed   shims\n",
@@ -51,6 +57,7 @@ const later = (on: Machine) =>
     "passed   configured\n",
     "passed   titles\n",
     "skipped  requests\n",
+    noReaderKey,
   ].join("");
 
 const healthy = (on: Machine) =>
@@ -100,6 +107,7 @@ const afterConfig = [
   "configured",
   "titles",
   "requests",
+  "memory",
 ];
 
 layer(Layer.effectDiscard(listing).pipe(Layer.provideMerge(Harness.layer())))(
@@ -151,7 +159,7 @@ layer(Layer.effectDiscard(listing).pipe(Layer.provideMerge(Harness.layer())))(
     );
 
     it.effect(
-      "joins with a subscription and a keyed hub key, in either order, and doctor passes every check",
+      "joins with a subscription and a keyed hub key, in either order, and doctor passes every check but memory, which warns that a join gives no reader key",
       () =>
         onAMachine((on) =>
           Effect.gen(function* () {
@@ -424,16 +432,21 @@ layer(Layer.effectDiscard(listing).pipe(Layer.provideMerge(Harness.layer())))(
         onAMachine((on) =>
           Effect.gen(function* () {
             yield* joined(on, [subscriptionKey, keyedKey]);
+            yield* cota(on, ["memory", "key"], { input: [readerKey] });
+            const everyCheck = healthy(on).replace(
+              noReaderKey,
+              "passed   memory\n",
+            );
             expect(yield* cota(on, ["doctor"])).toEqual({
               status: 0,
-              out: healthy(on),
+              out: everyCheck,
               err: "",
             });
             const json = yield* cota(on, ["doctor", "--json"]);
             expect(json.status).toBe(0);
             expect(JSON.parse(json.out)).toEqual({
               ok: true,
-              checks: healthy(on)
+              checks: everyCheck
                 .trim()
                 .split("\n")
                 .map((line) => {
@@ -539,6 +552,7 @@ layer(Layer.effectDiscard(listing).pipe(Layer.provideMerge(Harness.layer())))(
                 "skipped  configured\n",
                 "passed   titles\n",
                 "skipped  requests\n",
+                "skipped  memory\n",
               ].join(""),
             );
           }),
@@ -640,7 +654,7 @@ layer(Layer.effectDiscard(listing).pipe(Layer.provideMerge(Harness.layer())))(
                 "passed   configured",
                 "passed   titles",
                 "skipped  requests",
-                "",
+                noReaderKey,
               ].join("\n"),
             );
             expect((yield* cota(on, ["shims"])).out).toBe(
@@ -659,6 +673,7 @@ layer(Layer.effectDiscard(listing).pipe(Layer.provideMerge(Harness.layer())))(
         onAMachine((on) =>
           Effect.gen(function* () {
             yield* joined(on, [subscriptionKey, keyedKey]);
+            yield* cota(on, ["memory", "key"], { input: [readerKey] });
             const old = join(on.root, "old-gateway", "bin");
             mkdirSync(old, { recursive: true });
             const wrapper = join(old, "claude");
@@ -691,6 +706,7 @@ layer(Layer.effectDiscard(listing).pipe(Layer.provideMerge(Harness.layer())))(
         onAMachine((on) =>
           Effect.gen(function* () {
             yield* joined(on, [subscriptionKey, keyedKey]);
+            yield* cota(on, ["memory", "key"], { input: [readerKey] });
             mkdirSync(join(on.root, ".git"));
             const { status, out } = yield* cota(on, ["doctor"]);
             expect(status).toBe(0);

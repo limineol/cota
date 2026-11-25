@@ -72,6 +72,15 @@ const Machine = Schema.Struct({
     "failed",
     "unreachable",
   ]),
+  reader: Schema.Literals([
+    "absent",
+    "blank",
+    "reader",
+    "subscription",
+    "unknown",
+    "failed",
+    "unreachable",
+  ]),
   health: Schema.Literals(["up", "down", "failing"]),
   directoryMode: Schema.Literals(["700", "755"]),
   fileMode: Schema.Literals(["600", "644"]),
@@ -178,6 +187,7 @@ const filesOf = (drawn: Machine): Entries => {
     [hubKeys, directory],
     ...keyFile(drawn.subscription, "subscription"),
     ...keyFile(drawn.keyed, "keyed"),
+    ...keyFile(drawn.reader, "reader"),
     ...(drawn.login === "absent"
       ? []
       : ([
@@ -347,6 +357,10 @@ describe("doctor laws", () => {
             ["keyed-key-subscription", "subscription"],
             ["keyed-key-failed", "failed"],
             ["keyed-key-unreachable", "unreachable"],
+            ["reader-key-reader", "reader"],
+            ["reader-key-subscription", "subscription"],
+            ["reader-key-failed", "failed"],
+            ["reader-key-unreachable", "unreachable"],
           ]),
           health: drawn.health,
           pools,

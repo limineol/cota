@@ -20,39 +20,41 @@ const secret = Arbitrary.array(character, {
   maxLength: 48,
 }).pipe(Arbitrary.map((characters) => characters.join("")));
 
-const given = Arbitrary.array(
-  Arbitrary.all({
-    key: secret,
-    answer: Arbitrary.schema(
-      Schema.Literals([
-        "subscription",
-        "keyed",
-        "reader",
-        "unknown",
-        "failed",
-        "unreachable",
-      ]),
-    ),
-  }),
-  { minLength: 1, maxLength: 3 },
-);
+const answered = Arbitrary.all({
+  key: secret,
+  answer: Arbitrary.schema(
+    Schema.Literals([
+      "subscription",
+      "keyed",
+      "reader",
+      "unknown",
+      "failed",
+      "unreachable",
+    ]),
+  ),
+});
+
+const given = Arbitrary.array(answered, { minLength: 1, maxLength: 3 });
 
 describe("cota laws", () => {
   it.effect.prop(
     "J9: No launch, shim, schedule or rewrite puts a hub key or a login in any command's arguments, and no command but `cota hub-key keyed` prints one.",
     {
       given,
+      reader: answered,
       typed: Arbitrary.schema(Schema.Boolean),
       health: Arbitrary.schema(Schema.Literals(["up", "down", "failing"])),
       plainHttp: Arbitrary.schema(Schema.Boolean),
       system: Arbitrary.schema(System),
     },
-    ({ given, typed, health, plainHttp, system }) =>
+    ({ given, reader, typed, health, plainHttp, system }) =>
       Effect.gen(function* () {
         const keys = given.map(({ key }) => key);
         const { layer: files } = InMemoryFiles.make();
         const hub = ScriptedHub.make({
-          keys: new Map(given.map(({ key, answer }) => [key, answer])),
+          keys: new Map(
+            [...given, reader].map(({ key, answer }) => [key, answer]),
+          ),
           health,
           observedPools: ["gemini"],
         });
@@ -64,6 +66,9 @@ describe("cota laws", () => {
           typed ? { typed: keys } : { input: keys.join("\n") },
         );
         const scheduler = InMemoryScheduler.make();
+        const readerTerminal = ScriptedTerminal.make(
+          typed ? { typed: [reader.key] } : { input: reader.key },
+        );
         const [first = ""] = keys;
         const ports = {
           files,
@@ -88,6 +93,7 @@ describe("cota laws", () => {
           : "http://127.0.0.1:18080";
         const argv = [
           ["join", address, "--machine", "studio"],
+          ["memory", "key"],
           ["requests", "add", "antigravity", folder, "gemini"],
           ["doctor"],
           ["doctor", "--json"],
@@ -96,7 +102,12 @@ describe("cota laws", () => {
         ];
         const scheduled: Array<string> = [];
         for (const each of argv) {
-          yield* Cota.run(each, ports);
+          yield* Cota.run(
+            each,
+            each[0] === "memory"
+              ? { ...ports, terminal: readerTerminal.layer }
+              : ports,
+          );
           for (const schedule of scheduler.held.values()) {
             scheduled.push(
               ...definitionsOf(schedule).flatMap(({ path, text }) => [
@@ -112,9 +123,13 @@ describe("cota laws", () => {
           ...terminal.printed.out,
           ...terminal.printed.err,
           ...terminal.printed.questions,
+          ...readerTerminal.printed.out,
+          ...readerTerminal.printed.err,
+          ...readerTerminal.printed.questions,
           ...scheduled,
         ].join("\n");
-        for (const key of keys) expect(printed).not.toContain(key);
+        for (const key of [...keys, reader.key])
+          expect(printed).not.toContain(key);
       }),
     { arbitrary: { runs: 300 } },
   );

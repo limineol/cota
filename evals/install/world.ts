@@ -261,6 +261,7 @@ export const composeOf = (
           `${join(folder, "release.crt")}:/release/release.crt:ro`,
           `${join(folder, "release.key")}:/release/release.key:ro`,
           `${join(folder, "release")}:/release/files:ro`,
+          `${join(root, "skills")}:/release/skills:ro`,
         ],
         networks: { default: { aliases: ["github.com"] } },
       },

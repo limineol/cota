@@ -240,4 +240,61 @@ layer(Harness.layer())("cota memory against a whole hub", (it) => {
         }),
       ),
   );
+
+  it.effect(
+    "doctor warns of a machine that keeps no reader key, passes one the hub knows as a reader key, and fails one it does not know or knows under another scope",
+    () =>
+      onAMachine((on) =>
+        Effect.gen(function* () {
+          yield* joined(on, [subscriptionKey]);
+          const memoryCheck = Effect.gen(function* () {
+            const doctor = yield* cota(on, ["doctor", "--json"]);
+            return {
+              status: doctor.status,
+              check: JSON.parse(doctor.out).checks.at(-1),
+            };
+          });
+
+          expect(yield* memoryCheck).toEqual({
+            status: 0,
+            check: {
+              id: "memory",
+              outcome: "warned",
+              problem:
+                "this machine keeps no reader key, so coding agents on it cannot read the request log with cota memory",
+              fix: "cota memory key, if the owner wants this machine's agents to read the request log",
+            },
+          });
+
+          yield* cota(on, ["memory", "key"], { input: [readerKey] });
+          expect(yield* memoryCheck).toEqual({
+            status: 0,
+            check: {
+              id: "memory",
+              outcome: "passed",
+              problem: null,
+              fix: null,
+            },
+          });
+
+          const failed = (problem: string) => ({
+            status: 1,
+            check: {
+              id: "memory",
+              outcome: "failed",
+              problem,
+              fix: "cota memory key",
+            },
+          });
+          writeFileSync(readerKeyFile(on), "a-reader-key-the-hub-forgot\n");
+          expect(yield* memoryCheck).toEqual(
+            failed("the hub does not know the reader hub key"),
+          );
+          writeFileSync(readerKeyFile(on), `${subscriptionKey}\n`);
+          expect(yield* memoryCheck).toEqual(
+            failed("the hub key kept as the reader one is a subscription key"),
+          );
+        }),
+      ),
+  );
 });

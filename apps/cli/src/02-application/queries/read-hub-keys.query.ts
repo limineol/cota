@@ -10,6 +10,10 @@ export class ReadHubKeys extends Context.Service<
     readonly execute: (
       paths: Paths.Paths,
     ) => Effect.Effect<HubKeys, FilesFailed>;
+    /** The reader key `cota memory key` kept, read the same way. */
+    readonly reader: (
+      paths: Paths.Paths,
+    ) => Effect.Effect<Option.Option<Redacted.Redacted<string>>, FilesFailed>;
   }
 >()("@cota/cli/ReadHubKeys") {}
 
@@ -31,6 +35,10 @@ export const layer: Layer.Layer<ReadHubKeys, never, Files> = Layer.effect(
           keyed: yield* keyIn(Paths.hubKeyFile(paths, "keyed")),
         };
       }),
+      reader: (paths) =>
+        keyIn(Paths.readerKeyFile(paths)).pipe(
+          Effect.withSpan("ReadHubKeys.reader"),
+        ),
     });
   }),
 );
