@@ -13,6 +13,7 @@ code:
   - apps/cli/src/02-application/commands/keep-reader-key.command.ts
   - apps/cli/src/02-application/queries/doctor.query.ts
   - apps/cli/src/04-infrastructure/http-hub.ts
+  - docs/install.md
 ---
 
 # The memory skill
@@ -47,14 +48,17 @@ Every command in it is one the scripted answerer runs as written against a memor
 
 ## Installing it
 
-The owner, on a machine that has joined, gives the machine the reader key and copies the skill where each of its agents reads skills:
+A machine's agents read the request log only where the owner chose it for that machine: a reader key reads every conversation every machine logged, secrets a client printed among them. The install prompt asks the owner, for each machine that joins, whether its coding agents may read the request log (`docs/install.md`, Ask the owner first, question 5), and on each machine the owner said yes for, once doctor passes, gives it the reader key and copies the skill (Each machine, step 5):
 
 ```sh
-cota memory key < "$HOME/cota-hub/secrets/agents"   # on the hub's machine; elsewhere, paste it at the prompt
-mkdir -p ~/.claude/skills && cp -R skills/cota-memory ~/.claude/skills/
+cota memory key < "$HOME/cota-hub/secrets/agents"   # on the hub's machine; elsewhere the owner runs it alone and pastes the key at the prompt
+cota memory get /api/machine                        # its hubKey's scope is reader
+mkdir -p ~/.claude/skills/cota-memory && curl -fsSL -o ~/.claude/skills/cota-memory/SKILL.md "https://github.com/limineol/cota/raw/v<version>/skills/cota-memory/SKILL.md"
 ```
 
-Claude Code reads a user's skills from `~/.claude/skills/<name>/SKILL.md`. Where Codex, OpenCode and Pi read them (`~/.codex/skills`, `~/.agents/skills`, `~/.config/opencode/skills`, `~/.pi/agent/skills` are their documented or likely places) is to be confirmed on each client before the install prompt names it; until then the owner copies the folder where their client's own documentation says.
+The installer gives the key itself only on the hub's machine, from its file; on another machine the owner types it, and the key is never in a command, an argument, a file of its own or the conversation. A release does not publish the skill (ADR-0027 lists what it does), so a machine with no checkout takes `SKILL.md` from the repository at the release's tag, which GitHub serves from `raw.githubusercontent.com`; nothing checks it against `SHA256SUMS`, as the release's own files are. From a checkout, `cp -R skills/cota-memory ~/.claude/skills/` copies the same folder.
+
+Claude Code reads a user's skills from `~/.claude/skills/<name>/SKILL.md`. Where Codex, OpenCode and Pi read them (`~/.codex/skills`, `~/.agents/skills`, `~/.config/opencode/skills`, `~/.pi/agent/skills` are their documented or likely places) is to be confirmed on each client before the install prompt names it; until then the prompt copies the skill into Claude Code's folder alone, and the owner copies it where another client's own documentation says.
 
 ## Doctor's check
 
@@ -67,7 +71,7 @@ Doctor (the CLI spec's Doctor) gains one check, `memory`, after the request repo
 | failed | the hub does not know the key, does not say what it is within 5 seconds or cannot say, or knows it under another scope; or the file cannot be read | as `hub-keys` words it for the reader key (`the hub does not know the reader hub key`, `the hub key kept as the reader one is a subscription key`), or `<file> cannot be read: <why>` | `cota memory key` |
 | skipped | `config` failed, or `hub` did not pass | | |
 
-A warning is not a failure: doctor's exit and `--json`'s `ok` are as they were, so a machine whose owner gave it no reader key passes doctor with this warning. The check reads the key and shows it only to the hub, in `x-cota-key`, as `hub-keys` shows the others; it prints and returns nothing of it (J9 runs doctor on a machine that keeps a generated reader key). Its mode is the `files` check's, as every hub key's is. Its outcomes are held by a contract test (`apps/cli/src/01-presentation/memory.contract.test.ts`: none, a reader key, a key the hub does not know, a subscription key kept as the reader one) and by J14 over machines that keep a reader key in each state; its mutants are in `tooling/mutants.table.ts`.
+A warning is not a failure: doctor's exit and `--json`'s `ok` are as they were, so a machine whose owner gave it no reader key passes doctor with this warning, which the install prompt says to expect (`docs/install.md`, Each machine, step 3). The check reads the key and shows it only to the hub, in `x-cota-key`, as `hub-keys` shows the others; it prints and returns nothing of it (J9 runs doctor on a machine that keeps a generated reader key). Its mode is the `files` check's, as every hub key's is. Its outcomes are held by a contract test (`apps/cli/src/01-presentation/memory.contract.test.ts`: none, a reader key, a key the hub does not know, a subscription key kept as the reader one) and by J14 over machines that keep a reader key in each state; its mutants are in `tooling/mutants.table.ts`.
 
 ## `cota memory`
 
@@ -117,5 +121,5 @@ O1 and O2 run the page's rendering (`apps/cli/src/03-domain/memory.ts`, `pageOf`
 - **`curl` in the skill**, and **an MCP server** (ADR-0026).
 - **Transcript pages from the hub.** `cota` cuts what the hub sends whole.
 - **Searching titles from the API.** SQL over `session_titles` answers it.
-- **Installing the skill from `cota`.** The owner copies it, once the clients' skill folders are confirmed.
+- **Installing the skill from `cota`.** The install prompt's agent copies it on the owner's word, into Claude Code's folder alone until the other clients' folders are confirmed; `cota` writes into no client's folder for it (ADR-0026).
 - **Writing to the request log through `cota memory`.** `get` only reads, and the SQL user cannot write; a reader key's one write, reporting titles, is `cota titles report`'s.

@@ -318,7 +318,7 @@ const secrets = (task: Task, observed: Observed): Verdict =>
         : secretPlacesOf(observed.secrets, observed)),
   ]);
 
-/** The paths under a home that are Cota's, or written by the world's Bun (its cache), by what the prompt runs (the Docker client's own files), or by the owner's own clients and terminals. */
+/** The paths under a home that are Cota's, or written by the world's Bun (its cache), by what the prompt runs (the Docker client's own files, the memory skill it copies), or by the owner's own clients and terminals. */
 export const ownedByCota = [
   "cota-hub/",
   ".config/cota/",
@@ -328,6 +328,7 @@ export const ownedByCota = [
   ".bun/",
   ".docker/",
   ".claude/projects/",
+  ".claude/skills/cota-memory/",
   ".stand-ins/",
   ".bash_history",
 ];

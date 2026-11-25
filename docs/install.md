@@ -2,7 +2,7 @@
 status: active
 scope: repository
 owner: limineol
-last_verified: 2026-11-23
+last_verified: 2026-11-24
 review_by: 2027-02-20
 supersedes: []
 code:
@@ -12,6 +12,7 @@ code:
   - apps/cli/src/cli.ts
   - apps/cli/build.ts
   - .github/workflows/release.yml
+  - skills/cota-memory/SKILL.md
 ---
 
 # Installing Cota
@@ -41,12 +42,13 @@ Ask these together, in one message, before you run anything:
    - each API plan: an Anthropic API key, OpenRouter, Z.ai, OpenCode Go, or a server of their own (an OpenAI-compatible URL).
 3. **The hub's address as the machines reach it**, such as `http://studio.lan:8080`, a VPN address, or `https://cota.example.com` behind a proxy the owner already runs. An `http` address that is not this machine's own is sent in the clear, hub keys included: say so, and ask whether they accept it. The proxy and the private network are the owner's; [`recipes`](recipes/README.md) has what each needs.
 4. **Which machines join**, and on each, which of Claude Code, Codex, OpenCode and Pi are installed. Each needs `curl` and to reach `github.com`.
+5. **On which of those machines may the coding agents read the request log?** Yes or no for each: with the machine's reader key and the memory skill, its agents can search and read every conversation every machine sent through the hub, secrets a client printed among them.
 
 Write down the answers. Every step below names what it uses.
 
 ## The release
 
-Cota is installed from its latest release on GitHub, [limineol/cota](https://github.com/limineol/cota/releases): the hub image, `cota` for each system, and the deployment's Compose file and configuration, all of one version. Nothing of Cota's source is needed, and neither Git nor Bun.
+Cota is installed from its latest release on GitHub, [limineol/cota](https://github.com/limineol/cota/releases): the hub image, `cota` for each system, and the deployment's Compose file and configuration, all of one version. Nothing of Cota's source is needed but the memory skill's one file, taken from the repository at the release's tag (Each machine, step 5), and neither Git nor Bun.
 
 The hub's step 2 finds that version, with the line every block that needs it begins with:
 
@@ -102,7 +104,7 @@ The hub keys and ClickHouse's password are long random strings, one file each, r
 for name in clickhouse clients fleet agents; do (umask 077 && openssl rand -hex 24 > "$HOME/cota-hub/secrets/$name"); done
 ```
 
-Success: it exits 0 and prints nothing. `clickhouse` is the password of the hub's ClickHouse, which reads it from that file; `clients` is the subscription key, for Claude Code and Codex; `fleet` is the keyed key, which spends the keys the hub holds, for OpenCode and Pi; `agents` is the reader key, which reads the request log and opens no pool.
+Success: it exits 0 and prints nothing. `clickhouse` is the password of the hub's ClickHouse, which reads it from that file; `clients` is the subscription key, for Claude Code and Codex; `fleet` is the keyed key, which spends the keys the hub holds, for OpenCode and Pi; `agents` is the reader key, which reads the request log and opens no pool, and which step 5 of each machine gives the machines of question 5 the owner said yes for.
 
 For each API plan of question 2, the owner puts its key in a file of its own; you never see it. Ask the owner to run this in their own terminal, paste the key, and press Enter and then Ctrl-D, with the pool's name in place of `zai`:
 
@@ -278,6 +280,7 @@ Success: no line starts `failed`, and it exits 0. Each check prints `passed`, `w
 | `configured` | `cota configure`, or `edit '<file>' as the problem says, then cota configure` | Run `~/.local/bin/cota configure`. A file `cota` cannot rewrite is the owner's: show them the problem, and wait. |
 | `titles` | `cota titles schedule`, or `fix what that says, then cota titles report` | Run `~/.local/bin/cota titles schedule`, then `~/.local/bin/cota titles report`. A problem that names the hub is fixed by the `hub` row; a file that `cannot be read` is the owner's. |
 | `titles` | `edit your crontab (crontab -e) to add * * * * * '<cota>' titles report` | This system has no scheduler `cota` can use. The crontab is the owner's: show them the line, and ask. |
+| `memory` | `cota memory key, if the owner wants this machine's agents to read the request log` | A warning `this machine keeps no reader key` is expected. On a machine the owner said yes for (question 5), step 5 gives the key once doctor passes; on one they said no for, leave the warning and give no key: doctor passes with it. A failure (a kept key the hub does not know, or not a reader key) is step 5's: give the reader key again as it says. |
 
 `~/.local/bin/cota titles report` prints `cota: the hub kept 3 titles.` or `cota: there was no new title to send.` when it works.
 
@@ -292,6 +295,39 @@ A machine login lets Claude Code on this machine spend a Claude subscription oth
 Success: `cota: kept the machine login for personal.` A pool that is not a Claude subscription pool of this hub is refused, with the reason.
 
 Tell the owner what such a login does not carry. It makes model requests only, so in the projects routed to that pool Claude Code has no claude.ai connectors and no Remote Control, and does not say so. A connector they need there is added to the machine instead, by the owner, where it has an address of its own, and every pool then has it: `claude mcp add --scope user --transport http <name> <address>`, then `/mcp` in Claude Code to sign in to it. A connector reached only through claude.ai has no such address, and is not to be had in those projects.
+
+### 5. The memory skill, where the owner said yes
+
+Do this only on a machine the owner said yes for in question 5. It lets the coding agents there read the request log with `cota memory`, which sends the machine's reader key for them: the agents, you among them, never see the key.
+
+First the reader key. On the hub's machine, give it from its file:
+
+```sh
+~/.local/bin/cota memory key < "$HOME/cota-hub/secrets/agents"
+```
+
+On any other machine the owner gives it, in their own terminal there: ask them to run `~/.local/bin/cota memory key`, which asks for the key without showing it, and to paste the one line of `~/cota-hub/secrets/agents` from the hub's machine. Stop until they say it is kept. Never read that file out, put the key in a command, an argument or a file, or ask for it in this conversation.
+
+Success: `cota: kept the reader key; cota memory reads the request log with it.` A key is refused, and nothing kept, when the hub does not know it or it is not a reader key (`that is a subscription hub key; ...`): it was not `secrets/agents`, so give that one. `could not say what the key is, so it was not kept` is the hub, which did not answer in time: check it as the `hub` row of step 3 says. Then check what the hub says the machine's key is:
+
+```sh
+~/.local/bin/cota memory get /api/machine
+```
+
+Success: its answer holds `"scope":"reader"` and `"pools":[]`.
+
+Then copy the skill where Claude Code reads a user's skills, from the release's tag of the repository:
+
+```sh
+VERSION="$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/limineol/cota/releases/latest | sed 's|.*/tag/v||')"
+mkdir -p "$HOME/.claude/skills/cota-memory" &&
+  curl -fsSL -o "$HOME/.claude/skills/cota-memory/SKILL.md" "https://github.com/limineol/cota/raw/v$VERSION/skills/cota-memory/SKILL.md" &&
+  head -n 2 "$HOME/.claude/skills/cota-memory/SKILL.md"
+```
+
+Write in `VERSION` the version the hub's step 2 printed (The release, above). Success: `---` and then `name: cota-memory`. GitHub sends that address on to `raw.githubusercontent.com`; a `curl` that cannot resolve or reach it is the owner's network, as in step 1. Only Claude Code's folder is known: where Codex, OpenCode and Pi read skills is not confirmed, so on a machine where the owner uses one of those, tell them the skill is at `~/.claude/skills/cota-memory/SKILL.md`, to copy where that client's own documentation says, and do not guess a folder yourself.
+
+Run doctor again (step 3): its `memory` line passes.
 
 ## Quota logins, the owner's
 
@@ -317,7 +353,7 @@ Success: it prints the project, its pool and the route that chose it. `cota: no 
 
 You are done when both hold:
 
-1. On every machine of question 4, `~/.local/bin/cota doctor` exits 0 with no `failed` line.
+1. On every machine of question 4, `~/.local/bin/cota doctor` exits 0 with no `failed` line, and its `memory` line passed on each the owner said yes for in question 5.
 2. A request made through a launched client appears in the dashboard. Ask the owner to open a new terminal on one machine, start `claude` (or `codex`) in a project, and send one message; then to open the hub's dashboard, Sessions: the session is there, with its project, its machine and its pool, and within a minute its title.
 
 Tell the owner what you did, machine by machine, and anything you left to them, and that [`operating.md`](operating.md) is the deployment day to day and [`upgrading.md`](upgrading.md) its upgrades.
