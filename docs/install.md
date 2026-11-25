@@ -298,7 +298,7 @@ Tell the owner what such a login does not carry. It makes model requests only, s
 
 ### 5. The memory skill, where the owner said yes
 
-Do this only on a machine the owner said yes for in question 5. It lets the coding agents there read the request log with `cota memory`, which sends the machine's reader key for them: the agents, you among them, never see the key.
+Do this only on a machine the owner said yes for in question 5. It lets the coding agents there read the request log with `cota memory`, which sends the machine's reader key for them and never prints it. The key's file is readable by the machine's user, as every hub key's is, so the agents, you among them, never read it out.
 
 First the reader key. On the hub's machine, give it from its file:
 
@@ -306,7 +306,7 @@ First the reader key. On the hub's machine, give it from its file:
 ~/.local/bin/cota memory key < "$HOME/cota-hub/secrets/agents"
 ```
 
-On any other machine the owner gives it, in their own terminal there: ask them to run `~/.local/bin/cota memory key`, which asks for the key without showing it, and to paste the one line of `~/cota-hub/secrets/agents` from the hub's machine. Stop until they say it is kept. Never read that file out, put the key in a command, an argument or a file, or ask for it in this conversation.
+On any other machine the owner gives it, in their own terminal there: ask them to run `~/.local/bin/cota memory key`, which asks for the key without showing it, and to paste the one line of `~/cota-hub/secrets/agents` from the hub's machine. Stop until they say it is kept. Never read that file out, put the key in a command, an argument or a file, or ask for it in this conversation. Every machine given `agents` shares that one key, so retiring it ends memory on all of them at once: an owner who wants to retire one machine alone adds a reader key of its own for it ([`operating.md`](operating.md), Hub keys) and gives that one here instead.
 
 Success: `cota: kept the reader key; cota memory reads the request log with it.` A key is refused, and nothing kept, when the hub does not know it or it is not a reader key (`that is a subscription hub key; ...`): it was not `secrets/agents`, so give that one. `could not say what the key is, so it was not kept` is the hub, which did not answer in time: check it as the `hub` row of step 3 says. Then check what the hub says the machine's key is:
 

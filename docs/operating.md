@@ -188,7 +188,7 @@ That user can change and delete anything: the request log has no other copy but 
 
 ## The memory skill
 
-The memory skill ([`skills/cota-memory/SKILL.md`](../skills/cota-memory/SKILL.md)) lets a coding agent on a joined machine search past sessions, read their transcripts and ask the request log in SQL, through `cota memory`, with the machine's reader key. The agent never sees the key. On the hub's machine, give it the reader key from its file, and copy the skill where Claude Code reads a user's skills, from the checkout's root:
+The memory skill ([`skills/cota-memory/SKILL.md`](../skills/cota-memory/SKILL.md)) lets a coding agent on a joined machine search past sessions, read their transcripts and ask the request log in SQL, through `cota memory`, with the machine's reader key, which `cota memory` sends and never prints. The key's file is readable by the machine's user, and the skill tells the agent never to read it. On the hub's machine, give it the reader key from its file, and copy the skill where Claude Code reads a user's skills, from the checkout's root:
 
 ```sh
 cota memory key < "$HOME/cota-hub/secrets/agents"

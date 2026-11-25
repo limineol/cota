@@ -7,7 +7,7 @@ description: Use when you are asked about past work on any of the owner's machin
 
 The owner runs a hub, Cota, that every coding agent on their machines (Claude Code, Codex, OpenCode, Pi) sends its model requests through, and it keeps each request in a **request log**: who sent it, when, from which machine and project, and the whole conversation it carried, with every tool call and what came back. That log is your memory of past sessions, the owner's and other agents', and `cota memory` reads it for you.
 
-This works only on a machine that has joined the hub and keeps a reader key. Check first:
+This works only on a machine that has joined the hub and keeps a reader key. When `cota` is not on `PATH`, it is `~/.local/bin/cota` (on Windows, `%LOCALAPPDATA%\Programs\cota\cota.exe`): run it by that path wherever a command here says `cota`. Check first:
 
 ## Before you start
 
